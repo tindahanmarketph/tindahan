@@ -245,7 +245,7 @@ export default function ListingDetail() {
           )}
 
           <div className="shield-banner">
-            <ShieldCheck />
+            <ShieldCheck size={20} />
 
             <div>
               <strong>Buyer Shield</strong>
@@ -278,15 +278,15 @@ export default function ListingDetail() {
           </div>
 
           <div className="detail-actions">
-            <button className="primary-button full" type="button">
+            <button className="detail-action-btn detail-buy-btn" type="button">
               Buy Now
             </button>
 
-            <button className="secondary-button full" type="button">
+            <button className="detail-action-btn detail-offer-btn" type="button">
               Make an Offer
             </button>
 
-            <button className="secondary-button full" type="button">
+            <button className="detail-action-btn detail-chat-btn" type="button">
               Chat with seller
             </button>
           </div>
