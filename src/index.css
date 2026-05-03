@@ -1549,4 +1549,38 @@ textarea:focus {
   .preview-grid {
     grid-template-columns: repeat(2, 1fr);
   }
+  /* ========================= */
+/* NEW LISTING ADD BUTTON */
+/* ========================= */
+
+.add-listing-button {
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 900;
+  font-family: "Inter", system-ui, sans-serif;
+  cursor: pointer;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.25);
+  transition: all 0.18s ease;
+}
+
+.add-listing-button:hover:not(:disabled) {
+  background: var(--orange-dark);
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(255, 107, 44, 0.32);
+}
+
+.add-listing-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.add-listing-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+  box-shadow: none;
+}
 }

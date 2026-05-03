@@ -276,7 +276,7 @@ async function uploadPhotos() {
                     placeholder="ex: Black, Grey, Blue"
                  />
               </label>
-              
+
             <label>
               Location
               <input
@@ -442,8 +442,8 @@ async function uploadPhotos() {
             </div>
           </section>
 
-          <button className="primary-button full large" disabled={loading} type="submit">
-            {loading ? "Publishing..." : "Publish for free"}
+          <button className="add-listing-button" disabled={loading} type="submit">
+  {loading ? "Adding..." : "Add"}
           </button>
         </form>
       </div>
