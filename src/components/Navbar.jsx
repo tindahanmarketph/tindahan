@@ -1,4 +1,11 @@
-import { Camera, ChevronDown, HelpCircle, LogOut, Search, UserRound } from "lucide-react";
+import {
+  Camera,
+  ChevronDown,
+  HelpCircle,
+  LogOut,
+  Search,
+  UserRound
+} from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
@@ -32,7 +39,8 @@ export default function Navbar() {
       await logout();
       navigate("/");
     } catch (error) {
-      alert(error.message);
+      console.error("Logout error:", error);
+      alert(error.message || "Unable to log out.");
     }
   }
 
@@ -59,7 +67,11 @@ export default function Navbar() {
             />
           </div>
 
-          <button className="search-camera-button" type="button" aria-label="Search by image">
+          <button
+            className="search-camera-button"
+            type="button"
+            aria-label="Search by image"
+          >
             <Camera size={19} />
           </button>
         </form>
@@ -75,7 +87,11 @@ export default function Navbar() {
                 <span>{profile?.username || "Profile"}</span>
               </Link>
 
-              <button className="navbar-login-button" type="button" onClick={handleLogout}>
+              <button
+                className="navbar-login-button"
+                type="button"
+                onClick={handleLogout}
+              >
                 <LogOut size={16} />
                 Logout
               </button>

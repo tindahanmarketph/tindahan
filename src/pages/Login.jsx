@@ -1,61 +1,83 @@
-import { useState } from 'react'
-import { Link, useNavigate } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 export default function Login() {
-  const navigate = useNavigate()
-  const { signIn } = useAuth()
+  const navigate = useNavigate();
+  const { login } = useAuth();
 
   const [form, setForm] = useState({
-    email: '',
-    password: ''
-  })
+    email: "",
+    password: ""
+  });
 
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
 
-  function updateField(field, value) {
+  function updateField(e) {
+    const { name, value } = e.target;
+
     setForm((current) => ({
       ...current,
-      [field]: value
-    }))
+      [name]: value
+    }));
   }
 
-  async function handleSubmit(event) {
-    event.preventDefault()
-    setLoading(true)
-    setError('')
+  async function handleSubmit(e) {
+    e.preventDefault();
 
-    const { error: loginError } = await signIn({
-      email: form.email.trim(),
-      password: form.password
-    })
+    setErrorMessage("");
 
-    if (loginError) {
-      setError(loginError.message)
-      setLoading(false)
-      return
+    if (!form.email.trim()) {
+      setErrorMessage("Please enter your email.");
+      return;
     }
 
-    navigate('/')
+    if (!form.password) {
+      setErrorMessage("Please enter your password.");
+      return;
+    }
+
+    try {
+      setLoading(true);
+
+      await login(form.email.trim(), form.password);
+
+      navigate("/");
+    } catch (error) {
+      console.error("Login error:", error);
+
+      if (error.message?.includes("Invalid login credentials")) {
+        setErrorMessage("Incorrect email or password.");
+      } else if (error.message?.includes("Email not confirmed")) {
+        setErrorMessage("Please confirm your email before logging in.");
+      } else {
+        setErrorMessage(error.message || "Unable to log in.");
+      }
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="auth-page">
-      <div className="auth-card">
-        <h1>Welcome back</h1>
-        <p>Log in to continue on TindaHan.</p>
+    <main className="auth-page">
+      <section className="auth-card">
+        <div className="auth-logo">
+          <h1>Welcome back</h1>
+          <p>Log in to continue on TindaHan.</p>
+        </div>
 
-        {error && <div className="alert error">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="form-stack">
+        <form className="auth-form" onSubmit={handleSubmit}>
           <label>
             Email
             <input
               type="email"
+              name="email"
               value={form.email}
-              onChange={(event) => updateField('email', event.target.value)}
+              onChange={updateField}
               placeholder="you@email.com"
+              autoComplete="email"
+              required
             />
           </label>
 
@@ -63,21 +85,30 @@ export default function Login() {
             Password
             <input
               type="password"
+              name="password"
               value={form.password}
-              onChange={(event) => updateField('password', event.target.value)}
+              onChange={updateField}
               placeholder="Your password"
+              autoComplete="current-password"
+              required
             />
           </label>
 
-          <button className="primary-button" disabled={loading}>
-            {loading ? 'Logging in...' : 'Log in'}
+          {errorMessage && (
+            <div className="auth-error">
+              {errorMessage}
+            </div>
+          )}
+
+          <button type="submit" disabled={loading}>
+            {loading ? "Logging in..." : "Log in"}
           </button>
         </form>
 
-        <p className="auth-switch">
+        <p className="auth-link">
           New here? <Link to="/register">Create an account</Link>
         </p>
-      </div>
-    </div>
-  )
+      </section>
+    </main>
+  );
 }
