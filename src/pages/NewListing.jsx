@@ -108,26 +108,34 @@ export default function NewListing() {
     setFiles(selected);
   }
 
-  async function uploadPhotos() {
-    const urls = [];
+async function uploadPhotos() {
+  const urls = [];
 
-    for (const file of files) {
-      const extension = file.name.split(".").pop();
-      const filePath = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+  for (const file of files) {
+    const extension = file.name.split(".").pop();
+    const filePath = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
 
-      const { error } = await supabase.storage
-        .from("listings")
-        .upload(filePath, file);
+    const { error } = await supabase.storage
+      .from("listings")
+      .upload(filePath, file, {
+        cacheControl: "3600",
+        upsert: false
+      });
 
-      if (error) throw error;
-
-      const { data } = supabase.storage.from("listings").getPublicUrl(filePath);
-
-      urls.push(data.publicUrl);
+    if (error) {
+      console.error("Upload error:", error);
+      throw new Error(
+        "Impossible d'envoyer la photo. Vérifie que le bucket Supabase 'listings' existe bien dans Storage."
+      );
     }
 
-    return urls;
+    const { data } = supabase.storage.from("listings").getPublicUrl(filePath);
+
+    urls.push(data.publicUrl);
   }
+
+  return urls;
+}
 
   async function handleSubmit(e) {
     e.preventDefault();
