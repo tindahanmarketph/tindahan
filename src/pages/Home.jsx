@@ -1,6 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import CategoryBar from "../components/CategoryBar";
 import ListingCard from "../components/ListingCard";
 import {
   getCategoryLabel,
@@ -110,40 +109,36 @@ export default function Home() {
   }
 
   return (
-    <>
-      <CategoryBar />
-
-      <main className="page">
-        <div className="container">
-          <div className="page-header">
-            <div>
-              <h1>{title}</h1>
-              <p>Buy and sell second-hand treasures across the Philippines.</p>
-            </div>
-
-            <select className="select" value={sort} onChange={handleSortChange}>
-              <option value="recent">Newest first</option>
-              <option value="price_asc">Price: low to high</option>
-              <option value="price_desc">Price: high to low</option>
-            </select>
+    <main className="page">
+      <div className="container">
+        <div className="page-header">
+          <div>
+            <h1>{title}</h1>
+            <p>Buy and sell second-hand treasures across the Philippines.</p>
           </div>
 
-          {loading ? (
-            <SkeletonGrid />
-          ) : listings.length === 0 ? (
-            <div className="empty-state">
-              <h2>No items found</h2>
-              <p>Try another search, category or subcategory.</p>
-            </div>
-          ) : (
-            <div className="grid">
-              {listings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          )}
+          <select className="select" value={sort} onChange={handleSortChange}>
+            <option value="recent">Newest first</option>
+            <option value="price_asc">Price: low to high</option>
+            <option value="price_desc">Price: high to low</option>
+          </select>
         </div>
-      </main>
-    </>
+
+        {loading ? (
+          <SkeletonGrid />
+        ) : listings.length === 0 ? (
+          <div className="empty-state">
+            <h2>No items found</h2>
+            <p>Try another search, category or subcategory.</p>
+          </div>
+        ) : (
+          <div className="grid">
+            {listings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }

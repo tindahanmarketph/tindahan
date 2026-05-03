@@ -1,13 +1,33 @@
-import { Routes, Route } from 'react-router-dom'
-import Navbar from './components/Navbar'
-import CategoryBar from './components/CategoryBar'
-import ProtectedRoute from './components/ProtectedRoute'
-import Home from './pages/Home'
-import Login from './pages/Login'
-import Register from './pages/Register'
-import Sell from './pages/Sell'
-import ItemDetail from './pages/ItemDetail'
-import Profile from './pages/Profile'
+import { Navigate, Route, Routes } from "react-router-dom";
+import { useAuth } from "./context/AuthContext";
+import Navbar from "./components/Navbar";
+import CategoryBar from "./components/CategoryBar";
+import Home from "./pages/Home";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
+import ListingDetail from "./pages/ListingDetail";
+import Profile from "./pages/Profile";
+import NewListing from "./pages/NewListing";
+
+function ProtectedRoute({ children }) {
+  const { user, loadingAuth } = useAuth();
+
+  if (loadingAuth) {
+    return (
+      <div className="page">
+        <div className="container">
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  return children;
+}
 
 export default function App() {
   return (
@@ -15,25 +35,23 @@ export default function App() {
       <Navbar />
       <CategoryBar />
 
-      <main>
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
 
-          <Route
-            path="/sell"
-            element={
-              <ProtectedRoute>
-                <Sell />
-              </ProtectedRoute>
-            }
-          />
+        <Route
+          path="/sell"
+          element={
+            <ProtectedRoute>
+              <NewListing />
+            </ProtectedRoute>
+          }
+        />
 
-          <Route path="/item/:id" element={<ItemDetail />} />
-          <Route path="/profile/:username" element={<Profile />} />
-        </Routes>
-      </main>
+        <Route path="/item/:id" element={<ListingDetail />} />
+        <Route path="/profile/:username" element={<Profile />} />
+      </Routes>
     </>
-  )
+  );
 }
