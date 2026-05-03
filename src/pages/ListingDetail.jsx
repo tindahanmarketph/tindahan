@@ -1,4 +1,10 @@
-import { ChevronLeft, ChevronRight, MapPin, ShieldCheck, Star } from "lucide-react";
+import {
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  ShieldCheck,
+  Star
+} from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
@@ -12,43 +18,65 @@ const conditionLabels = {
   new: "New with tags",
   like_new: "Like new",
   good: "Good",
-  fair: "Fair"
+  fair: "Fair",
+  very_good: "Very good"
 };
 
 export default function ListingDetail() {
   const { id } = useParams();
 
   const [listing, setListing] = useState(null);
+  const [seller, setSeller] = useState(null);
   const [loading, setLoading] = useState(true);
   const [photoIndex, setPhotoIndex] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
     async function fetchListing() {
       setLoading(true);
+      setErrorMessage("");
+      setListing(null);
+      setSeller(null);
 
-      const { data, error } = await supabase
+      if (!id) {
+        setErrorMessage("Missing listing ID.");
+        setLoading(false);
+        return;
+      }
+
+      const { data: listingData, error: listingError } = await supabase
         .from("listings")
-        .select(`
-          *,
-          profiles (
-            id,
-            username,
-            avatar_url,
-            bio,
-            location,
-            rating,
-            total_sales,
-            is_verified
-          )
-        `)
+        .select("*")
         .eq("id", id)
-        .single();
+        .maybeSingle();
 
-      if (error) {
-        console.error(error.message);
-        setListing(null);
-      } else {
-        setListing(data);
+      if (listingError) {
+        console.error("Listing detail error:", listingError);
+        setErrorMessage(listingError.message);
+        setLoading(false);
+        return;
+      }
+
+      if (!listingData) {
+        setErrorMessage("This listing does not exist or was removed.");
+        setLoading(false);
+        return;
+      }
+
+      setListing(listingData);
+
+      if (listingData.seller_id) {
+        const { data: sellerData, error: sellerError } = await supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", listingData.seller_id)
+          .maybeSingle();
+
+        if (sellerError) {
+          console.error("Seller profile error:", sellerError);
+        } else {
+          setSeller(sellerData);
+        }
       }
 
       setLoading(false);
@@ -59,29 +87,36 @@ export default function ListingDetail() {
 
   useEffect(() => {
     async function incrementViews() {
-      if (!listing) return;
+      if (!listing?.id) return;
+
+      const nextViews = Number(listing.views || 0) + 1;
 
       await supabase
         .from("listings")
-        .update({ views: (listing.views || 0) + 1 })
+        .update({ views: nextViews })
         .eq("id", listing.id);
     }
 
     incrementViews();
-  }, [listing]);
+  }, [listing?.id]);
 
   const price = Number(listing?.price || 0);
   const protection = price * 0.08;
   const shipping = 80;
   const total = price + protection + shipping;
 
-  const photos = useMemo(() => listing?.photos || [], [listing]);
+  const photos = useMemo(() => {
+    if (!listing?.photos || !Array.isArray(listing.photos)) return [];
+    return listing.photos.filter(Boolean);
+  }, [listing]);
 
   function prevPhoto() {
+    if (photos.length === 0) return;
     setPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
   }
 
   function nextPhoto() {
+    if (photos.length === 0) return;
     setPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
   }
 
@@ -89,7 +124,10 @@ export default function ListingDetail() {
     return (
       <main className="page">
         <div className="container">
-          <p>Loading item...</p>
+          <div className="empty-state">
+            <h2>Loading item...</h2>
+            <p>Please wait a moment.</p>
+          </div>
         </div>
       </main>
     );
@@ -101,14 +139,13 @@ export default function ListingDetail() {
         <div className="container">
           <div className="empty-state">
             <h1>Item not found</h1>
-            <p>This listing may have been removed.</p>
+            <p>{errorMessage || "This listing may have been removed."}</p>
+            <p className="debug-id">Listing ID: {id}</p>
           </div>
         </div>
       </main>
     );
   }
-
-  const seller = listing.profiles;
 
   return (
     <main className="page">
@@ -138,7 +175,7 @@ export default function ListingDetail() {
             <div className="thumb-row">
               {photos.map((photo, index) => (
                 <button
-                  key={photo}
+                  key={`${photo}-${index}`}
                   className={index === photoIndex ? "thumb active" : "thumb"}
                   onClick={() => setPhotoIndex(index)}
                   type="button"
@@ -156,7 +193,7 @@ export default function ListingDetail() {
           <p className="detail-price">₱{price.toLocaleString("en-PH")}</p>
 
           <div className="tag-row">
-            <span>{getCategoryLabel(listing.category)}</span>
+            {listing.category && <span>{getCategoryLabel(listing.category)}</span>}
 
             {listing.subcategory && (
               <span>{getSubcategoryLabel(listing.subcategory)}</span>
@@ -166,7 +203,9 @@ export default function ListingDetail() {
               <span>{getChildCategoryLabel(listing.child_category)}</span>
             )}
 
-            <span>{conditionLabels[listing.condition]}</span>
+            {listing.condition && (
+              <span>{conditionLabels[listing.condition] || listing.condition}</span>
+            )}
 
             {listing.brand && <span>{listing.brand}</span>}
 
@@ -198,8 +237,8 @@ export default function ListingDetail() {
                 <strong>{seller.username}</strong>
 
                 <p>
-                  <Star size={15} fill="currentColor" /> {seller.rating} ·{" "}
-                  {seller.total_sales} sales
+                  <Star size={15} fill="currentColor" /> {seller.rating || 5} ·{" "}
+                  {seller.total_sales || 0} sales
                 </p>
               </div>
             </Link>

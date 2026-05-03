@@ -10,10 +10,13 @@ const conditionLabels = {
   new: "New with tags",
   like_new: "Like new",
   good: "Good",
-  fair: "Fair"
+  fair: "Fair",
+  very_good: "Very good"
 };
 
 export default function ListingCard({ listing }) {
+  if (!listing) return null;
+
   const seller = listing.profiles;
   const firstPhoto = listing.photos?.[0];
 
@@ -26,7 +29,15 @@ export default function ListingCard({ listing }) {
           <div className="image-placeholder">No photo</div>
         )}
 
-        <button className="heart-floating" type="button" aria-label="Like">
+        <button
+          className="heart-floating"
+          type="button"
+          aria-label="Like"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+          }}
+        >
           <Heart size={18} />
         </button>
       </Link>
@@ -35,7 +46,7 @@ export default function ListingCard({ listing }) {
         <h3>{listing.title}</h3>
 
         <p className="listing-price">
-          ₱{Number(listing.price).toLocaleString("en-PH")}
+          ₱{Number(listing.price || 0).toLocaleString("en-PH")}
         </p>
 
         <p className="listing-condition">
@@ -44,7 +55,8 @@ export default function ListingCard({ listing }) {
 
         {listing.subcategory && (
           <p className="listing-subcategory">
-            {getCategoryIcon(listing.category)} {getSubcategoryLabel(listing.subcategory)}
+            {getCategoryIcon(listing.category)}{" "}
+            {getSubcategoryLabel(listing.subcategory)}
           </p>
         )}
 

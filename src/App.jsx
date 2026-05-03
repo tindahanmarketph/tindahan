@@ -37,6 +37,7 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
+
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 
@@ -50,7 +51,12 @@ export default function App() {
         />
 
         <Route path="/item/:id" element={<ListingDetail />} />
+        <Route path="/listing/:id" element={<ListingDetail />} />
+        <Route path="/listings/:id" element={<ListingDetail />} />
+
         <Route path="/profile/:username" element={<Profile />} />
+
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
   );
