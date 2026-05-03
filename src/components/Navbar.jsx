@@ -1,76 +1,107 @@
-import { useState } from 'react'
-import { Link, useNavigate, useSearchParams } from 'react-router-dom'
-import { useAuth } from '../context/AuthContext'
+import { Camera, ChevronDown, HelpCircle, LogOut, Search, UserRound } from "lucide-react";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
-  const { user, profile, signOut } = useAuth()
-  const navigate = useNavigate()
-  const [searchParams] = useSearchParams()
-  const [search, setSearch] = useState(searchParams.get('q') || '')
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const { user, profile, logout } = useAuth();
 
-  function handleSubmit(event) {
-    event.preventDefault()
+  const [query, setQuery] = useState("");
 
-    const value = search.trim()
+  useEffect(() => {
+    setQuery(searchParams.get("q") || "");
+  }, [searchParams]);
 
-    if (!value) {
-      navigate('/')
-      return
+  function handleSearchSubmit(e) {
+    e.preventDefault();
+
+    const cleanQuery = query.trim();
+
+    if (!cleanQuery) {
+      navigate("/");
+      return;
     }
 
-    navigate(`/?q=${encodeURIComponent(value)}`)
+    navigate(`/?q=${encodeURIComponent(cleanQuery)}`);
   }
 
   async function handleLogout() {
-    await signOut()
-    navigate('/')
+    try {
+      await logout();
+      navigate("/");
+    } catch (error) {
+      alert(error.message);
+    }
   }
 
   return (
-    <header className="site-header">
-      <nav className="navbar">
-        <Link to="/" className="logo">
-          <span className="logo-mark">T</span>
-          <span>TindaHan</span>
+    <header className="navbar">
+      <div className="navbar-inner">
+        <Link to="/" className="navbar-logo">
+          TindaHan
         </Link>
 
-        <form className="search-form" onSubmit={handleSubmit}>
-          <input
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Search for Nike, bags, shirts..."
-          />
+        <form className="navbar-search" onSubmit={handleSearchSubmit}>
+          <button className="search-type-button" type="button">
+            Articles
+            <ChevronDown size={16} />
+          </button>
+
+          <div className="search-input-wrapper">
+            <Search size={19} />
+            <input
+              type="text"
+              placeholder="Search for items"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </div>
+
+          <button className="search-camera-button" type="button" aria-label="Search by image">
+            <Camera size={19} />
+          </button>
         </form>
 
-        <div className="nav-actions">
+        <nav className="navbar-actions">
           {user ? (
             <>
-              <Link to="/sell" className="sell-button">
-                Sell
+              <Link
+                className="navbar-account-link"
+                to={`/profile/${profile?.username || ""}`}
+              >
+                <UserRound size={17} />
+                <span>{profile?.username || "Profile"}</span>
               </Link>
 
-              {profile && (
-                <Link to={`/profile/${profile.username}`} className="icon-button">
-                  👤
-                </Link>
-              )}
-
-              <button className="text-button" onClick={handleLogout}>
+              <button className="navbar-login-button" type="button" onClick={handleLogout}>
+                <LogOut size={16} />
                 Logout
               </button>
             </>
           ) : (
-            <>
-              <Link to="/login" className="text-button">
-                Login
-              </Link>
-              <Link to="/register" className="sell-button">
-                Sign up
-              </Link>
-            </>
+            <div className="navbar-auth-box">
+              <Link to="/register">Sign up</Link>
+              <span>|</span>
+              <Link to="/login">Log in</Link>
+            </div>
           )}
-        </div>
-      </nav>
+
+          <Link to="/sell" className="navbar-sell-button">
+            Sell your items
+          </Link>
+
+          <button className="navbar-help-button" type="button" aria-label="Help">
+            <HelpCircle size={22} />
+          </button>
+
+          <button className="navbar-language-button" type="button">
+            EN
+            <ChevronDown size={15} />
+          </button>
+        </nav>
+      </div>
     </header>
-  )
+  );
 }
