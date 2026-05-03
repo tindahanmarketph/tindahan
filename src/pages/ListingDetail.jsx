@@ -22,6 +22,34 @@ const conditionLabels = {
   very_good: "Very good"
 };
 
+function formatRelativeTime(dateValue) {
+  if (!dateValue) return "Recently";
+
+  const date = new Date(dateValue);
+  const now = new Date();
+
+  const diffMs = now - date;
+  const diffMinutes = Math.floor(diffMs / 1000 / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
+
+  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 60) return `${diffMinutes} min ago`;
+  if (diffHours < 24) return `${diffHours} h ago`;
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffWeeks < 5) return `${diffWeeks} weeks ago`;
+  if (diffMonths < 12) return `${diffMonths} months ago`;
+
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
+}
+
 export default function ListingDetail() {
   const { id } = useParams();
 
@@ -110,6 +138,8 @@ export default function ListingDetail() {
     return listing.photos.filter(Boolean);
   }, [listing]);
 
+  const relativeCreatedAt = formatRelativeTime(listing?.created_at);
+
   function prevPhoto() {
     if (photos.length === 0) return;
     setPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
@@ -188,9 +218,67 @@ export default function ListingDetail() {
         </section>
 
         <aside className="detail-card">
-          <h1>{listing.title}</h1>
+          <div className="detail-top">
+            <h1>{listing.title}</h1>
 
-          <p className="detail-price">₱{price.toLocaleString("en-PH")}</p>
+            <p className="detail-meta-line">
+              {listing.size && `${listing.size} · `}
+              {conditionLabels[listing.condition] || listing.condition}
+              {listing.brand && (
+                <>
+                  {" · "}
+                  <span>{listing.brand}</span>
+                </>
+              )}
+              {" · "}
+              Added {relativeCreatedAt}
+            </p>
+
+            <p className="detail-price">₱{price.toLocaleString("en-PH")}</p>
+
+            <p className="buyer-protection-small">
+              Includes Buyer Protection
+            </p>
+          </div>
+
+          <div className="product-characteristics">
+            {listing.brand && (
+              <div className="characteristic-row">
+                <span>Brand</span>
+                <strong>{listing.brand}</strong>
+              </div>
+            )}
+
+            {listing.size && (
+              <div className="characteristic-row">
+                <span>Size</span>
+                <strong>{listing.size}</strong>
+              </div>
+            )}
+
+            {listing.condition && (
+              <div className="characteristic-row">
+                <span>Condition</span>
+                <strong>{conditionLabels[listing.condition] || listing.condition}</strong>
+              </div>
+            )}
+
+            {listing.color && (
+              <div className="characteristic-row">
+                <span>Color</span>
+                <strong>{listing.color}</strong>
+              </div>
+            )}
+
+            <div className="characteristic-row">
+              <span>Added</span>
+              <strong>{relativeCreatedAt}</strong>
+            </div>
+          </div>
+
+          <div className="detail-description-block">
+            <p>{listing.description || "No description provided."}</p>
+          </div>
 
           <div className="tag-row">
             {listing.category && <span>{getCategoryLabel(listing.category)}</span>}
@@ -202,19 +290,12 @@ export default function ListingDetail() {
             {listing.child_category && (
               <span>{getChildCategoryLabel(listing.child_category)}</span>
             )}
-
-            {listing.condition && (
-              <span>{conditionLabels[listing.condition] || listing.condition}</span>
-            )}
-
-            {listing.brand && <span>{listing.brand}</span>}
-
-            {listing.size && <span>Size {listing.size}</span>}
           </div>
 
-          <p className="description">
-            {listing.description || "No description provided."}
-          </p>
+          <div className="shipping-summary">
+            <span>Shipping</span>
+            <strong>from ₱{shipping.toLocaleString("en-PH")}</strong>
+          </div>
 
           {listing.location && (
             <p className="location-line">

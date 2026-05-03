@@ -51,6 +51,7 @@ export default function NewListing() {
     price: "",
     brand: "",
     size: "",
+    color: "",
     location: "",
     is_negotiable: false
   });
@@ -169,6 +170,7 @@ async function uploadPhotos() {
           photos: photoUrls,
           brand: form.brand || null,
           size: form.size || null,
+          color: form.color || null,
           location: form.location || null,
           is_negotiable: form.is_negotiable
         })
@@ -265,7 +267,16 @@ async function uploadPhotos() {
                 />
               </label>
             </div>
-
+              <label>
+                  Color
+                  <input
+                    name="color"
+                    value={form.color}
+                    onChange={updateField}
+                    placeholder="ex: Black, Grey, Blue"
+                 />
+              </label>
+              
             <label>
               Location
               <input
