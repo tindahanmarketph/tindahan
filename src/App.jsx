@@ -8,6 +8,7 @@ import Register from "./pages/Register";
 import ListingDetail from "./pages/ListingDetail";
 import Profile from "./pages/Profile";
 import NewListing from "./pages/NewListing";
+import HowItWorks from "./pages/HowItWorks";
 
 function ProtectedRoute({ children }) {
   const { user, loadingAuth } = useAuth();
@@ -37,7 +38,8 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
-
+        <Route path="/how-it-works" element={<HowItWorks />} />
+        
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
 

@@ -26,9 +26,9 @@ export default function GuestHero() {
             Start selling
           </Link>
 
-          <a href="#how-it-works" className="guest-hero-secondary">
+          <Link to="/how-it-works" className="guest-hero-secondary">
             Discover how it works
-          </a>
+            </Link>
         </div>
       </div>
     </section>
