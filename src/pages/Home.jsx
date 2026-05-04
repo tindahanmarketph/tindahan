@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import GuestHero from "../components/GuestHero";
 import ListingCard from "../components/ListingCard";
 import {
   getCategoryLabel,
@@ -82,7 +83,7 @@ export default function Home() {
       const { data, error } = await query;
 
       if (error) {
-        console.error(error.message);
+        console.error("Listings loading error:", error.message);
         setListings([]);
       } else {
         setListings(data || []);
@@ -109,36 +110,40 @@ export default function Home() {
   }
 
   return (
-    <main className="page">
-      <div className="container">
-        <div className="page-header">
-          <div>
-            <h1>{title}</h1>
-            <p>Buy and sell second-hand treasures across the Philippines.</p>
+    <>
+      <GuestHero />
+
+      <main className="page">
+        <div className="container">
+          <div className="page-header">
+            <div>
+              <h1>{title}</h1>
+              <p>Buy and sell second-hand treasures across the Philippines.</p>
+            </div>
+
+            <select className="select" value={sort} onChange={handleSortChange}>
+              <option value="recent">Newest first</option>
+              <option value="price_asc">Price: low to high</option>
+              <option value="price_desc">Price: high to low</option>
+            </select>
           </div>
 
-          <select className="select" value={sort} onChange={handleSortChange}>
-            <option value="recent">Newest first</option>
-            <option value="price_asc">Price: low to high</option>
-            <option value="price_desc">Price: high to low</option>
-          </select>
+          {loading ? (
+            <SkeletonGrid />
+          ) : listings.length === 0 ? (
+            <div className="empty-state">
+              <h2>No items found</h2>
+              <p>Try another search, category or subcategory.</p>
+            </div>
+          ) : (
+            <div className="grid">
+              {listings.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} />
+              ))}
+            </div>
+          )}
         </div>
-
-        {loading ? (
-          <SkeletonGrid />
-        ) : listings.length === 0 ? (
-          <div className="empty-state">
-            <h2>No items found</h2>
-            <p>Try another search, category or subcategory.</p>
-          </div>
-        ) : (
-          <div className="grid">
-            {listings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} />
-            ))}
-          </div>
-        )}
-      </div>
-    </main>
+      </main>
+    </>
   );
 }
