@@ -2204,3 +2204,301 @@ textarea:focus {
     grid-template-columns: repeat(2, 1fr);
   }
 }
+/* ========================= */
+/* STATIC FOOTER PAGES */
+/* ========================= */
+
+.static-page {
+  min-height: 58vh;
+}
+
+.static-page-card {
+  background: #ffffff;
+  border: 1px solid var(--border);
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 42px;
+}
+
+.static-page-kicker {
+  margin: 0 0 12px;
+  color: var(--orange);
+  font-size: 14px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.static-page-card h1 {
+  margin: 0 0 14px;
+  color: #111111;
+  font-size: 36px;
+  line-height: 1.1;
+  letter-spacing: -0.8px;
+  font-weight: 950;
+}
+
+.static-page-card p {
+  margin: 0;
+  color: #5f6f75;
+  font-size: 16px;
+  line-height: 1.6;
+}
+
+.static-page-button {
+  width: fit-content;
+  min-height: 46px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 28px;
+  padding: 0 22px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.25);
+  transition: all 0.18s ease;
+}
+
+.static-page-button:hover {
+  background: var(--orange-dark);
+  transform: translateY(-1px);
+}
+
+/* ========================= */
+/* ORANGE TINDAHAN FOOTER */
+/* ========================= */
+
+.site-footer {
+  background: var(--orange);
+  color: #ffffff;
+  margin-top: 0;
+}
+
+.site-footer-inner {
+  width: min(1240px, calc(100% - 32px));
+  margin: 0 auto;
+  padding: 52px 0 26px;
+}
+
+.site-footer-top {
+  display: grid;
+  grid-template-columns: 1.05fr 2fr;
+  gap: 80px;
+  padding-bottom: 40px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.site-footer-brand {
+  max-width: 360px;
+}
+
+.site-footer-logo {
+  display: inline-block;
+  margin-bottom: 16px;
+  color: #ffffff;
+  font-size: 32px;
+  font-weight: 950;
+  font-style: italic;
+  letter-spacing: -1.2px;
+}
+
+.site-footer-brand p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 15px;
+  line-height: 1.55;
+}
+
+.site-footer-columns {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 56px;
+}
+
+.site-footer-column {
+  display: grid;
+  gap: 13px;
+  align-content: start;
+}
+
+.site-footer-column h3 {
+  margin: 0 0 6px;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 900;
+}
+
+.site-footer-column a {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 15px;
+  line-height: 1.35;
+  transition: color 0.15s ease, transform 0.15s ease;
+}
+
+.site-footer-column a:hover {
+  color: #ffffff;
+  transform: translateX(2px);
+}
+
+.site-footer-middle {
+  min-height: 92px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 26px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.28);
+}
+
+.site-footer-socials {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.site-footer-socials a {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 10px;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 950;
+  transition: all 0.15s ease;
+}
+
+.site-footer-socials a:hover {
+  background: #ffffff;
+  color: var(--orange);
+  transform: translateY(-1px);
+}
+
+.site-footer-apps {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.app-badge {
+  min-width: 140px;
+  height: 42px;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 0 13px;
+  border-radius: 9px;
+  background: #ffffff;
+  color: var(--orange);
+  font-weight: 900;
+  line-height: 1;
+  transition: all 0.15s ease;
+}
+
+.app-badge:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.16);
+}
+
+.app-badge small {
+  display: block;
+  margin-bottom: 3px;
+  color: rgba(255, 107, 44, 0.78);
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.app-badge span {
+  font-size: 14px;
+}
+
+.app-icon {
+  font-size: 19px !important;
+}
+
+.site-footer-bottom {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  padding-top: 24px;
+}
+
+.site-footer-bottom a {
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 14px;
+  transition: color 0.15s ease;
+}
+
+.site-footer-bottom a:hover {
+  color: #ffffff;
+}
+
+/* ========================= */
+/* FOOTER RESPONSIVE */
+/* ========================= */
+
+@media (max-width: 980px) {
+  .site-footer-top {
+    grid-template-columns: 1fr;
+    gap: 38px;
+  }
+
+  .site-footer-brand {
+    max-width: 620px;
+  }
+
+  .site-footer-columns {
+    gap: 34px;
+  }
+}
+
+@media (max-width: 760px) {
+  .site-footer-inner {
+    padding: 42px 0 24px;
+  }
+
+  .site-footer-columns {
+    grid-template-columns: 1fr;
+    gap: 30px;
+  }
+
+  .site-footer-middle {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .site-footer-apps {
+    flex-wrap: wrap;
+  }
+
+  .static-page-card {
+    padding: 28px;
+  }
+
+  .static-page-card h1 {
+    font-size: 30px;
+  }
+}
+
+@media (max-width: 520px) {
+  .site-footer-apps {
+    width: 100%;
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .app-badge {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .site-footer-bottom {
+    display: grid;
+    gap: 14px;
+  }
+}
