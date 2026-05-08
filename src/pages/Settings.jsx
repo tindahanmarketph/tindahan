@@ -114,6 +114,114 @@ function SelectLike({ children }) {
   );
 }
 
+function getLocalProfile() {
+  try {
+    const saved = localStorage.getItem("tindahan_profile");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getLocalAccount() {
+  try {
+    const saved = localStorage.getItem("tindahan_account_settings");
+    return saved ? JSON.parse(saved) : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveLocalProfile(profileData) {
+  localStorage.setItem("tindahan_profile", JSON.stringify(profileData));
+  window.dispatchEvent(new Event("tindahan-profile-updated"));
+}
+
+function saveLocalAccount(accountData) {
+  localStorage.setItem("tindahan_account_settings", JSON.stringify(accountData));
+  window.dispatchEvent(new Event("tindahan-account-updated"));
+}
+
+async function getCurrentSession() {
+  try {
+    const { data, error } = await supabase.auth.getSession();
+
+    if (error) {
+      console.warn("Session check error:", error.message);
+      return null;
+    }
+
+    return data?.session || null;
+  } catch (error) {
+    console.warn("Session check failed:", error);
+    return null;
+  }
+}
+
+async function getProfileByUserId(userId) {
+  if (!userId) return null;
+
+  try {
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (error) {
+      console.warn("Profile fetch error:", error.message);
+      return null;
+    }
+
+    return data || null;
+  } catch (error) {
+    console.warn("Profile fetch failed:", error);
+    return null;
+  }
+}
+
+async function upsertProfileSafely(userId, payload) {
+  if (!userId) {
+    return { success: false, error: "Missing user id" };
+  }
+
+  try {
+    const existingProfile = await getProfileByUserId(userId);
+
+    if (existingProfile) {
+      const { error } = await supabase
+        .from("profiles")
+        .update(payload)
+        .eq("id", userId);
+
+      if (error) {
+        console.warn("Profile update failed:", error.message);
+        return { success: false, error: error.message };
+      }
+
+      return { success: true };
+    }
+
+    const { error } = await supabase.from("profiles").insert({
+      id: userId,
+      ...payload
+    });
+
+    if (error) {
+      console.warn("Profile insert failed:", error.message);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.warn("Profile upsert failed:", error);
+    return {
+      success: false,
+      error: error?.message || "Profile could not be saved."
+    };
+  }
+}
+
 function ProfileSection({ user }) {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
@@ -143,37 +251,35 @@ function ProfileSection({ user }) {
 
   useEffect(() => {
     async function loadProfile() {
-      if (!user?.id) {
-        setLoadingProfile(false);
-        return;
-      }
-
       setLoadingProfile(true);
 
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("*")
-        .eq("id", user.id)
-        .maybeSingle();
+      const localProfile = getLocalProfile();
+      const supabaseProfile = user?.id ? await getProfileByUserId(user.id) : null;
 
-      if (error) {
-        console.error("Profile loading error:", error.message);
-        showToast("error", "Profile error", "Unable to load your profile.");
-        setLoadingProfile(false);
-        return;
-      }
+      const sourceProfile = {
+        ...(localProfile || {}),
+        ...(supabaseProfile || {})
+      };
 
-      if (data) {
-        setProfilePhoto(data.avatar_url || "");
-        setUsername(data.username || user.email?.split("@")[0] || "username");
-        setBio(data.bio || "");
-        setCountry(data.country || data.location || "Philippines");
-        setCity(data.city || "");
-        setLanguage(data.language || "English");
-        setShowCity(data.show_city ?? true);
-      } else {
-        setUsername(user.email?.split("@")[0] || "username");
-      }
+      setProfilePhoto(
+        sourceProfile.avatar_url ||
+          sourceProfile.profilePhoto ||
+          user?.user_metadata?.avatar_url ||
+          ""
+      );
+
+      setUsername(
+        sourceProfile.username ||
+          user?.user_metadata?.username ||
+          user?.email?.split("@")[0] ||
+          "username"
+      );
+
+      setBio(sourceProfile.bio || "");
+      setCountry(sourceProfile.country || sourceProfile.location || "Philippines");
+      setCity(sourceProfile.city || "");
+      setLanguage(sourceProfile.language || "English");
+      setShowCity(sourceProfile.show_city ?? sourceProfile.showCity ?? true);
 
       setLoadingProfile(false);
     }
@@ -200,37 +306,37 @@ function ProfileSection({ user }) {
     setCity("");
   }
 
-  async function uploadAvatarIfNeeded() {
+  async function uploadAvatarIfPossible() {
     if (!profilePhotoFile || !user?.id) {
       return profilePhoto;
     }
 
-    const fileExt = profilePhotoFile.name.split(".").pop() || "jpg";
-    const filePath = `${user.id}/avatar-${Date.now()}.${fileExt}`;
+    try {
+      const fileExt = profilePhotoFile.name.split(".").pop() || "jpg";
+      const filePath = `${user.id}/avatar-${Date.now()}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from("avatars")
-      .upload(filePath, profilePhotoFile, {
-        cacheControl: "3600",
-        upsert: true
-      });
+      const { error: uploadError } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, profilePhotoFile, {
+          cacheControl: "3600",
+          upsert: true
+        });
 
-    if (uploadError) {
-      console.error("Avatar upload error:", uploadError);
-      throw new Error("Unable to upload your profile photo.");
+      if (uploadError) {
+        console.warn("Avatar upload skipped:", uploadError.message);
+        return profilePhoto;
+      }
+
+      const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
+
+      return data?.publicUrl || profilePhoto;
+    } catch (error) {
+      console.warn("Avatar upload failed:", error);
+      return profilePhoto;
     }
-
-    const { data } = supabase.storage.from("avatars").getPublicUrl(filePath);
-
-    return data.publicUrl;
   }
 
   async function handleUpdate() {
-    if (!user?.id) {
-      showToast("error", "Not logged in", "Please log in to update your profile.");
-      return;
-    }
-
     const cleanUsername = username.trim();
 
     if (!cleanUsername) {
@@ -241,20 +347,32 @@ function ProfileSection({ user }) {
     setSaving(true);
 
     try {
-      const finalAvatarUrl = await uploadAvatarIfNeeded();
+      const finalAvatarUrl = await uploadAvatarIfPossible();
 
       const locationLabel =
         showCity && city ? `${city}, ${country}` : country || "Philippines";
 
-      const { data: existingProfile } = await supabase
-        .from("profiles")
-        .select("id")
-        .eq("id", user.id)
-        .maybeSingle();
+      const localProfileData = {
+        id: user?.id || null,
+        username: cleanUsername,
+        bio: bio.trim(),
+        profilePhoto: finalAvatarUrl || "",
+        avatar_url: finalAvatarUrl || "",
+        country,
+        city,
+        language,
+        showCity,
+        show_city: showCity,
+        location: locationLabel,
+        updated_at: new Date().toISOString()
+      };
 
-      if (!existingProfile) {
-        const { error: insertError } = await supabase.from("profiles").insert({
-          id: user.id,
+      saveLocalProfile(localProfileData);
+
+      let supabaseSaved = false;
+
+      if (user?.id) {
+        const payload = {
           username: cleanUsername,
           bio: bio.trim(),
           avatar_url: finalAvatarUrl || null,
@@ -264,76 +382,36 @@ function ProfileSection({ user }) {
           show_city: showCity,
           location: locationLabel,
           updated_at: new Date().toISOString()
-        });
+        };
 
-        if (insertError) {
-          console.error("Profile insert error:", insertError);
-          throw insertError;
-        }
-      } else {
-        const { error: updateError } = await supabase
-          .from("profiles")
-          .update({
-            username: cleanUsername,
-            bio: bio.trim(),
-            avatar_url: finalAvatarUrl || null,
-            country,
-            city: city || null,
-            language,
-            show_city: showCity,
-            location: locationLabel,
-            updated_at: new Date().toISOString()
-          })
-          .eq("id", user.id);
-
-        if (updateError) {
-          console.error("Profile update error:", updateError);
-          throw updateError;
-        }
+        const result = await upsertProfileSafely(user.id, payload);
+        supabaseSaved = result.success;
       }
 
       setProfilePhoto(finalAvatarUrl || "");
       setProfilePhotoFile(null);
 
-      window.dispatchEvent(new Event("tindahan-profile-updated"));
-
       showToast(
         "success",
         "Profile updated",
-        "Your changes are now visible on your public profile."
+        supabaseSaved
+          ? "Your changes are now visible on your public profile."
+          : "Your changes were saved locally. Supabase did not accept one or more profile fields."
       );
 
       window.setTimeout(() => {
-        navigate(`/profile/${cleanUsername}`);
+        if (supabaseSaved) {
+          navigate(`/profile/${cleanUsername}`);
+        }
       }, 900);
     } catch (error) {
-      const message = error?.message || "Your profile could not be saved.";
+      console.error("Profile save error:", error);
 
-      if (message.toLowerCase().includes("duplicate")) {
-        showToast(
-          "error",
-          "Username unavailable",
-          "This username is already used by another member."
-        );
-      } else if (message.toLowerCase().includes("bucket")) {
-        showToast(
-          "error",
-          "Storage error",
-          "The avatars bucket is missing or not configured."
-        );
-      } else if (
-        message.toLowerCase().includes("policy") ||
-        message.toLowerCase().includes("permission") ||
-        message.toLowerCase().includes("row-level")
-      ) {
-        showToast(
-          "error",
-          "Permission denied",
-          "Supabase Storage policies are blocking the upload."
-        );
-      } else {
-        showToast("error", "Update failed", message);
-      }
+      showToast(
+        "error",
+        "Update failed",
+        error?.message || "Your profile could not be saved."
+      );
     } finally {
       setSaving(false);
     }
@@ -453,6 +531,7 @@ function ProfileSection({ user }) {
               onChange={(event) => setCity(event.target.value)}
             >
               <option value="">Select your city</option>
+
               {(CITIES_BY_COUNTRY[country] || []).map((cityName) => (
                 <option key={cityName} value={cityName}>
                   {cityName}
@@ -505,70 +584,18 @@ function ProfileSection({ user }) {
 }
 
 function AccountSection({ user }) {
-  const [toast, setToast] = useState(null);
   const [loadingAccount, setLoadingAccount] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [savingAccount, setSavingAccount] = useState(false);
 
   const [email, setEmail] = useState(user?.email || "");
-  const [phone, setPhone] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [holidayMode, setHolidayMode] = useState(false);
-  const [facebook, setFacebook] = useState("");
-  const [google, setGoogle] = useState(user?.email || "");
-  const [newPassword, setNewPassword] = useState("");
+  const [password, setPassword] = useState("");
 
-  useEffect(() => {
-    async function loadAccountSettings() {
-      if (!user?.id) return;
-
-      setLoadingAccount(true);
-
-      const { data, error } = await supabase
-        .from("profiles")
-        .select(
-          `
-          phone,
-          full_name,
-          gender,
-          birth_date,
-          holiday_mode,
-          facebook_url,
-          google_email
-        `
-        )
-        .eq("id", user.id)
-        .maybeSingle();
-
-      if (error) {
-        console.error("Account settings loading error:", error.message);
-
-        showToast(
-          "error",
-          "Loading failed",
-          "Unable to load your account settings."
-        );
-
-        setLoadingAccount(false);
-        return;
-      }
-
-      if (data) {
-        setPhone(data.phone || "");
-        setFullName(data.full_name || "");
-        setGender(data.gender || "");
-        setBirthDate(data.birth_date || "");
-        setHolidayMode(data.holiday_mode || false);
-        setFacebook(data.facebook_url || "");
-        setGoogle(data.google_email || user?.email || "");
-      }
-
-      setLoadingAccount(false);
-    }
-
-    loadAccountSettings();
-  }, [user]);
+  const [toast, setToast] = useState(null);
 
   function showToast(type, title, message) {
     setToast({ type, title, message });
@@ -578,96 +605,152 @@ function AccountSection({ user }) {
     }, 3200);
   }
 
-  async function handleSaveAccount() {
-    if (!user?.id) return;
+  useEffect(() => {
+    async function loadAccountSettings() {
+      setLoadingAccount(true);
 
-    setSaving(true);
+      try {
+        const localAccount = getLocalAccount();
+        const supabaseProfile = user?.id ? await getProfileByUserId(user.id) : null;
+
+        const source = {
+          ...(localAccount || {}),
+          ...(supabaseProfile || {})
+        };
+
+        setEmail(source.email || user?.email || "");
+        setPhoneNumber(
+          source.phone_number ||
+            source.phoneNumber ||
+            user?.phone ||
+            user?.user_metadata?.phone_number ||
+            ""
+        );
+        setFullName(
+          source.full_name ||
+            source.fullName ||
+            user?.user_metadata?.full_name ||
+            ""
+        );
+        setGender(source.gender || user?.user_metadata?.gender || "");
+        setBirthDate(
+          source.birth_date ||
+            source.birthDate ||
+            user?.user_metadata?.birth_date ||
+            ""
+        );
+        setHolidayMode(source.holiday_mode ?? source.holidayMode ?? false);
+      } catch (error) {
+        console.error("Account settings loading error:", error);
+      } finally {
+        setLoadingAccount(false);
+      }
+    }
+
+    loadAccountSettings();
+  }, [user]);
+
+  async function handleSaveAccount() {
+    setSavingAccount(true);
 
     try {
-      const { error: profileError } = await supabase
-        .from("profiles")
-        .update({
-          phone: phone.trim() || null,
-          full_name: fullName.trim() || null,
-          gender: gender || null,
-          birth_date: birthDate || null,
-          holiday_mode: holidayMode,
-          facebook_url: facebook.trim() || null,
-          google_email: google.trim() || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq("id", user.id);
+      const cleanEmail = email.trim();
+      const cleanPhoneNumber = phoneNumber.trim();
+      const cleanFullName = fullName.trim();
+      const cleanPassword = password.trim();
 
-      if (profileError) {
-        console.error("Account profile update error:", profileError.message);
-
-        showToast(
-          "error",
-          "Update failed",
-          "Something went wrong while saving your account settings."
-        );
-
-        setSaving(false);
+      if (!cleanEmail) {
+        showToast("error", "Missing email", "Please enter your email address.");
+        setSavingAccount(false);
         return;
       }
 
-      if (email.trim() && email.trim() !== user.email) {
-        const { error: emailError } = await supabase.auth.updateUser({
-          email: email.trim()
-        });
-
-        if (emailError) {
-          console.error("Email update error:", emailError.message);
-
-          showToast(
-            "error",
-            "Email update pending",
-            "Your profile was saved, but your email could not be changed right now."
-          );
-
-          setSaving(false);
-          return;
-        }
+      if (cleanPassword.length > 0 && cleanPassword.length < 6) {
+        showToast(
+          "error",
+          "Password too short",
+          "Your password must contain at least 6 characters."
+        );
+        setSavingAccount(false);
+        return;
       }
 
-      if (newPassword.trim()) {
-        const { error: passwordError } = await supabase.auth.updateUser({
-          password: newPassword.trim()
+      const accountData = {
+        email: cleanEmail,
+        phoneNumber: cleanPhoneNumber,
+        phone_number: cleanPhoneNumber,
+        fullName: cleanFullName,
+        full_name: cleanFullName,
+        gender,
+        birthDate,
+        birth_date: birthDate,
+        holidayMode,
+        holiday_mode: holidayMode,
+        updated_at: new Date().toISOString()
+      };
+
+      saveLocalAccount(accountData);
+
+      let supabaseSaved = false;
+      let authUpdated = false;
+
+      if (user?.id) {
+        const profilePayload = {
+          email: cleanEmail,
+          phone_number: cleanPhoneNumber,
+          full_name: cleanFullName,
+          gender,
+          birth_date: birthDate || null,
+          holiday_mode: holidayMode,
+          updated_at: new Date().toISOString()
+        };
+
+        const profileResult = await upsertProfileSafely(user.id, profilePayload);
+        supabaseSaved = profileResult.success;
+      }
+
+      const session = await getCurrentSession();
+
+      if (session && cleanPassword.length > 0) {
+        const { error } = await supabase.auth.updateUser({
+          password: cleanPassword
         });
 
-        if (passwordError) {
-          console.error("Password update error:", passwordError.message);
-
+        if (error) {
+          console.warn("Password update failed:", error.message);
           showToast(
             "error",
-            "Password update failed",
-            "Your profile was saved, but your password could not be changed."
+            "Password not updated",
+            error.message || "Your password could not be updated."
           );
-
-          setSaving(false);
+          setSavingAccount(false);
           return;
         }
 
-        setNewPassword("");
+        authUpdated = true;
       }
+
+      setPassword("");
 
       showToast(
         "success",
         "Account updated",
-        "Your account settings have been saved successfully."
+        authUpdated
+          ? "Your account settings and password have been updated."
+          : supabaseSaved
+          ? "Your account settings have been saved."
+          : "Your changes were saved locally. Supabase did not accept one or more account fields."
       );
-
-      window.dispatchEvent(new Event("tindahan-account-updated"));
     } catch (error) {
       console.error("Account save error:", error);
 
       showToast(
         "error",
         "Update failed",
-        "Something went wrong while saving your account settings."
+        error?.message || "Something went wrong while saving your account settings."
       );
     } finally {
-      setSaving(false);
+      setSavingAccount(false);
     }
   }
 
@@ -706,8 +789,8 @@ function AccountSection({ user }) {
           }
           value={
             <input
-              className="settings-inline-input"
               type="email"
+              className="settings-inline-input"
               value={email}
               onChange={(event) => setEmail(event.target.value)}
               placeholder="Enter your email"
@@ -720,10 +803,10 @@ function AccountSection({ user }) {
           helper="Your phone number is only used to help you sign in. It will not be made public or used for marketing purposes."
           value={
             <input
-              className="settings-inline-input"
               type="tel"
-              value={phone}
-              onChange={(event) => setPhone(event.target.value)}
+              className="settings-inline-input"
+              value={phoneNumber}
+              onChange={(event) => setPhoneNumber(event.target.value)}
               placeholder="Enter your phone number"
             />
           }
@@ -752,8 +835,8 @@ function AccountSection({ user }) {
               onChange={(event) => setGender(event.target.value)}
             >
               <option value="">Select</option>
-              <option value="Woman">Woman</option>
               <option value="Man">Man</option>
+              <option value="Woman">Woman</option>
               <option value="Non-binary">Non-binary</option>
               <option value="Prefer not to say">Prefer not to say</option>
             </select>
@@ -765,8 +848,8 @@ function AccountSection({ user }) {
           value={
             <div className="settings-date-field">
               <input
-                className="settings-inline-input"
                 type="date"
+                className="settings-inline-input"
                 value={birthDate}
                 onChange={(event) => setBirthDate(event.target.value)}
               />
@@ -779,7 +862,6 @@ function AccountSection({ user }) {
       <SettingsCard>
         <SettingsRow
           title="Holiday mode"
-          helper="Pause your selling activity when you are away."
           action={
             <Toggle
               active={holidayMode}
@@ -792,25 +874,19 @@ function AccountSection({ user }) {
       <SettingsCard>
         <SettingsRow
           title="Facebook"
-          value={
-            <input
-              className="settings-inline-input"
-              value={facebook}
-              onChange={(event) => setFacebook(event.target.value)}
-              placeholder="Add your Facebook profile link"
-            />
+          action={
+            <button type="button" className="settings-outline-button">
+              Add
+            </button>
           }
         />
 
         <SettingsRow
           title="Google"
-          value={
-            <input
-              className="settings-inline-input"
-              value={google}
-              onChange={(event) => setGoogle(event.target.value)}
-              placeholder="Add your Google email"
-            />
+          action={
+            <button type="button" className="settings-disabled-button">
+              Added
+            </button>
           }
         />
       </SettingsCard>
@@ -826,11 +902,12 @@ function AccountSection({ user }) {
           helper="Leave this field empty if you do not want to change your password."
           value={
             <input
-              className="settings-inline-input"
               type="password"
-              value={newPassword}
-              onChange={(event) => setNewPassword(event.target.value)}
-              placeholder="Enter a new password"
+              className="settings-inline-input"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="New password"
+              autoComplete="new-password"
             />
           }
         />
@@ -839,7 +916,6 @@ function AccountSection({ user }) {
       <SettingsCard>
         <SettingsRow
           title="Delete my account"
-          helper="Account deletion will be handled later."
           action={<ChevronRight size={22} />}
           danger
         />
@@ -850,9 +926,9 @@ function AccountSection({ user }) {
           type="button"
           className="settings-save-button"
           onClick={handleSaveAccount}
-          disabled={saving}
+          disabled={savingAccount}
         >
-          {saving ? "Saving..." : "Save"}
+          {savingAccount ? "Saving..." : "Save"}
         </button>
       </div>
     </div>

@@ -4203,3 +4203,22 @@ textarea:focus {
   cursor: not-allowed;
   transform: none;
 }
+.settings-row-main p {
+  max-width: 260px;
+}
+
+.settings-row-value input,
+.settings-row-value select {
+  cursor: text;
+}
+
+.settings-row-value select {
+  cursor: pointer;
+}
+
+.settings-date-field {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+}
