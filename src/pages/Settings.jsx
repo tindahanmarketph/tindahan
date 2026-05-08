@@ -195,7 +195,7 @@ async function upsertProfileSafely(userId, payload) {
         .eq("id", userId);
 
       if (error) {
-        console.warn("Profile update failed:", error.message);
+        console.warn("Supabase profile update skipped:", error.message);
         return { success: false, error: error.message };
       }
 
@@ -208,7 +208,7 @@ async function upsertProfileSafely(userId, payload) {
     });
 
     if (error) {
-      console.warn("Profile insert failed:", error.message);
+      console.warn("Supabase profile insert skipped:", error.message);
       return { success: false, error: error.message };
     }
 
@@ -276,7 +276,7 @@ function ProfileSection({ user }) {
       );
 
       setBio(sourceProfile.bio || "");
-      setCountry(sourceProfile.country || sourceProfile.location || "Philippines");
+      setCountry(sourceProfile.country || "Philippines");
       setCity(sourceProfile.city || "");
       setLanguage(sourceProfile.language || "English");
       setShowCity(sourceProfile.show_city ?? sourceProfile.showCity ?? true);
@@ -396,13 +396,11 @@ function ProfileSection({ user }) {
         "Profile updated",
         supabaseSaved
           ? "Your changes are now visible on your public profile."
-          : "Your changes were saved locally. Supabase did not accept one or more profile fields."
+          : "Your changes were saved locally. Supabase did not accept one or more fields."
       );
 
       window.setTimeout(() => {
-        if (supabaseSaved) {
-          navigate(`/profile/${cleanUsername}`);
-        }
+        navigate(`/profile/${cleanUsername}`);
       }, 900);
     } catch (error) {
       console.error("Profile save error:", error);
@@ -619,6 +617,7 @@ function AccountSection({ user }) {
         };
 
         setEmail(source.email || user?.email || "");
+
         setPhoneNumber(
           source.phone_number ||
             source.phoneNumber ||
@@ -626,19 +625,23 @@ function AccountSection({ user }) {
             user?.user_metadata?.phone_number ||
             ""
         );
+
         setFullName(
           source.full_name ||
             source.fullName ||
             user?.user_metadata?.full_name ||
             ""
         );
+
         setGender(source.gender || user?.user_metadata?.gender || "");
+
         setBirthDate(
           source.birth_date ||
             source.birthDate ||
             user?.user_metadata?.birth_date ||
             ""
         );
+
         setHolidayMode(source.holiday_mode ?? source.holidayMode ?? false);
       } catch (error) {
         console.error("Account settings loading error:", error);
@@ -692,7 +695,7 @@ function AccountSection({ user }) {
       saveLocalAccount(accountData);
 
       let supabaseSaved = false;
-      let authUpdated = false;
+      let passwordUpdated = false;
 
       if (user?.id) {
         const profilePayload = {
@@ -727,7 +730,7 @@ function AccountSection({ user }) {
           return;
         }
 
-        authUpdated = true;
+        passwordUpdated = true;
       }
 
       setPassword("");
@@ -735,11 +738,11 @@ function AccountSection({ user }) {
       showToast(
         "success",
         "Account updated",
-        authUpdated
+        passwordUpdated
           ? "Your account settings and password have been updated."
           : supabaseSaved
           ? "Your account settings have been saved."
-          : "Your changes were saved locally. Supabase did not accept one or more account fields."
+          : "Your changes were saved locally. Supabase did not accept one or more fields."
       );
     } catch (error) {
       console.error("Account save error:", error);
@@ -747,7 +750,8 @@ function AccountSection({ user }) {
       showToast(
         "error",
         "Update failed",
-        error?.message || "Something went wrong while saving your account settings."
+        error?.message ||
+          "Something went wrong while saving your account settings."
       );
     } finally {
       setSavingAccount(false);
