@@ -1,149 +1,136 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import GuestHero from "../components/GuestHero";
+import { useEffect, useState } from "react";
 import ListingCard from "../components/ListingCard";
-import {
-  getCategoryLabel,
-  getChildCategoryLabel,
-  getSubcategoryLabel
-} from "../lib/categories";
 import { supabase } from "../lib/supabase";
 
-function SkeletonGrid() {
+function ListingSkeleton() {
   return (
-    <div className="grid">
-      {Array.from({ length: 12 }).map((_, index) => (
-        <div className="skeleton-card" key={index}>
-          <div className="skeleton skeleton-img"></div>
-          <div className="skeleton skeleton-line"></div>
-          <div className="skeleton skeleton-line short"></div>
-        </div>
-      ))}
+    <div className="skeleton-card">
+      <div className="skeleton skeleton-img" />
+      <div className="skeleton skeleton-line" />
+      <div className="skeleton skeleton-line short" />
     </div>
   );
 }
 
 export default function Home() {
-  const [searchParams, setSearchParams] = useSearchParams();
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
-
-  const q = searchParams.get("q") || "";
-  const category = searchParams.get("category") || "all";
-  const subcategory = searchParams.get("subcategory") || "";
-  const childCategory = searchParams.get("child_category") || "";
-  const sort = searchParams.get("sort") || "recent";
+  const [loadError, setLoadError] = useState("");
 
   useEffect(() => {
-    async function fetchListings() {
+    let isMounted = true;
+
+    async function loadListings() {
+      if (!isMounted) return;
+
       setLoading(true);
+      setLoadError("");
 
-      let query = supabase
-        .from("listings")
-        .select(`
-          *,
-          profiles (
-            id,
-            username,
-            avatar_url,
-            rating,
-            is_verified
-          )
-        `)
-        .eq("status", "active");
+      try {
+        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (category !== "all") {
-        query = query.eq("category", category);
-      }
+        if (!supabaseUrl || !supabaseAnonKey) {
+          throw new Error(
+            "Supabase environment variables are missing on Netlify. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
+          );
+        }
 
-      if (subcategory) {
-        query = query.eq("subcategory", subcategory);
-      }
+        const { data, error } = await supabase
+          .from("listings")
+          .select(`
+            *,
+            profiles (
+              id,
+              username,
+              avatar_url,
+              rating,
+              is_verified
+            )
+          `)
+          .eq("status", "active")
+          .order("created_at", { ascending: false });
 
-      if (childCategory) {
-        query = query.eq("child_category", childCategory);
-      }
+        if (error) {
+          throw error;
+        }
 
-      if (q.trim()) {
-        const term = q.trim();
+        if (!isMounted) return;
 
-        query = query.or(
-          `title.ilike.%${term}%,description.ilike.%${term}%,brand.ilike.%${term}%`
-        );
-      }
-
-      if (sort === "price_asc") {
-        query = query.order("price", { ascending: true });
-      } else if (sort === "price_desc") {
-        query = query.order("price", { ascending: false });
-      } else {
-        query = query.order("created_at", { ascending: false });
-      }
-
-      const { data, error } = await query;
-
-      if (error) {
-        console.error("Listings loading error:", error.message);
-        setListings([]);
-      } else {
         setListings(data || []);
-      }
+      } catch (error) {
+        console.error("Home listings loading error:", error);
 
-      setLoading(false);
+        if (!isMounted) return;
+
+        setListings([]);
+        setLoadError(
+          error?.message ||
+            "Unable to load listings. Please check your Supabase configuration."
+        );
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
+      }
     }
 
-    fetchListings();
-  }, [q, category, subcategory, childCategory, sort]);
+    loadListings();
 
-  const title = useMemo(() => {
-    if (q) return `Search results for "${q}"`;
-    if (childCategory) return getChildCategoryLabel(childCategory);
-    if (subcategory) return getSubcategoryLabel(subcategory);
-    if (category !== "all") return getCategoryLabel(category);
-    return "Fresh finds";
-  }, [q, category, subcategory, childCategory]);
-
-  function handleSortChange(e) {
-    const params = new URLSearchParams(searchParams);
-    params.set("sort", e.target.value);
-    setSearchParams(params);
-  }
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   return (
-    <>
-      <GuestHero />
-
-      <main className="page">
-        <div className="container">
-          <div className="page-header">
-            <div>
-              <h1>{title}</h1>
-              <p>Buy and sell second-hand treasures across the Philippines.</p>
-            </div>
-
-            <select className="select" value={sort} onChange={handleSortChange}>
-              <option value="recent">Newest first</option>
-              <option value="price_asc">Price: low to high</option>
-              <option value="price_desc">Price: high to low</option>
-            </select>
+    <main className="page">
+      <div className="container">
+        <div className="page-header">
+          <div>
+            <h1>Fresh finds</h1>
+            <p>Buy and sell second-hand treasures across the Philippines.</p>
           </div>
 
-          {loading ? (
-            <SkeletonGrid />
-          ) : listings.length === 0 ? (
-            <div className="empty-state">
-              <h2>No items found</h2>
-              <p>Try another search, category or subcategory.</p>
-            </div>
-          ) : (
-            <div className="grid">
-              {listings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          )}
+          <select className="select" defaultValue="newest">
+            <option value="newest">Newest first</option>
+            <option value="price-low">Price low to high</option>
+            <option value="price-high">Price high to low</option>
+          </select>
         </div>
-      </main>
-    </>
+
+        {loading && (
+          <div className="grid">
+            {Array.from({ length: 12 }).map((_, index) => (
+              <ListingSkeleton key={index} />
+            ))}
+          </div>
+        )}
+
+        {!loading && loadError && (
+          <div className="empty-state">
+            <h2>Unable to load items</h2>
+            <p>{loadError}</p>
+            <p className="debug-id">
+              Check your Netlify environment variables and Supabase RLS policies.
+            </p>
+          </div>
+        )}
+
+        {!loading && !loadError && listings.length === 0 && (
+          <div className="empty-state">
+            <h2>No items yet</h2>
+            <p>Be the first to list an item on TindaHan.</p>
+          </div>
+        )}
+
+        {!loading && !loadError && listings.length > 0 && (
+          <div className="grid">
+            {listings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        )}
+      </div>
+    </main>
   );
 }
