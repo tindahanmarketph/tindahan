@@ -1,9 +1,8 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import ListingCard from "../components/ListingCard";
-import { supabase } from "../lib/supabase";
+import { supabaseConfig } from "../lib/supabase";
 
 const SUPABASE_TIMEOUT_MS = 9000;
-const LISTINGS_LIMIT = 80;
 
 function ListingSkeleton() {
   return (
@@ -15,186 +14,124 @@ function ListingSkeleton() {
   );
 }
 
-function getEnvStatus() {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-  return {
-    supabaseUrl,
-    supabaseAnonKey,
-    isReady: Boolean(supabaseUrl && supabaseAnonKey)
-  };
-}
-
-async function runSupabaseQuery(buildQuery, timeoutMs = SUPABASE_TIMEOUT_MS) {
+async function fetchWithTimeout(url, options = {}, timeoutMs = SUPABASE_TIMEOUT_MS) {
   const controller = new AbortController();
 
-  const timeoutId = window.setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     controller.abort();
   }, timeoutMs);
 
   try {
-    const query = buildQuery(controller.signal);
-    const result = await query;
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
 
-    return result;
+    return response;
   } finally {
-    window.clearTimeout(timeoutId);
+    clearTimeout(timeoutId);
   }
 }
 
-function attachAbortSignal(query, signal) {
-  if (typeof query.abortSignal === "function") {
-    return query.abortSignal(signal);
-  }
-
-  return query;
+function getSupabaseHeaders() {
+  return {
+    apikey: supabaseConfig.anonKey,
+    Authorization: `Bearer ${supabaseConfig.anonKey}`,
+    "Content-Type": "application/json"
+  };
 }
 
-function getListingSellerId(listing) {
-  return listing?.seller_id || listing?.user_id || listing?.profile_id || null;
-}
-
-async function fetchListingsOnly() {
-  /*
-    1. On tente d'abord avec status = active.
-    2. Si ça échoue ou si ça retourne zéro résultat, on tente sans filtre status.
-       Ça évite une Home vide si tes anciennes annonces ont status = null,
-       published, available, ou autre.
-  */
-
-  try {
-    const activeResult = await runSupabaseQuery((signal) => {
-      let query = supabase
-        .from("listings")
-        .select("*")
-        .eq("status", "active")
-        .order("created_at", { ascending: false })
-        .limit(LISTINGS_LIMIT);
-
-      query = attachAbortSignal(query, signal);
-
-      return query;
-    });
-
-    if (activeResult.error) {
-      throw activeResult.error;
-    }
-
-    if (Array.isArray(activeResult.data) && activeResult.data.length > 0) {
-      return {
-        listings: activeResult.data,
-        warning: ""
-      };
-    }
-
-    const fallbackResult = await runSupabaseQuery((signal) => {
-      let query = supabase
-        .from("listings")
-        .select("*")
-        .order("created_at", { ascending: false })
-        .limit(LISTINGS_LIMIT);
-
-      query = attachAbortSignal(query, signal);
-
-      return query;
-    });
-
-    if (fallbackResult.error) {
-      throw fallbackResult.error;
-    }
-
-    return {
-      listings: fallbackResult.data || [],
-      warning:
-        fallbackResult.data?.length > 0
-          ? "Some listings were loaded without filtering by active status. Check the status column values in Supabase."
-          : ""
-    };
-  } catch (error) {
-    console.error("Listings query failed:", error);
-
+async function fetchListingsViaRest() {
+  if (!supabaseConfig.isReady) {
     return {
       listings: [],
       warning:
-        error?.name === "AbortError"
-          ? "Supabase request timed out. Check your Supabase RLS policies and Netlify environment variables."
-          : error?.message || "Unable to load listings from Supabase."
+        "Supabase environment variables are missing on Netlify. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
     };
   }
-}
 
-async function fetchSellerProfiles(listings) {
+  const listingsUrl =
+    `${supabaseConfig.url}/rest/v1/listings` +
+    `?select=*` +
+    `&status=eq.active` +
+    `&order=created_at.desc`;
+
+  const listingsResponse = await fetchWithTimeout(listingsUrl, {
+    headers: getSupabaseHeaders()
+  });
+
+  if (!listingsResponse.ok) {
+    const text = await listingsResponse.text();
+
+    throw new Error(
+      `Listings request failed: ${listingsResponse.status} ${text}`
+    );
+  }
+
+  const listings = await listingsResponse.json();
+
   const sellerIds = [
     ...new Set(
       listings
-        .map((listing) => getListingSellerId(listing))
+        .map((listing) => listing.seller_id)
         .filter(Boolean)
     )
   ];
 
   if (sellerIds.length === 0) {
-    return {};
+    return {
+      listings,
+      warning: ""
+    };
   }
 
   try {
-    const result = await runSupabaseQuery((signal) => {
-      let query = supabase
-        .from("profiles")
-        .select("id, username, avatar_url, rating, is_verified, total_sales")
-        .in("id", sellerIds);
+    const encodedIds = sellerIds.map((id) => `"${id}"`).join(",");
 
-      query = attachAbortSignal(query, signal);
+    const profilesUrl =
+      `${supabaseConfig.url}/rest/v1/profiles` +
+      `?select=id,username,avatar_url,rating,is_verified,total_sales` +
+      `&id=in.(${encodedIds})`;
 
-      return query;
-    }, 6000);
-
-    if (result.error) {
-      throw result.error;
-    }
-
-    const profilesMap = {};
-
-    (result.data || []).forEach((profile) => {
-      profilesMap[profile.id] = profile;
+    const profilesResponse = await fetchWithTimeout(profilesUrl, {
+      headers: getSupabaseHeaders()
     });
 
-    return profilesMap;
-  } catch (error) {
-    console.warn("Seller profiles query skipped:", error?.message || error);
-    return {};
-  }
-}
+    if (!profilesResponse.ok) {
+      throw new Error(`Profiles request failed: ${profilesResponse.status}`);
+    }
 
-async function fetchListingsSafely() {
-  const listingsResult = await fetchListingsOnly();
+    const profiles = await profilesResponse.json();
 
-  if (listingsResult.listings.length === 0) {
-    return listingsResult;
-  }
+    const profilesById = profiles.reduce((acc, profile) => {
+      acc[profile.id] = profile;
+      return acc;
+    }, {});
 
-  const profilesMap = await fetchSellerProfiles(listingsResult.listings);
-
-  const enrichedListings = listingsResult.listings.map((listing) => {
-    const sellerId = getListingSellerId(listing);
+    const listingsWithProfiles = listings.map((listing) => ({
+      ...listing,
+      profiles: profilesById[listing.seller_id] || null
+    }));
 
     return {
-      ...listing,
-      profiles: listing.profiles || profilesMap[sellerId] || null
+      listings: listingsWithProfiles,
+      warning: ""
     };
-  });
+  } catch (profileError) {
+    console.warn("Profiles loading skipped:", profileError.message);
 
-  return {
-    listings: enrichedListings,
-    warning: listingsResult.warning
-  };
+    return {
+      listings,
+      warning:
+        "Items loaded, but seller profiles could not be loaded. Check profiles RLS policies."
+    };
+  }
 }
 
 export default function Home() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadMessage, setLoadMessage] = useState("");
-  const [sort, setSort] = useState("newest");
 
   useEffect(() => {
     let isMounted = true;
@@ -203,26 +140,28 @@ export default function Home() {
       setLoading(true);
       setLoadMessage("");
 
-      const env = getEnvStatus();
+      try {
+        const result = await fetchListingsViaRest();
 
-      if (!env.isReady) {
+        if (!isMounted) return;
+
+        setListings(result.listings || []);
+        setLoadMessage(result.warning || "");
+      } catch (error) {
+        console.error("Home listings loading error:", error);
+
         if (!isMounted) return;
 
         setListings([]);
         setLoadMessage(
-          "Supabase environment variables are missing on Netlify. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
+          error?.message ||
+            "Unable to load listings from Supabase."
         );
-        setLoading(false);
-        return;
+      } finally {
+        if (isMounted) {
+          setLoading(false);
+        }
       }
-
-      const result = await fetchListingsSafely();
-
-      if (!isMounted) return;
-
-      setListings(result.listings);
-      setLoadMessage(result.warning);
-      setLoading(false);
     }
 
     loadListings();
@@ -231,25 +170,6 @@ export default function Home() {
       isMounted = false;
     };
   }, []);
-
-  const sortedListings = useMemo(() => {
-    const copy = [...listings];
-
-    if (sort === "price-low") {
-      return copy.sort((a, b) => Number(a.price || 0) - Number(b.price || 0));
-    }
-
-    if (sort === "price-high") {
-      return copy.sort((a, b) => Number(b.price || 0) - Number(a.price || 0));
-    }
-
-    return copy.sort((a, b) => {
-      const dateA = new Date(a.created_at || 0).getTime();
-      const dateB = new Date(b.created_at || 0).getTime();
-
-      return dateB - dateA;
-    });
-  }, [listings, sort]);
 
   return (
     <main className="page">
@@ -260,11 +180,7 @@ export default function Home() {
             <p>Buy and sell second-hand treasures across the Philippines.</p>
           </div>
 
-          <select
-            className="select"
-            value={sort}
-            onChange={(event) => setSort(event.target.value)}
-          >
+          <select className="select" defaultValue="newest">
             <option value="newest">Newest first</option>
             <option value="price-low">Price low to high</option>
             <option value="price-high">Price high to low</option>
@@ -279,7 +195,7 @@ export default function Home() {
           </div>
         )}
 
-        {!loading && loadMessage && sortedListings.length === 0 && (
+        {!loading && loadMessage && listings.length === 0 && (
           <div className="empty-state">
             <h2>Unable to load items</h2>
             <p>{loadMessage}</p>
@@ -290,23 +206,23 @@ export default function Home() {
           </div>
         )}
 
-        {!loading && !loadMessage && sortedListings.length === 0 && (
+        {!loading && !loadMessage && listings.length === 0 && (
           <div className="empty-state">
             <h2>No items yet</h2>
             <p>Be the first to list an item on TindaHan.</p>
           </div>
         )}
 
-        {!loading && loadMessage && sortedListings.length > 0 && (
+        {!loading && loadMessage && listings.length > 0 && (
           <div className="empty-state" style={{ marginBottom: 20 }}>
             <h2>Items loaded with a warning</h2>
             <p>{loadMessage}</p>
           </div>
         )}
 
-        {!loading && sortedListings.length > 0 && (
+        {!loading && listings.length > 0 && (
           <div className="grid">
-            {sortedListings.map((listing) => (
+            {listings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
             ))}
           </div>

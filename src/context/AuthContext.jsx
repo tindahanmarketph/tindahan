@@ -3,6 +3,17 @@ import { supabase } from "../lib/supabase";
 
 const AuthContext = createContext(null);
 
+const AUTH_TIMEOUT_MS = 5000;
+
+function withTimeout(promise, ms, fallbackValue) {
+  return Promise.race([
+    promise,
+    new Promise((resolve) => {
+      setTimeout(() => resolve(fallbackValue), ms);
+    })
+  ]);
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -11,49 +22,82 @@ export function AuthProvider({ children }) {
   async function loadProfile(userId) {
     if (!userId) {
       setProfile(null);
-      return;
+      return null;
     }
 
-    const { data, error } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("id", userId)
-      .maybeSingle();
+    try {
+      const result = await withTimeout(
+        supabase
+          .from("profiles")
+          .select("*")
+          .eq("id", userId)
+          .maybeSingle(),
+        AUTH_TIMEOUT_MS,
+        { data: null, error: new Error("Profile request timed out.") }
+      );
 
-    if (error) {
-      console.error("Profile loading error:", error.message);
+      const { data, error } = result || {};
+
+      if (error) {
+        console.warn("Profile loading skipped:", error.message);
+        setProfile(null);
+        return null;
+      }
+
+      setProfile(data || null);
+      return data || null;
+    } catch (error) {
+      console.warn("Profile loading error:", error.message);
       setProfile(null);
-      return;
+      return null;
     }
-
-    setProfile(data);
   }
 
   useEffect(() => {
     let mounted = true;
 
     async function getSession() {
-      setLoadingAuth(true);
+      try {
+        setLoadingAuth(true);
 
-      const { data, error } = await supabase.auth.getSession();
+        const result = await withTimeout(
+          supabase.auth.getSession(),
+          AUTH_TIMEOUT_MS,
+          {
+            data: { session: null },
+            error: new Error("Auth session request timed out.")
+          }
+        );
 
-      if (error) {
-        console.error("Session error:", error.message);
+        const { data, error } = result || {};
+
+        if (error) {
+          console.warn("Session loading skipped:", error.message);
+        }
+
+        const currentUser = data?.session?.user || null;
+
+        if (!mounted) return;
+
+        setUser(currentUser);
+
+        if (currentUser) {
+          await loadProfile(currentUser.id);
+        } else {
+          setProfile(null);
+        }
+      } catch (error) {
+        console.warn("Session error:", error.message);
+
+        if (mounted) {
+          setUser(null);
+          setProfile(null);
+        }
+      } finally {
+        if (mounted) {
+          setLoadingAuth(false);
+        }
       }
-
-      const currentUser = data?.session?.user || null;
-
-      if (!mounted) return;
-
-      setUser(currentUser);
-
-      if (currentUser) {
-        await loadProfile(currentUser.id);
-      } else {
-        setProfile(null);
-      }
-
-      setLoadingAuth(false);
     }
 
     getSession();
@@ -62,6 +106,8 @@ export function AuthProvider({ children }) {
       data: { subscription }
     } = supabase.auth.onAuthStateChange(async (_event, session) => {
       const currentUser = session?.user || null;
+
+      if (!mounted) return;
 
       setUser(currentUser);
 
@@ -76,7 +122,7 @@ export function AuthProvider({ children }) {
 
     return () => {
       mounted = false;
-      subscription.unsubscribe();
+      subscription?.unsubscribe();
     };
   }, []);
 
@@ -90,8 +136,11 @@ export function AuthProvider({ children }) {
       throw error;
     }
 
-    setUser(data.user);
-    await loadProfile(data.user.id);
+    setUser(data.user || null);
+
+    if (data.user?.id) {
+      await loadProfile(data.user.id);
+    }
 
     return data;
   }

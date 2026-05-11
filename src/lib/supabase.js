@@ -12,8 +12,21 @@ if (!supabaseUrl || !supabaseAnonKey) {
 
 export const supabase = createClient(supabaseUrl || "", supabaseAnonKey || "", {
   auth: {
+    storageKey: "tindahan-auth-token",
     persistSession: true,
     autoRefreshToken: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+
+    // Important pour Netlify / navigateur :
+    // évite que Supabase bloque l'app avec le Web Lock auth-token.
+    lock: async (_name, _acquireTimeout, fn) => {
+      return await fn();
+    }
   }
 });
+
+export const supabaseConfig = {
+  url: supabaseUrl || "",
+  anonKey: supabaseAnonKey || "",
+  isReady: Boolean(supabaseUrl && supabaseAnonKey)
+};
