@@ -189,57 +189,63 @@ export default function ListingDetail() {
   }
 
   return (
-    <main className="page">
+    <main className="page listing-detail-page">
       <div className="container detail-layout">
-        <section className="photo-panel">
-          <div className="main-photo">
-            {photos.length > 0 ? (
-              <img src={photos[photoIndex]} alt={listing.title} />
-            ) : (
-              <div className="image-placeholder">No photo</div>
-            )}
+        <div className="detail-left-column">
+          <section className="photo-panel">
+            <div className="main-photo">
+              {photos.length > 0 ? (
+                <img src={photos[photoIndex]} alt={listing.title} />
+              ) : (
+                <div className="image-placeholder">No photo</div>
+              )}
+
+              {photos.length > 1 && (
+                <>
+                  <button
+                    className="carousel-btn left"
+                    type="button"
+                    onClick={prevPhoto}
+                    aria-label="Previous photo"
+                  >
+                    <ChevronLeft />
+                  </button>
+
+                  <button
+                    className="carousel-btn right"
+                    type="button"
+                    onClick={nextPhoto}
+                    aria-label="Next photo"
+                  >
+                    <ChevronRight />
+                  </button>
+                </>
+              )}
+            </div>
 
             {photos.length > 1 && (
-              <>
-                <button
-                  className="carousel-btn left"
-                  type="button"
-                  onClick={prevPhoto}
-                  aria-label="Previous photo"
-                >
-                  <ChevronLeft />
-                </button>
-
-                <button
-                  className="carousel-btn right"
-                  type="button"
-                  onClick={nextPhoto}
-                  aria-label="Next photo"
-                >
-                  <ChevronRight />
-                </button>
-              </>
+              <div className="thumb-row">
+                {photos.map((photo, index) => (
+                  <button
+                    key={`${photo}-${index}`}
+                    className={index === photoIndex ? "thumb active" : "thumb"}
+                    onClick={() => setPhotoIndex(index)}
+                    type="button"
+                    aria-label={`Show photo ${index + 1}`}
+                  >
+                    <img src={photo} alt="" />
+                  </button>
+                ))}
+              </div>
             )}
-          </div>
+          </section>
 
-          {photos.length > 1 && (
-            <div className="thumb-row">
-              {photos.map((photo, index) => (
-                <button
-                  key={`${photo}-${index}`}
-                  className={index === photoIndex ? "thumb active" : "thumb"}
-                  onClick={() => setPhotoIndex(index)}
-                  type="button"
-                  aria-label={`Show photo ${index + 1}`}
-                >
-                  <img src={photo} alt="" />
-                </button>
-              ))}
-            </div>
-          )}
-        </section>
+          <section className="detail-recommendations-slot">
+            <ListingRecommendations listing={recommendationListing} />
+          </section>
+        </div>
 
-        <aside className="detail-card">
+        <aside className="detail-card detail-sticky-card">
           <div className="detail-top">
             <h1>{listing.title}</h1>
 
@@ -399,10 +405,6 @@ export default function ListingDetail() {
             </button>
           </div>
         </aside>
-      </div>
-
-      <div className="container">
-        <ListingRecommendations listing={recommendationListing} />
       </div>
     </main>
   );

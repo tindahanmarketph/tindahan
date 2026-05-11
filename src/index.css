@@ -3666,3 +3666,160 @@ textarea:focus {
     gap: 10px;
   }
 }
+/* ========================= */
+/* LISTING DETAIL VINTED-LIKE LAYOUT */
+/* ========================= */
+
+.listing-detail-page {
+  background: #f7f7f7;
+}
+
+.detail-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  gap: 24px;
+  align-items: start;
+}
+
+.detail-left-column {
+  min-width: 0;
+  display: grid;
+  gap: 24px;
+}
+
+.photo-panel {
+  background: #ffffff;
+  border-radius: 24px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+}
+
+.main-photo {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  background: #eeeeee;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.main-photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.detail-sticky-card {
+  position: sticky;
+  top: 126px;
+}
+
+.detail-recommendations-slot {
+  width: 100%;
+  min-width: 0;
+}
+
+/* Si ton composant ListingRecommendations a déjà ses propres classes,
+   ce bloc aide à le rendre compact comme Vinted dans la colonne gauche. */
+
+.detail-recommendations-slot .listing-recommendations,
+.detail-recommendations-slot .recommendations-section {
+  margin: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.detail-recommendations-slot .recommendations-header,
+.detail-recommendations-slot .listing-recommendations-header {
+  margin-bottom: 16px;
+}
+
+.detail-recommendations-slot .recommendations-grid,
+.detail-recommendations-slot .listing-recommendations-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.detail-recommendations-slot .listing-card {
+  box-shadow: none;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+@media (max-width: 1180px) {
+  .detail-layout {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 20px;
+  }
+
+  .detail-recommendations-slot .recommendations-grid,
+  .detail-recommendations-slot .listing-recommendations-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 980px) {
+  .detail-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .detail-sticky-card {
+    position: static;
+  }
+
+  .detail-recommendations-slot {
+    order: 2;
+  }
+
+  .detail-recommendations-slot .recommendations-grid,
+  .detail-recommendations-slot .listing-recommendations-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .photo-panel {
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+  }
+
+  .main-photo {
+    border-radius: 0;
+  }
+
+  .detail-card {
+    border-radius: 18px;
+    padding: 20px;
+  }
+
+  .detail-recommendations-slot .recommendations-grid,
+  .detail-recommendations-slot .listing-recommendations-grid {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding-bottom: 8px;
+    scroll-snap-type: x mandatory;
+  }
+
+  .detail-recommendations-slot .listing-card {
+    min-width: 160px;
+    scroll-snap-align: start;
+  }
+}
+
+@media (max-width: 520px) {
+  .detail-layout {
+    width: 100%;
+  }
+
+  .detail-left-column {
+    gap: 18px;
+  }
+
+  .detail-recommendations-slot .listing-card {
+    min-width: 145px;
+  }
+}
