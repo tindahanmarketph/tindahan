@@ -6,7 +6,7 @@ import {
   Star
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   getCategoryLabel,
   getChildCategoryLabel,
@@ -53,6 +53,7 @@ function formatRelativeTime(dateValue) {
 
 export default function ListingDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
 
   const [listing, setListing] = useState(null);
   const [seller, setSeller] = useState(null);
@@ -61,6 +62,8 @@ export default function ListingDetail() {
   const [errorMessage, setErrorMessage] = useState("");
 
   useEffect(() => {
+    let isMounted = true;
+
     async function fetchListing() {
       setLoading(true);
       setErrorMessage("");
@@ -79,6 +82,8 @@ export default function ListingDetail() {
         .select("*")
         .eq("id", id)
         .maybeSingle();
+
+      if (!isMounted) return;
 
       if (listingError) {
         console.error("Listing detail error:", listingError);
@@ -102,6 +107,8 @@ export default function ListingDetail() {
           .eq("id", listingData.seller_id)
           .maybeSingle();
 
+        if (!isMounted) return;
+
         if (sellerError) {
           console.error("Seller profile error:", sellerError);
         } else {
@@ -109,10 +116,16 @@ export default function ListingDetail() {
         }
       }
 
-      setLoading(false);
+      if (isMounted) {
+        setLoading(false);
+      }
     }
 
     fetchListing();
+
+    return () => {
+      isMounted = false;
+    };
   }, [id]);
 
   useEffect(() => {
@@ -121,10 +134,14 @@ export default function ListingDetail() {
 
       const nextViews = Number(listing.views || 0) + 1;
 
-      await supabase
+      const { error } = await supabase
         .from("listings")
         .update({ views: nextViews })
         .eq("id", listing.id);
+
+      if (error) {
+        console.warn("View increment skipped:", error.message);
+      }
     }
 
     incrementViews();
@@ -151,13 +168,6 @@ export default function ListingDetail() {
     };
   }, [listing, seller]);
 
-  const chatUrl =
-    seller?.id && listing?.id
-      ? `/messages?seller=${encodeURIComponent(
-          seller.id
-        )}&listing=${encodeURIComponent(listing.id)}`
-      : "/messages";
-
   function prevPhoto() {
     if (photos.length === 0) return;
     setPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
@@ -166,6 +176,28 @@ export default function ListingDetail() {
   function nextPhoto() {
     if (photos.length === 0) return;
     setPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+  }
+
+  function handleChatWithSeller() {
+    const params = new URLSearchParams();
+
+    params.set("listingId", listing.id);
+    params.set("title", listing.title || "Item");
+    params.set("price", String(listing.price || 0));
+
+    if (photos[0]) {
+      params.set("photo", photos[0]);
+    }
+
+    if (seller?.id) {
+      params.set("sellerId", seller.id);
+    }
+
+    if (seller?.username) {
+      params.set("seller", seller.username);
+    }
+
+    navigate(`/messages?${params.toString()}`);
   }
 
   if (loading) {
@@ -407,9 +439,13 @@ export default function ListingDetail() {
               Make an Offer
             </button>
 
-            <Link to={chatUrl} className="detail-action-btn detail-chat-btn">
+            <button
+              className="detail-action-btn detail-chat-btn"
+              type="button"
+              onClick={handleChatWithSeller}
+            >
               Chat with seller
-            </Link>
+            </button>
           </div>
         </aside>
       </div>

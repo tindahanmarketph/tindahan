@@ -92,43 +92,19 @@ export default function App() {
         <Route path="/profile/:username" element={<Profile />} />
 
         <Route path="/about" element={<StaticPage title="About TindaHan" />} />
-        <Route
-          path="/sustainability"
-          element={<StaticPage title="Sustainability" />}
-        />
+        <Route path="/sustainability" element={<StaticPage title="Sustainability" />} />
         <Route path="/press" element={<StaticPage title="Press" />} />
         <Route path="/advertising" element={<StaticPage title="Advertising" />} />
-        <Route
-          path="/accessibility"
-          element={<StaticPage title="Accessibility" />}
-        />
-        <Route
-          path="/item-verification"
-          element={<StaticPage title="Item verification" />}
-        />
-        <Route
-          path="/mobile-apps"
-          element={<StaticPage title="Mobile apps" />}
-        />
+        <Route path="/accessibility" element={<StaticPage title="Accessibility" />} />
+        <Route path="/item-verification" element={<StaticPage title="Item verification" />} />
+        <Route path="/mobile-apps" element={<StaticPage title="Mobile apps" />} />
         <Route path="/dashboard" element={<StaticPage title="Dashboard" />} />
-        <Route
-          path="/help-center"
-          element={<StaticPage title="Help Center" />}
-        />
+        <Route path="/help-center" element={<StaticPage title="Help Center" />} />
         <Route path="/buy" element={<StaticPage title="Buy" />} />
-        <Route
-          path="/trust-and-safety"
-          element={<StaticPage title="Trust and safety" />}
-        />
-        <Route
-          path="/privacy"
-          element={<StaticPage title="Privacy Center" />}
-        />
+        <Route path="/trust-and-safety" element={<StaticPage title="Trust and safety" />} />
+        <Route path="/privacy" element={<StaticPage title="Privacy Center" />} />
         <Route path="/cookies" element={<StaticPage title="Cookie Policy" />} />
-        <Route
-          path="/cookie-settings"
-          element={<StaticPage title="Cookie Settings" />}
-        />
+        <Route path="/cookie-settings" element={<StaticPage title="Cookie Settings" />} />
         <Route path="/terms" element={<StaticPage title="Terms and Conditions" />} />
         <Route path="/platform" element={<StaticPage title="Our platform" />} />
 

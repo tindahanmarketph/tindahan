@@ -64,7 +64,7 @@ export default function Navbar() {
               type="text"
               placeholder="Search for items"
               value={query}
-              onChange={(e) => setQuery(e.target.value)}
+              onChange={(event) => setQuery(event.target.value)}
             />
           </div>
 
@@ -78,20 +78,22 @@ export default function Navbar() {
         </form>
 
         <nav className="navbar-actions">
+          {user && (
+            <Link
+              className="navbar-icon-link"
+              to="/messages"
+              aria-label="Messages"
+              title="Messages"
+            >
+              <Mail size={21} />
+            </Link>
+          )}
+
           {user ? (
             <>
               <Link
-                to="/messages"
-                className="navbar-icon-link"
-                aria-label="Messages"
-                title="Messages"
-              >
-                <Mail size={21} />
-              </Link>
-
-              <Link
                 className="navbar-account-link"
-                to={`/profile/${profile?.username || ""}`}
+                to={`/profile/${profile?.username || user?.email?.split("@")[0] || ""}`}
               >
                 <UserRound size={17} />
                 <span>{profile?.username || "Profile"}</span>
