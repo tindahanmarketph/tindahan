@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   X
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 
 const STORAGE_KEY = "tindahan_demo_conversations";
@@ -31,6 +31,35 @@ function getInitialConversations() {
 
 function saveConversations(conversations) {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
+}
+
+function createId(prefix = "id") {
+  if (window.crypto?.randomUUID) {
+    return `${prefix}-${window.crypto.randomUUID()}`;
+  }
+
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => {
+      resolve({
+        id: createId("photo"),
+        name: file.name,
+        type: file.type,
+        dataUrl: reader.result
+      });
+    };
+
+    reader.onerror = () => {
+      reject(new Error("Unable to read photo."));
+    };
+
+    reader.readAsDataURL(file);
+  });
 }
 
 function buildConversationFromParams(searchParams) {
@@ -57,9 +86,10 @@ function buildConversationFromParams(searchParams) {
     },
     messages: [
       {
-        id: `intro-${Date.now()}`,
+        id: createId("intro"),
         sender: "seller",
         text: `Hello, I am ${sellerName}.`,
+        photos: [],
         createdAt: new Date().toISOString()
       }
     ],
@@ -69,6 +99,7 @@ function buildConversationFromParams(searchParams) {
 
 export default function Messages() {
   const [searchParams] = useSearchParams();
+  const photoInputRef = useRef(null);
 
   const incomingConversation = useMemo(
     () => buildConversationFromParams(searchParams),
@@ -80,6 +111,8 @@ export default function Messages() {
   );
   const [activeConversationId, setActiveConversationId] = useState("");
   const [message, setMessage] = useState("");
+  const [selectedPhotos, setSelectedPhotos] = useState([]);
+  const [showBundleBox, setShowBundleBox] = useState(false);
   const [showSafety, setShowSafety] = useState(true);
 
   useEffect(() => {
@@ -130,23 +163,14 @@ export default function Messages() {
     return (
       conversations.find(
         (conversation) => conversation.id === activeConversationId
-      ) || conversations[0] || null
+      ) ||
+      conversations[0] ||
+      null
     );
   }, [conversations, activeConversationId]);
 
-  function handleSendMessage(event) {
-    event.preventDefault();
-
-    const cleanMessage = message.trim();
-
-    if (!cleanMessage || !activeConversation) return;
-
-    const newMessage = {
-      id: `message-${Date.now()}`,
-      sender: "me",
-      text: cleanMessage,
-      createdAt: new Date().toISOString()
-    };
+  function updateActiveConversation(newMessage) {
+    if (!activeConversation) return;
 
     const nextConversations = conversations.map((conversation) => {
       if (conversation.id !== activeConversation.id) return conversation;
@@ -160,7 +184,75 @@ export default function Messages() {
 
     setConversations(nextConversations);
     saveConversations(nextConversations);
+  }
+
+  async function handlePhotoChange(event) {
+    const files = Array.from(event.target.files || []);
+    const imageFiles = files.filter((file) => file.type.startsWith("image/"));
+
+    if (imageFiles.length === 0) {
+      event.target.value = "";
+      return;
+    }
+
+    try {
+      const photos = await Promise.all(imageFiles.map(fileToDataUrl));
+      setSelectedPhotos((current) => [...current, ...photos]);
+    } catch (error) {
+      console.error("Photo loading error:", error);
+      alert("Unable to load this photo.");
+    } finally {
+      event.target.value = "";
+    }
+  }
+
+  function removeSelectedPhoto(photoId) {
+    setSelectedPhotos((current) =>
+      current.filter((photo) => photo.id !== photoId)
+    );
+  }
+
+  function handleCreateBundleClick() {
+    setShowBundleBox(true);
+  }
+
+  function handleStartBundle() {
+    if (!activeConversation) return;
+
+    const newMessage = {
+      id: createId("message"),
+      sender: "me",
+      text: "I would like to create a bundle with several items from your closet.",
+      photos: [],
+      type: "bundle",
+      createdAt: new Date().toISOString()
+    };
+
+    updateActiveConversation(newMessage);
+    setShowBundleBox(false);
+  }
+
+  function handlePhotoButtonClick() {
+    photoInputRef.current?.click();
+  }
+
+  function handleSendMessage() {
+    const cleanMessage = message.trim();
+
+    if (!activeConversation) return;
+    if (!cleanMessage && selectedPhotos.length === 0) return;
+
+    const newMessage = {
+      id: createId("message"),
+      sender: "me",
+      text: cleanMessage,
+      photos: selectedPhotos,
+      createdAt: new Date().toISOString()
+    };
+
+    updateActiveConversation(newMessage);
     setMessage("");
+    setSelectedPhotos([]);
   }
 
   return (
@@ -275,7 +367,19 @@ export default function Messages() {
                     }`}
                   >
                     <div className="message-bubble">
-                      <p>{item.text}</p>
+                      {item.text && <p>{item.text}</p>}
+
+                      {item.photos?.length > 0 && (
+                        <div className="message-photo-grid">
+                          {item.photos.map((photo) => (
+                            <img
+                              key={photo.id}
+                              src={photo.dataUrl}
+                              alt={photo.name || "Message attachment"}
+                            />
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -300,26 +404,107 @@ export default function Messages() {
                 </div>
               )}
 
-              <form className="messages-composer" onSubmit={handleSendMessage}>
-                <button type="button" aria-label="Add attachment">
-                  <Plus size={21} />
-                </button>
+              <div className="chat-composer-wrapper">
+                {showBundleBox && (
+                  <div className="chat-bundle-box">
+                    <div>
+                      <strong>Create a bundle</strong>
+                      <p>
+                        Select several items from this seller and send them as a
+                        bundle request.
+                      </p>
+                    </div>
 
-                <button type="button" aria-label="Add photo">
-                  <Camera size={21} />
-                </button>
+                    <button
+                      type="button"
+                      className="chat-bundle-action"
+                      onClick={handleStartBundle}
+                    >
+                      Start
+                    </button>
 
-                <input
-                  type="text"
-                  placeholder="Send a message"
-                  value={message}
-                  onChange={(event) => setMessage(event.target.value)}
-                />
+                    <button
+                      type="button"
+                      className="chat-bundle-close"
+                      onClick={() => setShowBundleBox(false)}
+                      aria-label="Close bundle box"
+                    >
+                      <X size={17} />
+                    </button>
+                  </div>
+                )}
 
-                <button type="submit" aria-label="Send message">
-                  <Send size={21} />
-                </button>
-              </form>
+                {selectedPhotos.length > 0 && (
+                  <div className="chat-photo-preview-row">
+                    {selectedPhotos.map((photo) => (
+                      <div className="chat-photo-preview" key={photo.id}>
+                        <img src={photo.dataUrl} alt={photo.name || ""} />
+
+                        <button
+                          type="button"
+                          onClick={() => removeSelectedPhoto(photo.id)}
+                          aria-label="Remove photo"
+                        >
+                          <X size={14} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="chat-composer">
+                  <button
+                    type="button"
+                    className="chat-composer-icon"
+                    onClick={handleCreateBundleClick}
+                    aria-label="Create a bundle"
+                  >
+                    <Plus size={22} />
+                  </button>
+
+                  <button
+                    type="button"
+                    className="chat-composer-icon"
+                    onClick={handlePhotoButtonClick}
+                    aria-label="Add photo"
+                  >
+                    <Camera size={21} />
+                  </button>
+
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="chat-hidden-file-input"
+                    onChange={handlePhotoChange}
+                  />
+
+                  <input
+                    type="text"
+                    className="chat-message-input"
+                    placeholder="Send a message"
+                    value={message}
+                    onChange={(event) => setMessage(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        handleSendMessage();
+                      }
+                    }}
+                  />
+
+                  <button
+                    type="button"
+                    className="chat-send-button"
+                    onClick={handleSendMessage}
+                    disabled={!message.trim() && selectedPhotos.length === 0}
+                    aria-label="Send message"
+                  >
+                    <Send size={22} />
+                  </button>
+                </div>
+              </div>
             </>
           )}
         </section>
