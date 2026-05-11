@@ -13,6 +13,7 @@ import {
   getSubcategoryLabel
 } from "../lib/categories";
 import { supabase } from "../lib/supabase";
+import ListingRecommendations from "../components/ListingRecommendations";
 
 const conditionLabels = {
   new: "New with tags",
@@ -65,6 +66,7 @@ export default function ListingDetail() {
       setErrorMessage("");
       setListing(null);
       setSeller(null);
+      setPhotoIndex(0);
 
       if (!id) {
         setErrorMessage("Missing listing ID.");
@@ -140,6 +142,15 @@ export default function ListingDetail() {
 
   const relativeCreatedAt = formatRelativeTime(listing?.created_at);
 
+  const recommendationListing = useMemo(() => {
+    if (!listing) return null;
+
+    return {
+      ...listing,
+      profiles: seller || listing.profiles || null
+    };
+  }, [listing, seller]);
+
   function prevPhoto() {
     if (photos.length === 0) return;
     setPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
@@ -190,11 +201,21 @@ export default function ListingDetail() {
 
             {photos.length > 1 && (
               <>
-                <button className="carousel-btn left" type="button" onClick={prevPhoto}>
+                <button
+                  className="carousel-btn left"
+                  type="button"
+                  onClick={prevPhoto}
+                  aria-label="Previous photo"
+                >
                   <ChevronLeft />
                 </button>
 
-                <button className="carousel-btn right" type="button" onClick={nextPhoto}>
+                <button
+                  className="carousel-btn right"
+                  type="button"
+                  onClick={nextPhoto}
+                  aria-label="Next photo"
+                >
                   <ChevronRight />
                 </button>
               </>
@@ -209,6 +230,7 @@ export default function ListingDetail() {
                   className={index === photoIndex ? "thumb active" : "thumb"}
                   onClick={() => setPhotoIndex(index)}
                   type="button"
+                  aria-label={`Show photo ${index + 1}`}
                 >
                   <img src={photo} alt="" />
                 </button>
@@ -259,7 +281,9 @@ export default function ListingDetail() {
             {listing.condition && (
               <div className="characteristic-row">
                 <span>Condition</span>
-                <strong>{conditionLabels[listing.condition] || listing.condition}</strong>
+                <strong>
+                  {conditionLabels[listing.condition] || listing.condition}
+                </strong>
               </div>
             )}
 
@@ -281,7 +305,9 @@ export default function ListingDetail() {
           </div>
 
           <div className="tag-row">
-            {listing.category && <span>{getCategoryLabel(listing.category)}</span>}
+            {listing.category && (
+              <span>{getCategoryLabel(listing.category)}</span>
+            )}
 
             {listing.subcategory && (
               <span>{getSubcategoryLabel(listing.subcategory)}</span>
@@ -331,7 +357,8 @@ export default function ListingDetail() {
             <div>
               <strong>Buyer Shield</strong>
               <p>
-                Buyer protection helps cover secure payment support and issue handling.
+                Buyer protection helps cover secure payment support and issue
+                handling.
               </p>
             </div>
           </div>
@@ -372,6 +399,10 @@ export default function ListingDetail() {
             </button>
           </div>
         </aside>
+      </div>
+
+      <div className="container">
+        <ListingRecommendations listing={recommendationListing} />
       </div>
     </main>
   );

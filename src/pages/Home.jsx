@@ -2,6 +2,8 @@ import { useEffect, useState } from "react";
 import ListingCard from "../components/ListingCard";
 import { supabase } from "../lib/supabase";
 
+const SUPABASE_TIMEOUT_MS = 7000;
+
 function ListingSkeleton() {
   return (
     <div className="skeleton-card">
@@ -12,67 +14,120 @@ function ListingSkeleton() {
   );
 }
 
+function timeoutPromise(ms) {
+  return new Promise((_, reject) => {
+    setTimeout(() => {
+      reject(new Error("Supabase request timed out."));
+    }, ms);
+  });
+}
+
+async function fetchListingsSafely() {
+  /*
+    Première requête : version complète avec profiles.
+    Si ça bloque ou si la relation profiles pose problème sur Netlify,
+    on tente une deuxième requête plus simple.
+  */
+
+  try {
+    const fullQuery = supabase
+      .from("listings")
+      .select(`
+        *,
+        profiles (
+          id,
+          username,
+          avatar_url,
+          rating,
+          is_verified
+        )
+      `)
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+
+    const { data, error } = await Promise.race([
+      fullQuery,
+      timeoutPromise(SUPABASE_TIMEOUT_MS)
+    ]);
+
+    if (error) {
+      throw error;
+    }
+
+    return {
+      listings: data || [],
+      warning: ""
+    };
+  } catch (fullQueryError) {
+    console.warn("Full listings query failed:", fullQueryError?.message);
+
+    try {
+      const simpleQuery = supabase
+        .from("listings")
+        .select("*")
+        .eq("status", "active")
+        .order("created_at", { ascending: false });
+
+      const { data, error } = await Promise.race([
+        simpleQuery,
+        timeoutPromise(SUPABASE_TIMEOUT_MS)
+      ]);
+
+      if (error) {
+        throw error;
+      }
+
+      return {
+        listings: data || [],
+        warning:
+          "Listings loaded without seller profile data. Check the profiles relation or RLS policies."
+      };
+    } catch (simpleQueryError) {
+      console.error("Simple listings query failed:", simpleQueryError);
+
+      return {
+        listings: [],
+        warning:
+          simpleQueryError?.message ||
+          "Unable to load listings from Supabase."
+      };
+    }
+  }
+}
+
 export default function Home() {
   const [listings, setListings] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [loadError, setLoadError] = useState("");
+  const [loadMessage, setLoadMessage] = useState("");
 
   useEffect(() => {
     let isMounted = true;
 
     async function loadListings() {
-      if (!isMounted) return;
-
       setLoading(true);
-      setLoadError("");
+      setLoadMessage("");
 
-      try {
-        const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-        const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-        if (!supabaseUrl || !supabaseAnonKey) {
-          throw new Error(
-            "Supabase environment variables are missing on Netlify. Check VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
-          );
-        }
-
-        const { data, error } = await supabase
-          .from("listings")
-          .select(`
-            *,
-            profiles (
-              id,
-              username,
-              avatar_url,
-              rating,
-              is_verified
-            )
-          `)
-          .eq("status", "active")
-          .order("created_at", { ascending: false });
-
-        if (error) {
-          throw error;
-        }
-
-        if (!isMounted) return;
-
-        setListings(data || []);
-      } catch (error) {
-        console.error("Home listings loading error:", error);
-
+      if (!supabaseUrl || !supabaseAnonKey) {
         if (!isMounted) return;
 
         setListings([]);
-        setLoadError(
-          error?.message ||
-            "Unable to load listings. Please check your Supabase configuration."
+        setLoadMessage(
+          "Supabase environment variables are missing on Netlify. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
         );
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        setLoading(false);
+        return;
       }
+
+      const result = await fetchListingsSafely();
+
+      if (!isMounted) return;
+
+      setListings(result.listings);
+      setLoadMessage(result.warning);
+      setLoading(false);
     }
 
     loadListings();
@@ -106,24 +161,32 @@ export default function Home() {
           </div>
         )}
 
-        {!loading && loadError && (
+        {!loading && loadMessage && listings.length === 0 && (
           <div className="empty-state">
             <h2>Unable to load items</h2>
-            <p>{loadError}</p>
+            <p>{loadMessage}</p>
             <p className="debug-id">
-              Check your Netlify environment variables and Supabase RLS policies.
+              Check Netlify environment variables, Supabase table name, columns
+              and RLS policies.
             </p>
           </div>
         )}
 
-        {!loading && !loadError && listings.length === 0 && (
+        {!loading && !loadMessage && listings.length === 0 && (
           <div className="empty-state">
             <h2>No items yet</h2>
             <p>Be the first to list an item on TindaHan.</p>
           </div>
         )}
 
-        {!loading && !loadError && listings.length > 0 && (
+        {!loading && loadMessage && listings.length > 0 && (
+          <div className="empty-state" style={{ marginBottom: 20 }}>
+            <h2>Items loaded with a warning</h2>
+            <p>{loadMessage}</p>
+          </div>
+        )}
+
+        {!loading && listings.length > 0 && (
           <div className="grid">
             {listings.map((listing) => (
               <ListingCard key={listing.id} listing={listing} />
