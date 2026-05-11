@@ -151,6 +151,13 @@ export default function ListingDetail() {
     };
   }, [listing, seller]);
 
+  const chatUrl =
+    seller?.id && listing?.id
+      ? `/messages?seller=${encodeURIComponent(
+          seller.id
+        )}&listing=${encodeURIComponent(listing.id)}`
+      : "/messages";
+
   function prevPhoto() {
     if (photos.length === 0) return;
     setPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
@@ -400,9 +407,9 @@ export default function ListingDetail() {
               Make an Offer
             </button>
 
-            <button className="detail-action-btn detail-chat-btn" type="button">
+            <Link to={chatUrl} className="detail-action-btn detail-chat-btn">
               Chat with seller
-            </button>
+            </Link>
           </div>
         </aside>
       </div>

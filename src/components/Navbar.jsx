@@ -3,6 +3,7 @@ import {
   ChevronDown,
   HelpCircle,
   LogOut,
+  Mail,
   Search,
   UserRound
 } from "lucide-react";
@@ -79,6 +80,15 @@ export default function Navbar() {
         <nav className="navbar-actions">
           {user ? (
             <>
+              <Link
+                to="/messages"
+                className="navbar-icon-link"
+                aria-label="Messages"
+                title="Messages"
+              >
+                <Mail size={21} />
+              </Link>
+
               <Link
                 className="navbar-account-link"
                 to={`/profile/${profile?.username || ""}`}
