@@ -1,4 +1,5 @@
 import {
+  Bell,
   Camera,
   ChevronDown,
   HelpCircle,
@@ -8,7 +9,7 @@ import {
   UserRound
 } from "lucide-react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 
 export default function Navbar() {
@@ -17,10 +18,37 @@ export default function Navbar() {
   const { user, profile, logout } = useAuth();
 
   const [query, setQuery] = useState("");
+  const [notificationsOpen, setNotificationsOpen] = useState(false);
+  const notificationsRef = useRef(null);
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
   }, [searchParams]);
+
+  useEffect(() => {
+    function handleClickOutside(event) {
+      if (
+        notificationsRef.current &&
+        !notificationsRef.current.contains(event.target)
+      ) {
+        setNotificationsOpen(false);
+      }
+    }
+
+    function handleEscape(event) {
+      if (event.key === "Escape") {
+        setNotificationsOpen(false);
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
+  }, []);
 
   function handleSearchSubmit(e) {
     e.preventDefault();
@@ -79,21 +107,56 @@ export default function Navbar() {
 
         <nav className="navbar-actions">
           {user && (
-            <Link
-              className="navbar-icon-link"
-              to="/messages"
-              aria-label="Messages"
-              title="Messages"
-            >
-              <Mail size={21} />
-            </Link>
+            <>
+              <Link
+                className="navbar-icon-link"
+                to="/messages"
+                aria-label="Messages"
+                title="Messages"
+              >
+                <Mail size={21} />
+              </Link>
+
+              <div className="navbar-notifications" ref={notificationsRef}>
+                <button
+                  className={`navbar-icon-link navbar-notification-button ${
+                    notificationsOpen ? "active" : ""
+                  }`}
+                  type="button"
+                  aria-label="Notifications"
+                  title="Notifications"
+                  aria-expanded={notificationsOpen}
+                  onClick={() =>
+                    setNotificationsOpen((currentValue) => !currentValue)
+                  }
+                >
+                  <Bell size={21} />
+                </button>
+
+                {notificationsOpen && (
+                  <div className="notifications-popover">
+                    <div className="notifications-empty">
+                      <div className="notifications-empty-icon">
+                        <Bell size={42} />
+                      </div>
+
+                      <strong>
+                        You don&apos;t have notifications for now
+                      </strong>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </>
           )}
 
           {user ? (
             <>
               <Link
                 className="navbar-account-link"
-                to={`/profile/${profile?.username || user?.email?.split("@")[0] || ""}`}
+                to={`/profile/${
+                  profile?.username || user?.email?.split("@")[0] || ""
+                }`}
               >
                 <UserRound size={17} />
                 <span>{profile?.username || "Profile"}</span>
