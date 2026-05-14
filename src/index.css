@@ -5145,32 +5145,10 @@ textarea:focus {
 /* NAVBAR NOTIFICATIONS */
 /* ========================= */
 
-.navbar-icon-link {
-  width: 36px;
-  height: 36px;
-  display: grid;
-  place-items: center;
-  border: 1px solid transparent;
-  border-radius: 50%;
-  background: transparent;
-  color: #34444a;
-  transition: all 0.15s ease;
-}
-
-.navbar-icon-link:hover {
-  border-color: #aab7bc;
-  color: var(--orange);
-  background: var(--orange-soft);
-}
-
 .navbar-notifications {
   position: relative;
   display: flex;
   align-items: center;
-}
-
-.navbar-notification-button {
-  border: none;
 }
 
 .navbar-notification-button.active {
@@ -5182,21 +5160,22 @@ textarea:focus {
 .notifications-popover {
   position: absolute;
   top: calc(100% + 10px);
-  right: -108px;
+  right: -96px;
   z-index: 120;
   width: 300px;
-  min-height: 174px;
+  min-height: 176px;
   border: 1px solid var(--border);
   border-radius: 2px;
   background: #ffffff;
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.16);
+  overflow: hidden;
 }
 
 .notifications-popover::before {
   content: "";
   position: absolute;
   top: -8px;
-  right: 120px;
+  right: 108px;
   width: 14px;
   height: 14px;
   background: #ffffff;
@@ -5206,42 +5185,59 @@ textarea:focus {
 }
 
 .notifications-empty {
-  min-height: 174px;
-  display: grid;
-  place-items: center;
-  align-content: center;
-  gap: 18px;
-  padding: 28px 24px;
+  width: 100%;
+  min-height: 176px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 24px 22px;
   text-align: center;
 }
 
 .notifications-empty-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
   color: #5c5ce2;
+  flex: none;
+}
+
+.notifications-empty-icon svg {
+  width: 40px;
+  height: 40px;
 }
 
 .notifications-empty strong {
-  max-width: 220px;
+  width: 100%;
+  max-width: 240px;
+  display: block;
+  margin: 0;
   color: #222222;
   font-size: 16px;
   line-height: 1.25;
   font-weight: 850;
+  white-space: normal;
+  overflow-wrap: break-word;
 }
 
 /* Responsive navbar notifications */
 
 @media (max-width: 760px) {
-  .navbar-icon-link {
-    width: 34px;
-    height: 34px;
-  }
-
   .notifications-popover {
-    right: -82px;
+    right: -72px;
     width: 280px;
   }
 
   .notifications-popover::before {
-    right: 92px;
+    right: 84px;
+  }
+
+  .notifications-empty strong {
+    max-width: 220px;
+    font-size: 15px;
   }
 }
 
@@ -5255,6 +5251,6 @@ textarea:focus {
   }
 
   .notifications-popover::before {
-    right: 118px;
+    display: none;
   }
 }
