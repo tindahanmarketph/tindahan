@@ -4,8 +4,10 @@ import { useAuth } from "./context/AuthContext";
 import Navbar from "./components/Navbar";
 import CategoryBar from "./components/CategoryBar";
 import Footer from "./components/Footer";
+import MobileBottomNav from "./components/MobileBottomNav";
 
 import Home from "./pages/Home";
+import SearchPage from "./pages/Search";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ListingDetail from "./pages/ListingDetail";
@@ -44,6 +46,7 @@ export default function App() {
 
       <Routes>
         <Route path="/" element={<Home />} />
+        <Route path="/search" element={<SearchPage />} />
         <Route path="/how-it-works" element={<HowItWorks />} />
 
         <Route path="/login" element={<Login />} />
@@ -112,6 +115,7 @@ export default function App() {
       </Routes>
 
       <Footer />
+      <MobileBottomNav />
     </>
   );
 }
