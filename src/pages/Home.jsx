@@ -24,52 +24,46 @@ function ListingSkeleton() {
 }
 
 function HomeTrustCards() {
+  const trustCards = [
+    {
+      icon: <ShieldCheck size={21} />,
+      title: "8% Buyer Protection",
+      text: "Secure payment until delivery"
+    },
+    {
+      icon: <Tag size={21} />,
+      title: "0% Seller Fees",
+      text: "List for free, always"
+    },
+    {
+      icon: <BadgeCheck size={21} />,
+      title: "Trusted Marketplace",
+      text: "Safer buying and selling on TindaHan"
+    },
+    {
+      icon: <HeartHandshake size={21} />,
+      title: "Made by Filipinos for Filipinos",
+      text: "Local, simple and built for the Philippines"
+    }
+  ];
+
   return (
     <section className="home-trust-section">
-      <div className="container home-trust-inner">
-        <div className="home-trust-card">
-          <div className="home-trust-icon">
-            <ShieldCheck size={22} />
-          </div>
+      <div className="container home-trust-inner home-trust-card-mobile-slider">
+        {trustCards.map((card, index) => (
+          <div
+            key={card.title}
+            className="home-trust-card"
+            style={{ "--trust-index": index }}
+          >
+            <div className="home-trust-icon">{card.icon}</div>
 
-          <div>
-            <strong>8% Buyer Protection</strong>
-            <span>Secure payment until delivery</span>
+            <div>
+              <strong>{card.title}</strong>
+              <span>{card.text}</span>
+            </div>
           </div>
-        </div>
-
-        <div className="home-trust-card">
-          <div className="home-trust-icon">
-            <Tag size={22} />
-          </div>
-
-          <div>
-            <strong>0% Seller Fees</strong>
-            <span>List for free, always</span>
-          </div>
-        </div>
-
-        <div className="home-trust-card">
-          <div className="home-trust-icon">
-            <BadgeCheck size={22} />
-          </div>
-
-          <div>
-            <strong>Trusted Marketplace</strong>
-            <span>Safer buying and selling on TindaHan</span>
-          </div>
-        </div>
-
-        <div className="home-trust-card">
-          <div className="home-trust-icon">
-            <HeartHandshake size={22} />
-          </div>
-
-          <div>
-            <strong>Made by Filipinos for Filipinos</strong>
-            <span>Local, simple and built for the Philippines</span>
-          </div>
-        </div>
+        ))}
       </div>
     </section>
   );
