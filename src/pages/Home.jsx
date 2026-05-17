@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
+import { ShieldCheck, Tag, BadgeCheck, HeartHandshake } from "lucide-react";
 import ListingCard from "../components/ListingCard";
 import GuestHero from "../components/GuestHero";
 import { useAuth } from "../context/AuthContext";
@@ -19,6 +20,58 @@ function ListingSkeleton() {
       <div className="skeleton skeleton-line" />
       <div className="skeleton skeleton-line short" />
     </div>
+  );
+}
+
+function HomeTrustCards() {
+  return (
+    <section className="home-trust-section">
+      <div className="container home-trust-inner">
+        <div className="home-trust-card">
+          <div className="home-trust-icon">
+            <ShieldCheck size={22} />
+          </div>
+
+          <div>
+            <strong>8% Buyer Protection</strong>
+            <span>Secure payment until delivery</span>
+          </div>
+        </div>
+
+        <div className="home-trust-card">
+          <div className="home-trust-icon">
+            <Tag size={22} />
+          </div>
+
+          <div>
+            <strong>0% Seller Fees</strong>
+            <span>List for free, always</span>
+          </div>
+        </div>
+
+        <div className="home-trust-card">
+          <div className="home-trust-icon">
+            <BadgeCheck size={22} />
+          </div>
+
+          <div>
+            <strong>Trusted Marketplace</strong>
+            <span>Safer buying and selling on TindaHan</span>
+          </div>
+        </div>
+
+        <div className="home-trust-card">
+          <div className="home-trust-icon">
+            <HeartHandshake size={22} />
+          </div>
+
+          <div>
+            <strong>Made by Filipinos for Filipinos</strong>
+            <span>Local, simple and built for the Philippines</span>
+          </div>
+        </div>
+      </div>
+    </section>
   );
 }
 
@@ -312,7 +365,12 @@ export default function Home() {
 
   return (
     <>
-      {shouldShowGuestHero && <GuestHero />}
+      {shouldShowGuestHero && (
+        <>
+          <GuestHero />
+          <HomeTrustCards />
+        </>
+      )}
 
       <main className="page">
         <div className="container">

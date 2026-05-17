@@ -6477,3 +6477,123 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+/* ========================= */
+/* HOME TRUST CARDS */
+/* ========================= */
+
+.home-trust-section {
+  background: var(--bg);
+  border: none;
+  padding: 22px 0 10px;
+}
+
+.home-trust-inner {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.home-trust-card {
+  min-height: 62px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: 11px;
+  padding: 12px 14px;
+  border: 1px solid #ededed;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.035);
+  transition: transform 0.16s ease, border-color 0.16s ease,
+    box-shadow 0.16s ease;
+}
+
+.home-trust-card:hover {
+  transform: translateY(-1px);
+  border-color: #ffd9c9;
+  box-shadow: 0 8px 22px rgba(255, 107, 44, 0.07),
+    0 6px 18px rgba(0, 0, 0, 0.04);
+}
+
+.home-trust-icon {
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 11px;
+  background: #fff7f3;
+  color: var(--orange);
+  border: 1px solid #ffe2d5;
+}
+
+.home-trust-icon svg {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.25;
+}
+
+.home-trust-card strong {
+  display: block;
+  color: #111111;
+  font-size: 14px;
+  line-height: 1.15;
+  font-weight: 900;
+  letter-spacing: -0.15px;
+}
+
+.home-trust-card span {
+  display: block;
+  margin-top: 3px;
+  color: #6b7478;
+  font-size: 12.5px;
+  line-height: 1.25;
+  font-weight: 500;
+}
+
+/* ========================= */
+/* HOME TRUST CARDS RESPONSIVE */
+/* ========================= */
+
+@media (max-width: 1100px) {
+  .home-trust-inner {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 640px) {
+  .home-trust-section {
+    padding: 16px 0 8px;
+  }
+
+  .home-trust-inner {
+    grid-template-columns: 1fr;
+    gap: 9px;
+  }
+
+  .home-trust-card {
+    min-height: 58px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    gap: 10px;
+    padding: 11px 13px;
+    border-radius: 13px;
+  }
+
+  .home-trust-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+  }
+
+  .home-trust-icon svg {
+    width: 17px;
+    height: 17px;
+  }
+
+  .home-trust-card strong {
+    font-size: 13.5px;
+  }
+
+  .home-trust-card span {
+    font-size: 12px;
+  }
+}
