@@ -89,7 +89,7 @@ export default function CategoryBar() {
             onClick={handleCategoryClick}
           >
             <span className="desktop-category-label">All</span>
-            <span className="mobile-category-label">Voir tout</span>
+            <span className="mobile-category-label">See all</span>
           </Link>
 
           {CATEGORIES.map((category) => (
