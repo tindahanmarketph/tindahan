@@ -88,7 +88,8 @@ export default function CategoryBar() {
             onMouseEnter={closeMenu}
             onClick={handleCategoryClick}
           >
-            All
+            <span className="desktop-category-label">All</span>
+            <span className="mobile-category-label">Voir tout</span>
           </Link>
 
           {CATEGORIES.map((category) => (
