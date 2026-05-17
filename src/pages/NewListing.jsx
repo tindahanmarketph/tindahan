@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, CheckCircle2, ChevronDown, X } from "lucide-react";
+import { Camera, ChevronDown, Ruler, X } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import {
   CATEGORIES,
@@ -87,6 +87,60 @@ const bagSizes = ["Mini", "Small", "Medium", "Large", "Oversized"];
 
 const accessorySizes = ["One size", "Adjustable", "Small", "Medium", "Large"];
 
+const materialOptions = [
+  "Acetate",
+  "Acrylic",
+  "Alpaca",
+  "Bamboo",
+  "Canvas",
+  "Cashmere",
+  "Ceramic",
+  "Chiffon",
+  "Corduroy",
+  "Cotton",
+  "Denim",
+  "Down",
+  "Elastane",
+  "Faux fur",
+  "Faux leather",
+  "Felt",
+  "Fleece",
+  "Glass",
+  "Gold",
+  "Hemp",
+  "Jersey",
+  "Lace",
+  "Leather",
+  "Linen",
+  "Lyocell",
+  "Mesh",
+  "Metal",
+  "Microfiber",
+  "Mohair",
+  "Nylon",
+  "Paper",
+  "Plastic",
+  "Polyamide",
+  "Polyester",
+  "Polyurethane",
+  "Rayon",
+  "Rubber",
+  "Satin",
+  "Sequin",
+  "Silk",
+  "Silver",
+  "Stainless steel",
+  "Suede",
+  "Synthetic",
+  "Terrycloth",
+  "Tweed",
+  "Velour",
+  "Velvet",
+  "Viscose",
+  "Wood",
+  "Wool"
+];
+
 const allColors = [
   { id: "Black", label: "Black", hex: "#000000" },
   { id: "White", label: "White", hex: "#ffffff" },
@@ -103,25 +157,32 @@ const allColors = [
   { id: "Purple", label: "Purple", hex: "#8e5cf7" },
   { id: "Gold", label: "Gold", hex: "#d4af37" },
   { id: "Silver", label: "Silver", hex: "#c0c0c0" },
-  { id: "Multicolor", label: "Multicolor", hex: "linear-gradient(135deg, #ff6b2c, #2f80ed, #2a9d8f)" }
+  {
+    id: "Multicolor",
+    label: "Multicolor",
+    hex: "linear-gradient(135deg, #ff6b2c, #2f80ed, #2a9d8f)"
+  }
 ];
 
 const parcelOptions = [
   {
     id: "small",
     label: "Small",
-    description: "Fits a small item in a padded envelope, such as a T-shirt or accessory."
+    description:
+      "Fits a small item in a padded envelope, such as a T-shirt or accessory."
   },
   {
     id: "medium",
     label: "Medium",
     badge: "Recommended",
-    description: "Fits an item in a shoe box or medium parcel, such as shoes, bags or folded clothes."
+    description:
+      "Fits an item in a shoe box or medium parcel, such as shoes, bags or folded clothes."
   },
   {
     id: "large",
     label: "Large",
-    description: "Fits a larger box, such as bulky clothing, home items or multiple items."
+    description:
+      "Fits a larger box, such as bulky clothing, home items or multiple items."
   }
 ];
 
@@ -296,7 +357,9 @@ function getSizeOptions(form) {
 }
 
 function getSuggestedColors(form) {
-  const text = `${form.title || ""} ${form.description || ""} ${form.brand || ""}`.toLowerCase();
+  const text = `${form.title || ""} ${form.description || ""} ${
+    form.brand || ""
+  }`.toLowerCase();
 
   const suggestions = allColors.filter((color) =>
     text.includes(color.label.toLowerCase())
@@ -326,6 +389,44 @@ function formatColorValue(colors) {
   return colors.join(", ");
 }
 
+function formatMaterialValue(materials) {
+  if (!materials.length) return "";
+  return materials.join(", ");
+}
+
+function buildDescriptionWithExtras(form) {
+  const cleanDescription = form.description?.trim() || "";
+  const extraBlocks = [];
+
+  if (form.selectedMaterials.length > 0) {
+    extraBlocks.push(`Materials:\n${form.selectedMaterials.join(", ")}`);
+  }
+
+  if (getItemType(form) === "clothing") {
+    const dimensions = [];
+
+    if (form.shoulder_width) {
+      dimensions.push(`Shoulder width: ${form.shoulder_width} cm`);
+    }
+
+    if (form.item_length) {
+      dimensions.push(`Length: ${form.item_length} cm`);
+    }
+
+    if (dimensions.length > 0) {
+      extraBlocks.push(`Dimensions:\n${dimensions.join("\n")}`);
+    }
+  }
+
+  if (extraBlocks.length === 0) {
+    return cleanDescription;
+  }
+
+  return `${cleanDescription}
+
+${extraBlocks.join("\n\n")}`;
+}
+
 export default function NewListing() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -333,6 +434,7 @@ export default function NewListing() {
   const [files, setFiles] = useState([]);
   const [loading, setLoading] = useState(false);
   const [showAuthenticityModal, setShowAuthenticityModal] = useState(false);
+  const [showDimensionsModal, setShowDimensionsModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState("");
 
   const [form, setForm] = useState({
@@ -347,7 +449,11 @@ export default function NewListing() {
     size: "",
     color: "",
     selectedColors: [],
+    material: "",
+    selectedMaterials: [],
     location: "",
+    shoulder_width: "",
+    item_length: "",
     parcel_size: "medium",
     is_negotiable: false
   });
@@ -386,7 +492,11 @@ export default function NewListing() {
         child_category: firstChildCategory?.id || "",
         size: "",
         selectedColors: [],
-        color: ""
+        color: "",
+        selectedMaterials: [],
+        material: "",
+        shoulder_width: "",
+        item_length: ""
       }));
 
       return;
@@ -399,7 +509,11 @@ export default function NewListing() {
         ...prev,
         subcategory: value,
         child_category: firstChildCategory?.id || "",
-        size: ""
+        size: "",
+        selectedMaterials: [],
+        material: "",
+        shoulder_width: "",
+        item_length: ""
       }));
 
       return;
@@ -416,6 +530,7 @@ export default function NewListing() {
       ...prev,
       size
     }));
+
     setOpenDropdown("");
   }
 
@@ -424,6 +539,7 @@ export default function NewListing() {
       ...prev,
       condition: conditionId
     }));
+
     setOpenDropdown("");
   }
 
@@ -444,6 +560,27 @@ export default function NewListing() {
         ...prev,
         selectedColors: nextColors,
         color: formatColorValue(nextColors)
+      };
+    });
+  }
+
+  function toggleMaterial(material) {
+    setForm((prev) => {
+      const exists = prev.selectedMaterials.includes(material);
+
+      let nextMaterials;
+
+      if (exists) {
+        nextMaterials = prev.selectedMaterials.filter((item) => item !== material);
+      } else {
+        if (prev.selectedMaterials.length >= 3) return prev;
+        nextMaterials = [...prev.selectedMaterials, material];
+      }
+
+      return {
+        ...prev,
+        selectedMaterials: nextMaterials,
+        material: formatMaterialValue(nextMaterials)
       };
     });
   }
@@ -511,7 +648,7 @@ export default function NewListing() {
         .insert({
           seller_id: user.id,
           title: form.title,
-          description: form.description,
+          description: buildDescriptionWithExtras(form),
           category: form.category,
           subcategory: form.subcategory,
           child_category: form.child_category || null,
@@ -747,6 +884,54 @@ export default function NewListing() {
               </div>
             </div>
 
+            {getItemType(form) === "clothing" && (
+              <div className="listing-detail-row dimensions-detail-row">
+                <div className="listing-detail-label">Dimensions recommended</div>
+
+                <div className="listing-detail-control">
+                  <div className="dimensions-inline-fields">
+                    <label className="dimension-inline-input">
+                      <input
+                        name="shoulder_width"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={form.shoulder_width}
+                        onChange={updateField}
+                        placeholder="Shoulder width, e.g. 42"
+                      />
+                      <span>cm</span>
+                    </label>
+
+                    <label className="dimension-inline-input">
+                      <input
+                        name="item_length"
+                        type="number"
+                        min="0"
+                        step="1"
+                        value={form.item_length}
+                        onChange={updateField}
+                        placeholder="Length, e.g. 68"
+                      />
+                      <span>cm</span>
+                    </label>
+
+                    <p className="dimensions-inline-help">
+                      How to measure your item? Check our{" "}
+                      <button
+                        type="button"
+                        className="dimensions-guide-link"
+                        onClick={() => setShowDimensionsModal(true)}
+                      >
+                        dimensions guide
+                      </button>
+                      .
+                    </p>
+                  </div>
+                </div>
+              </div>
+            )}
+
             <div className="listing-detail-row">
               <div className="listing-detail-label">Condition</div>
 
@@ -803,9 +988,7 @@ export default function NewListing() {
                     setOpenDropdown(openDropdown === "color" ? "" : "color")
                   }
                 >
-                  <span>
-                    {form.color || "Select up to 2 colors"}
-                  </span>
+                  <span>{form.color || "Select up to 2 colors"}</span>
                   <ChevronDown size={18} />
                 </button>
 
@@ -858,6 +1041,51 @@ export default function NewListing() {
                         <span
                           className={`listing-checkbox ${
                             form.selectedColors.includes(color.id) ? "active" : ""
+                          }`}
+                        />
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="listing-detail-row">
+              <div className="listing-detail-label">Material (recommended)</div>
+
+              <div className="listing-detail-control">
+                <button
+                  type="button"
+                  className={`listing-dropdown-trigger ${
+                    openDropdown === "material" ? "active" : ""
+                  }`}
+                  onClick={() =>
+                    setOpenDropdown(openDropdown === "material" ? "" : "material")
+                  }
+                >
+                  <span>{form.material || "Select up to 3 materials"}</span>
+                  <ChevronDown size={18} />
+                </button>
+
+                {openDropdown === "material" && (
+                  <div className="listing-dropdown-panel large">
+                    <p className="listing-dropdown-help">
+                      Select the main materials shown on the item's label. You can
+                      choose up to 3.
+                    </p>
+
+                    {materialOptions.map((material) => (
+                      <button
+                        key={material}
+                        type="button"
+                        className="listing-option-row"
+                        onClick={() => toggleMaterial(material)}
+                      >
+                        <strong>{material}</strong>
+
+                        <span
+                          className={`listing-checkbox ${
+                            form.selectedMaterials.includes(material) ? "active" : ""
                           }`}
                         />
                       </button>
@@ -1057,6 +1285,83 @@ export default function NewListing() {
                 onClick={() => setShowAuthenticityModal(false)}
               >
                 Close
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showDimensionsModal && (
+        <div
+          className="dimensions-modal-overlay"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget) {
+              setShowDimensionsModal(false);
+            }
+          }}
+        >
+          <div
+            className="dimensions-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Dimensions guide"
+          >
+            <header className="dimensions-modal-header">
+              <strong>Dimensions guide</strong>
+
+              <button
+                type="button"
+                aria-label="Close"
+                onClick={() => setShowDimensionsModal(false)}
+              >
+                <X size={24} />
+              </button>
+            </header>
+
+            <div className="dimensions-modal-body">
+              <h2>How to measure your item</h2>
+
+              <p>Lay your item flat on a clean surface.</p>
+
+              <ul>
+                <li>
+                  <strong>Shoulder width:</strong> measure the distance between the
+                  shoulder seams, across the back of the item.
+                </li>
+
+                <li>
+                  <strong>Length:</strong> measure from the highest point near the
+                  collar down to the bottom hem.
+                </li>
+              </ul>
+
+              <div className="dimensions-guide-grid">
+                <div className="dimensions-guide-card">
+                  <div className="dimensions-guide-illustration">
+                    <Ruler size={44} />
+                    <span className="dimension-horizontal-line" />
+                  </div>
+
+                  <p>Shoulder width</p>
+                </div>
+
+                <div className="dimensions-guide-card">
+                  <div className="dimensions-guide-illustration">
+                    <Ruler size={44} />
+                    <span className="dimension-vertical-line" />
+                  </div>
+
+                  <p>Length</p>
+                </div>
+              </div>
+
+              <button
+                className="dimensions-done-button"
+                type="button"
+                onClick={() => setShowDimensionsModal(false)}
+              >
+                Done
               </button>
             </div>
           </div>

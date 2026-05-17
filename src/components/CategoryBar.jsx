@@ -9,6 +9,9 @@ export default function CategoryBar() {
   const currentSubcategory = searchParams.get("subcategory") || "";
   const currentChildCategory = searchParams.get("child_category") || "";
 
+  const currentQuery = searchParams.get("q") || "";
+  const currentSort = searchParams.get("sort") || "";
+
   const [openCategoryId, setOpenCategoryId] = useState(null);
   const [hoveredSubcategoryId, setHoveredSubcategoryId] = useState(null);
 
@@ -28,7 +31,7 @@ export default function CategoryBar() {
     return openCategory.subcategories[0] || null;
   }, [openCategory, hoveredSubcategoryId]);
 
-  function getUrl(categoryId, subcategoryId = null, childCategoryId = null) {
+  function getUrl(categoryId = "all", subcategoryId = null, childCategoryId = null) {
     const params = new URLSearchParams();
 
     if (categoryId && categoryId !== "all") {
@@ -41,6 +44,14 @@ export default function CategoryBar() {
 
     if (childCategoryId) {
       params.set("child_category", childCategoryId);
+    }
+
+    if (currentQuery) {
+      params.set("q", currentQuery);
+    }
+
+    if (currentSort && currentSort !== "newest") {
+      params.set("sort", currentSort);
     }
 
     const queryString = params.toString();
@@ -58,18 +69,24 @@ export default function CategoryBar() {
     setHoveredSubcategoryId(null);
   }
 
+  function handleCategoryClick() {
+    closeMenu();
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
   return (
     <div className="vinted-category-wrapper" onMouseLeave={closeMenu}>
       <nav className="vinted-category-nav">
         <div className="container vinted-category-inner">
           <Link
-            to="/"
+            to={getUrl("all")}
             className={
               currentCategory === "all"
                 ? "vinted-category-link active"
                 : "vinted-category-link"
             }
             onMouseEnter={closeMenu}
+            onClick={handleCategoryClick}
           >
             All
           </Link>
@@ -84,6 +101,7 @@ export default function CategoryBar() {
                   : "vinted-category-link"
               }
               onMouseEnter={() => openMenu(category.id)}
+              onClick={handleCategoryClick}
             >
               {category.label}
             </Link>
@@ -98,6 +116,7 @@ export default function CategoryBar() {
               <Link
                 to={getUrl(openCategory.id)}
                 className="vinted-mega-sidebar-item see-all"
+                onClick={handleCategoryClick}
               >
                 <span className="sidebar-icon">⋮⋮</span>
                 Voir tout
@@ -108,6 +127,7 @@ export default function CategoryBar() {
                   key={subcategory.id}
                   to={getUrl(openCategory.id, subcategory.id)}
                   onMouseEnter={() => setHoveredSubcategoryId(subcategory.id)}
+                  onClick={handleCategoryClick}
                   className={
                     currentSubcategory === subcategory.id ||
                     selectedSubcategory?.id === subcategory.id
@@ -133,6 +153,7 @@ export default function CategoryBar() {
                 <Link
                   to={getUrl(openCategory.id)}
                   className="vinted-mega-main-link"
+                  onClick={handleCategoryClick}
                 >
                   Voir tout {openCategory.label}
                 </Link>
@@ -141,6 +162,7 @@ export default function CategoryBar() {
                   <Link
                     to={getUrl(openCategory.id, selectedSubcategory.id)}
                     className="vinted-mega-main-link"
+                    onClick={handleCategoryClick}
                   >
                     Voir tout {selectedSubcategory.label}
                   </Link>
@@ -153,6 +175,7 @@ export default function CategoryBar() {
                     <Link
                       key={child.id}
                       to={getUrl(openCategory.id, selectedSubcategory.id, child.id)}
+                      onClick={handleCategoryClick}
                       className={
                         currentChildCategory === child.id
                           ? "vinted-mega-link active"
@@ -170,6 +193,7 @@ export default function CategoryBar() {
                       key={subcategory.id}
                       to={getUrl(openCategory.id, subcategory.id)}
                       onMouseEnter={() => setHoveredSubcategoryId(subcategory.id)}
+                      onClick={handleCategoryClick}
                       className={
                         currentSubcategory === subcategory.id
                           ? "vinted-mega-link active"
