@@ -1,7 +1,9 @@
 import {
   ChevronLeft,
   ChevronRight,
+  Heart,
   MapPin,
+  MoreHorizontal,
   ShieldCheck,
   Star
 } from "lucide-react";
@@ -17,14 +19,15 @@ import ListingRecommendations from "../components/ListingRecommendations";
 
 const conditionLabels = {
   new: "New with tags",
+  new_without_tags: "New without tags",
   like_new: "Like new",
+  very_good: "Very good",
   good: "Good",
-  fair: "Fair",
-  very_good: "Very good"
+  fair: "Fair"
 };
 
 function formatRelativeTime(dateValue) {
-  if (!dateValue) return "Recently";
+  if (!dateValue) return "recently";
 
   const date = new Date(dateValue);
   const now = new Date();
@@ -36,10 +39,10 @@ function formatRelativeTime(dateValue) {
   const diffWeeks = Math.floor(diffDays / 7);
   const diffMonths = Math.floor(diffDays / 30);
 
-  if (diffMinutes < 1) return "Just now";
+  if (diffMinutes < 1) return "just now";
   if (diffMinutes < 60) return `${diffMinutes} min ago`;
   if (diffHours < 24) return `${diffHours} h ago`;
-  if (diffDays === 1) return "Yesterday";
+  if (diffDays === 1) return "yesterday";
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffWeeks < 5) return `${diffWeeks} weeks ago`;
   if (diffMonths < 12) return `${diffMonths} months ago`;
@@ -51,6 +54,18 @@ function formatRelativeTime(dateValue) {
   });
 }
 
+function getInitials(name) {
+  if (!name) return "U";
+
+  return name
+    .split(" ")
+    .map((part) => part.trim()[0])
+    .filter(Boolean)
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
 export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -60,6 +75,7 @@ export default function ListingDetail() {
   const [loading, setLoading] = useState(true);
   const [photoIndex, setPhotoIndex] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -70,6 +86,7 @@ export default function ListingDetail() {
       setListing(null);
       setSeller(null);
       setPhotoIndex(0);
+      setDescriptionExpanded(false);
 
       if (!id) {
         setErrorMessage("Missing listing ID.");
@@ -147,17 +164,58 @@ export default function ListingDetail() {
     incrementViews();
   }, [listing?.id]);
 
-  const price = Number(listing?.price || 0);
-  const protection = price * 0.08;
-  const shipping = 80;
-  const total = price + protection + shipping;
-
   const photos = useMemo(() => {
     if (!listing?.photos || !Array.isArray(listing.photos)) return [];
     return listing.photos.filter(Boolean);
   }, [listing]);
 
+  const price = Number(listing?.price || 0);
+  const protection = price * 0.08;
+  const shipping = 80;
+  const total = price + protection + shipping;
+
   const relativeCreatedAt = formatRelativeTime(listing?.created_at);
+
+  const conditionLabel =
+    conditionLabels[listing?.condition] || listing?.condition || "";
+
+  const sellerName =
+    seller?.username ||
+    listing?.profiles?.username ||
+    listing?.seller?.username ||
+    "Member";
+
+  const categoryLabel = listing?.category
+    ? getCategoryLabel(listing.category)
+    : "";
+
+  const subcategoryLabel = listing?.subcategory
+    ? getSubcategoryLabel(listing.subcategory)
+    : "";
+
+  const childCategoryLabel = listing?.child_category
+    ? getChildCategoryLabel(listing.child_category)
+    : "";
+
+  const description = listing?.description?.trim() || "No description provided.";
+
+  const shouldShowDescriptionToggle = description.length > 150;
+
+  const displayedDescription =
+    descriptionExpanded || !shouldShowDescriptionToggle
+      ? description
+      : `${description.slice(0, 150).trim()}...`;
+
+  const characteristics = [
+    listing?.brand ? ["Brand", listing.brand] : null,
+    listing?.size ? ["Size", listing.size] : null,
+    listing?.condition ? ["Condition", conditionLabel] : null,
+    listing?.color ? ["Color", listing.color] : null,
+    categoryLabel ? ["Category", categoryLabel] : null,
+    subcategoryLabel ? ["Subcategory", subcategoryLabel] : null,
+    childCategoryLabel ? ["Type", childCategoryLabel] : null,
+    ["Added", relativeCreatedAt]
+  ].filter(Boolean);
 
   const recommendationListing = useMemo(() => {
     if (!listing) return null;
@@ -179,6 +237,8 @@ export default function ListingDetail() {
   }
 
   function handleChatWithSeller() {
+    if (!listing) return;
+
     const params = new URLSearchParams();
 
     params.set("listingId", listing.id);
@@ -198,6 +258,15 @@ export default function ListingDetail() {
     }
 
     navigate(`/messages?${params.toString()}`);
+  }
+
+  function handleBack() {
+    if (window.history.length > 1) {
+      navigate(-1);
+      return;
+    }
+
+    navigate("/");
   }
 
   if (loading) {
@@ -228,16 +297,51 @@ export default function ListingDetail() {
   }
 
   return (
-    <main className="page listing-detail-page">
-      <div className="container detail-layout">
-        <div className="detail-left-column">
-          <section className="photo-panel">
-            <div className="main-photo">
+    <main className="page listing-detail-page listing-detail-vinted-page">
+      <div className="mobile-product-topbar">
+        <button type="button" onClick={handleBack} aria-label="Go back">
+          <ChevronLeft size={27} />
+        </button>
+
+        <button type="button" aria-label="More options">
+          <MoreHorizontal size={25} />
+        </button>
+      </div>
+
+      <div className="container detail-layout product-vinted-layout">
+        <div className="detail-left-column product-vinted-left">
+          <section className="photo-panel product-gallery-panel">
+            <div className="main-photo product-main-photo">
               {photos.length > 0 ? (
                 <img src={photos[photoIndex]} alt={listing.title} />
               ) : (
                 <div className="image-placeholder">No photo</div>
               )}
+
+              <button
+                className="mobile-gallery-back"
+                type="button"
+                onClick={handleBack}
+                aria-label="Go back"
+              >
+                <ChevronLeft size={28} />
+              </button>
+
+              <button
+                className="mobile-gallery-more"
+                type="button"
+                aria-label="More options"
+              >
+                <MoreHorizontal size={26} />
+              </button>
+
+              <button
+                className="mobile-gallery-heart"
+                type="button"
+                aria-label="Add to favorites"
+              >
+                <Heart size={22} />
+              </button>
 
               {photos.length > 1 && (
                 <>
@@ -258,12 +362,24 @@ export default function ListingDetail() {
                   >
                     <ChevronRight />
                   </button>
+
+                  <div className="mobile-photo-dots">
+                    {photos.map((photo, index) => (
+                      <button
+                        key={`${photo}-${index}`}
+                        type="button"
+                        className={index === photoIndex ? "active" : ""}
+                        onClick={() => setPhotoIndex(index)}
+                        aria-label={`Show photo ${index + 1}`}
+                      />
+                    ))}
+                  </div>
                 </>
               )}
             </div>
 
             {photos.length > 1 && (
-              <div className="thumb-row">
+              <div className="thumb-row product-thumb-row">
                 {photos.map((photo, index) => (
                   <button
                     key={`${photo}-${index}`}
@@ -279,18 +395,28 @@ export default function ListingDetail() {
             )}
           </section>
 
-          <section className="detail-recommendations-slot">
+          <section className="detail-recommendations-slot product-mobile-recommendations">
             <ListingRecommendations listing={recommendationListing} />
           </section>
         </div>
 
-        <aside className="detail-card detail-sticky-card">
-          <div className="detail-top">
-            <h1>{listing.title}</h1>
+        <aside className="detail-card detail-sticky-card product-info-panel">
+          <section className="product-summary-card">
+            <div className="product-title-row">
+              <h1>{listing.title}</h1>
 
-            <p className="detail-meta-line">
+              <button
+                className="product-favorite-button"
+                type="button"
+                aria-label="Add to favorites"
+              >
+                <Heart size={24} />
+              </button>
+            </div>
+
+            <p className="product-meta-line">
               {listing.size && `${listing.size} · `}
-              {conditionLabels[listing.condition] || listing.condition}
+              {conditionLabel}
               {listing.brand && (
                 <>
                   {" · "}
@@ -301,87 +427,60 @@ export default function ListingDetail() {
               Added {relativeCreatedAt}
             </p>
 
-            <p className="detail-price">₱{price.toLocaleString("en-PH")}</p>
-
-            <p className="buyer-protection-small">
-              Includes Buyer Protection
+            <p className="detail-price product-price">
+              ₱{price.toLocaleString("en-PH")}
             </p>
-          </div>
 
-          <div className="product-characteristics">
-            {listing.brand && (
-              <div className="characteristic-row">
-                <span>Brand</span>
-                <strong>{listing.brand}</strong>
-              </div>
+            <p className="buyer-protection-small product-protection-line">
+              ₱{(price + protection).toLocaleString("en-PH")} incl. Buyer
+              Protection <ShieldCheck size={15} />
+            </p>
+          </section>
+
+          <section className="mobile-demand-box">
+            <span>🔥</span>
+            <p>
+              In demand! Buyers recently viewed or saved similar items.
+            </p>
+          </section>
+
+          <section className="product-description-card">
+            <h2>Description</h2>
+
+            <p className="product-description-text">{displayedDescription}</p>
+
+            {shouldShowDescriptionToggle && (
+              <button
+                className="product-see-more-button"
+                type="button"
+                onClick={() =>
+                  setDescriptionExpanded((currentValue) => !currentValue)
+                }
+              >
+                {descriptionExpanded ? "See less" : "See more"}
+              </button>
             )}
 
-            {listing.size && (
-              <div className="characteristic-row">
-                <span>Size</span>
-                <strong>{listing.size}</strong>
-              </div>
-            )}
-
-            {listing.condition && (
-              <div className="characteristic-row">
-                <span>Condition</span>
-                <strong>
-                  {conditionLabels[listing.condition] || listing.condition}
-                </strong>
-              </div>
-            )}
-
-            {listing.color && (
-              <div className="characteristic-row">
-                <span>Color</span>
-                <strong>{listing.color}</strong>
-              </div>
-            )}
-
-            <div className="characteristic-row">
-              <span>Added</span>
-              <strong>{relativeCreatedAt}</strong>
+            <div className="product-characteristics-clean">
+              {characteristics.map(([label, value]) => (
+                <div className="product-characteristic-clean-row" key={label}>
+                  <span>{label}</span>
+                  <strong>{value}</strong>
+                </div>
+              ))}
             </div>
-          </div>
-
-          <div className="detail-description-block">
-            <p>{listing.description || "No description provided."}</p>
-          </div>
-
-          <div className="tag-row">
-            {listing.category && (
-              <span>{getCategoryLabel(listing.category)}</span>
-            )}
-
-            {listing.subcategory && (
-              <span>{getSubcategoryLabel(listing.subcategory)}</span>
-            )}
-
-            {listing.child_category && (
-              <span>{getChildCategoryLabel(listing.child_category)}</span>
-            )}
-          </div>
-
-          <div className="shipping-summary">
-            <span>Shipping</span>
-            <strong>from ₱{shipping.toLocaleString("en-PH")}</strong>
-          </div>
-
-          {listing.location && (
-            <p className="location-line">
-              <MapPin size={17} />
-              {listing.location}
-            </p>
-          )}
+          </section>
 
           {seller && (
-            <Link to={`/profile/${seller.username}`} className="seller-card">
+            <Link
+              to={`/profile/${seller.username}`}
+              className="seller-card product-seller-card"
+            >
               <div className="avatar-large">
                 {seller.avatar_url ? (
                   <img src={seller.avatar_url} alt={seller.username} />
                 ) : (
-                  seller.username?.slice(0, 1)?.toUpperCase()
+                  getInitials(seller.username)
                 )}
               </div>
 
@@ -396,19 +495,26 @@ export default function ListingDetail() {
             </Link>
           )}
 
-          <div className="shield-banner">
-            <ShieldCheck size={20} />
+          {listing.location && (
+            <p className="location-line product-location-line">
+              <MapPin size={17} />
+              {listing.location}
+            </p>
+          )}
+
+          <section className="shield-banner product-shield-banner">
+            <ShieldCheck size={21} />
 
             <div>
-              <strong>Buyer Shield</strong>
+              <strong>Buyer Protection</strong>
               <p>
-                Buyer protection helps cover secure payment support and issue
-                handling.
+                Your payment is held securely until delivery. If there is an
+                issue, TindaHan can help.
               </p>
             </div>
-          </div>
+          </section>
 
-          <div className="price-table">
+          <section className="price-table product-price-table">
             <div>
               <span>Item</span>
               <strong>₱{price.toLocaleString("en-PH")}</strong>
@@ -428,15 +534,15 @@ export default function ListingDetail() {
               <span>Total</span>
               <strong>₱{total.toLocaleString("en-PH")}</strong>
             </div>
-          </div>
+          </section>
 
-          <div className="detail-actions">
-            <button className="detail-action-btn detail-buy-btn" type="button">
-              Buy Now
+          <div className="detail-actions product-desktop-actions">
+            <button className="detail-action-btn detail-offer-btn" type="button">
+              Make an offer
             </button>
 
-            <button className="detail-action-btn detail-offer-btn" type="button">
-              Make an Offer
+            <button className="detail-action-btn detail-buy-btn" type="button">
+              Buy
             </button>
 
             <button
@@ -448,6 +554,20 @@ export default function ListingDetail() {
             </button>
           </div>
         </aside>
+      </div>
+
+      <div className="mobile-product-cta-bar">
+        <button
+          className="mobile-product-offer-button"
+          type="button"
+          onClick={handleChatWithSeller}
+        >
+          Make an offer
+        </button>
+
+        <button className="mobile-product-buy-button" type="button">
+          Buy
+        </button>
       </div>
     </main>
   );

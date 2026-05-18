@@ -7084,3 +7084,551 @@ textarea:focus {
     gap: 16px 10px;
   }
 }
+/* ========================= */
+/* PRODUCT DETAIL VINTED MOBILE - TINDAHAN */
+/* À coller à la toute fin du fichier */
+/* ========================= */
+
+.listing-detail-vinted-page {
+  background: #f5f5f5;
+}
+
+.product-vinted-layout {
+  align-items: start;
+}
+
+.product-gallery-panel {
+  background: #ffffff;
+}
+
+.product-main-photo {
+  background: #eeeeee;
+}
+
+.product-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 14px;
+}
+
+.product-title-row h1 {
+  margin: 0;
+  color: #111111;
+  font-size: 29px;
+  line-height: 1.12;
+  letter-spacing: -0.7px;
+  font-weight: 950;
+}
+
+.product-favorite-button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: #ffffff;
+  color: #34444a;
+}
+
+.product-favorite-button:hover {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: var(--orange-soft);
+}
+
+.product-meta-line {
+  margin: 8px 0 0;
+  color: #5f6f75;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.product-meta-line span {
+  color: var(--orange);
+  font-weight: 850;
+}
+
+.product-price {
+  margin: 18px 0 0;
+  color: #111111;
+  font-size: 29px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.product-protection-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin: 7px 0 0;
+  color: #007782;
+  font-size: 15px;
+  font-weight: 850;
+}
+
+.product-summary-card,
+.product-description-card {
+  background: #ffffff;
+  border-radius: 18px;
+}
+
+.product-description-card {
+  display: grid;
+  gap: 12px;
+  padding: 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.product-description-card h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 18px;
+  font-weight: 950;
+}
+
+.product-description-text {
+  margin: 0;
+  color: #1f2d33;
+  font-size: 15.5px;
+  line-height: 1.55;
+  white-space: pre-line;
+}
+
+.product-see-more-button {
+  width: fit-content;
+  min-height: 32px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--orange);
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.product-see-more-button:hover {
+  color: var(--orange-dark);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.product-characteristics-clean {
+  display: grid;
+  margin-top: 8px;
+  border: 1px solid var(--orange-border);
+  border-radius: 15px;
+  overflow: hidden;
+  background: #fff8f4;
+}
+
+.product-characteristic-clean-row {
+  display: grid;
+  grid-template-columns: 130px minmax(0, 1fr);
+  gap: 14px;
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 107, 44, 0.18);
+}
+
+.product-characteristic-clean-row:last-child {
+  border-bottom: none;
+}
+
+.product-characteristic-clean-row span {
+  color: #6f6f6f;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.product-characteristic-clean-row strong {
+  color: #111111;
+  font-size: 14px;
+  font-weight: 900;
+  line-height: 1.25;
+}
+
+.product-seller-card {
+  border-radius: 14px;
+  background: #ffffff;
+}
+
+.product-location-line {
+  margin: 0;
+}
+
+.product-shield-banner {
+  border-radius: 14px;
+  background: #eef8f5;
+  color: #007782;
+}
+
+.product-shield-banner p {
+  color: #3d6565;
+}
+
+.product-price-table {
+  border-radius: 14px;
+}
+
+.mobile-product-topbar,
+.mobile-gallery-back,
+.mobile-gallery-more,
+.mobile-gallery-heart,
+.mobile-photo-dots,
+.mobile-demand-box,
+.mobile-product-cta-bar {
+  display: none;
+}
+
+/* ========================= */
+/* MOBILE PRODUCT DETAIL */
+/* ========================= */
+
+@media (max-width: 760px) {
+  body:has(.listing-detail-vinted-page) {
+    padding-bottom: 82px;
+    background: #ffffff;
+  }
+
+  body:has(.listing-detail-vinted-page) .navbar,
+  body:has(.listing-detail-vinted-page) .vinted-category-wrapper,
+  body:has(.listing-detail-vinted-page) .mobile-bottom-nav,
+  body:has(.listing-detail-vinted-page) .site-footer {
+    display: none !important;
+  }
+
+  .listing-detail-vinted-page {
+    padding: 0 0 104px;
+    background: #ffffff;
+  }
+
+  .listing-detail-vinted-page .container {
+    width: 100%;
+  }
+
+  .product-vinted-layout {
+    display: block;
+  }
+
+  .product-vinted-left {
+    display: block;
+  }
+
+  .product-gallery-panel {
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff;
+  }
+
+  .product-main-photo {
+    width: 100%;
+    aspect-ratio: 1 / 1.12;
+    border-radius: 0;
+    background: #eeeeee;
+  }
+
+  .product-main-photo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  .product-main-photo .carousel-btn {
+    display: none;
+  }
+
+  .mobile-gallery-back,
+  .mobile-gallery-more,
+  .mobile-gallery-heart {
+    position: absolute;
+    z-index: 8;
+    display: grid;
+    place-items: center;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.92);
+    color: #1f2d33;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16);
+    backdrop-filter: blur(8px);
+  }
+
+  .mobile-gallery-back {
+    top: 16px;
+    left: 14px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .mobile-gallery-more {
+    top: 16px;
+    right: 14px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .mobile-gallery-heart {
+    right: 14px;
+    bottom: 18px;
+    width: 46px;
+    height: 46px;
+  }
+
+  .mobile-photo-dots {
+    position: absolute;
+    left: 50%;
+    bottom: 18px;
+    z-index: 7;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    transform: translateX(-50%);
+  }
+
+  .mobile-photo-dots button {
+    width: 7px;
+    height: 7px;
+    padding: 0;
+    border: none;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.75);
+  }
+
+  .mobile-photo-dots button.active {
+    background: #ffffff;
+    transform: scale(1.2);
+  }
+
+  .product-thumb-row {
+    display: none;
+  }
+
+  .product-info-panel {
+    display: grid;
+    gap: 0;
+    padding: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: #ffffff;
+  }
+
+  .product-summary-card {
+    padding: 17px 20px 18px;
+    border-radius: 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .product-title-row {
+    display: block;
+  }
+
+  .product-title-row h1 {
+    font-size: 22px;
+    line-height: 1.15;
+    letter-spacing: -0.35px;
+  }
+
+  .product-favorite-button {
+    display: none;
+  }
+
+  .product-meta-line {
+    margin-top: 8px;
+    color: #5f6f75;
+    font-size: 15px;
+  }
+
+  .product-price {
+    margin-top: 17px;
+    font-size: 24px;
+  }
+
+  .product-protection-line {
+    margin-top: 5px;
+    color: #007782;
+    font-size: 14px;
+    line-height: 1.25;
+  }
+
+  .mobile-demand-box {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: 10px;
+    padding: 14px 20px;
+    border-bottom: 12px solid #eef3f3;
+    background: #ffffff;
+  }
+
+  .mobile-demand-box span {
+    font-size: 18px;
+  }
+
+  .mobile-demand-box p {
+    margin: 0;
+    color: #34444a;
+    font-size: 14.5px;
+    line-height: 1.35;
+  }
+
+  .product-description-card {
+    padding: 20px 20px 18px;
+    border-top: none;
+    border-bottom: 12px solid #eef3f3;
+    border-radius: 0;
+  }
+
+  .product-description-card h2 {
+    font-size: 19px;
+  }
+
+  .product-description-text {
+    color: #1f2d33;
+    font-size: 15.5px;
+    line-height: 1.55;
+  }
+
+  .product-characteristics-clean {
+    margin-top: 12px;
+    border-radius: 14px;
+  }
+
+  .product-characteristic-clean-row {
+    grid-template-columns: 105px minmax(0, 1fr);
+    padding: 11px 13px;
+  }
+
+  .product-seller-card {
+    margin: 0;
+    padding: 16px 20px;
+    border: none;
+    border-bottom: 12px solid #eef3f3;
+    border-radius: 0;
+  }
+
+  .product-seller-card .avatar-large {
+    width: 46px;
+    height: 46px;
+  }
+
+  .product-location-line {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .product-shield-banner {
+    margin: 0;
+    padding: 16px 20px;
+    border-radius: 0;
+    border-bottom: 12px solid #eef3f3;
+    background: #eef8f5;
+  }
+
+  .product-price-table {
+    margin: 0;
+    border: none;
+    border-radius: 0;
+    border-bottom: 12px solid #eef3f3;
+  }
+
+  .product-price-table div {
+    padding: 13px 20px;
+  }
+
+  .product-desktop-actions {
+    display: none;
+  }
+
+  .product-mobile-recommendations {
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .product-mobile-recommendations .listing-recommendations {
+    margin-top: 0;
+    padding-top: 0;
+    border-top: none;
+  }
+
+  .product-mobile-recommendations .listing-reco-mobile-tabs {
+    top: 0;
+    margin-bottom: 18px;
+  }
+
+  .product-mobile-recommendations .listing-reco-section {
+    padding: 0 20px 20px;
+  }
+
+  .product-mobile-recommendations .listing-reco-header h2 {
+    font-size: 20px;
+  }
+
+  .product-mobile-recommendations .listing-reco-header p {
+    font-size: 14px;
+  }
+
+  .mobile-product-cta-bar {
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 120;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+    padding: 10px 16px calc(10px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--border);
+    background: #ffffff;
+    box-shadow: 0 -8px 28px rgba(0, 0, 0, 0.08);
+  }
+
+  .mobile-product-offer-button,
+  .mobile-product-buy-button {
+    min-height: 46px;
+    border-radius: 7px;
+    font-size: 15px;
+    font-weight: 950;
+  }
+
+  .mobile-product-offer-button {
+    border: 1.5px solid var(--orange);
+    background: #ffffff;
+    color: var(--orange);
+  }
+
+  .mobile-product-buy-button {
+    border: 1.5px solid var(--orange);
+    background: var(--orange);
+    color: #ffffff;
+  }
+}
+
+@media (max-width: 420px) {
+  .product-main-photo {
+    aspect-ratio: 1 / 1.08;
+  }
+
+  .product-title-row h1 {
+    font-size: 21px;
+  }
+
+  .product-summary-card,
+  .product-description-card,
+  .product-seller-card,
+  .product-location-line,
+  .product-shield-banner {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .product-price-table div {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+
+  .mobile-product-cta-bar {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+}
