@@ -298,107 +298,91 @@ export default function ListingDetail() {
 
   return (
     <main className="page listing-detail-page listing-detail-vinted-page">
-      <div className="mobile-product-topbar">
-        <button type="button" onClick={handleBack} aria-label="Go back">
-          <ChevronLeft size={27} />
-        </button>
-
-        <button type="button" aria-label="More options">
-          <MoreHorizontal size={25} />
-        </button>
-      </div>
-
       <div className="container detail-layout product-vinted-layout">
-        <div className="detail-left-column product-vinted-left">
-          <section className="photo-panel product-gallery-panel">
-            <div className="main-photo product-main-photo">
-              {photos.length > 0 ? (
-                <img src={photos[photoIndex]} alt={listing.title} />
-              ) : (
-                <div className="image-placeholder">No photo</div>
-              )}
+        <section className="photo-panel product-gallery-panel">
+          <div className="main-photo product-main-photo">
+            {photos.length > 0 ? (
+              <img src={photos[photoIndex]} alt={listing.title} />
+            ) : (
+              <div className="image-placeholder">No photo</div>
+            )}
 
-              <button
-                className="mobile-gallery-back"
-                type="button"
-                onClick={handleBack}
-                aria-label="Go back"
-              >
-                <ChevronLeft size={28} />
-              </button>
+            <button
+              className="mobile-gallery-back"
+              type="button"
+              onClick={handleBack}
+              aria-label="Go back"
+            >
+              <ChevronLeft size={28} />
+            </button>
 
-              <button
-                className="mobile-gallery-more"
-                type="button"
-                aria-label="More options"
-              >
-                <MoreHorizontal size={26} />
-              </button>
+            <button
+              className="mobile-gallery-more"
+              type="button"
+              aria-label="More options"
+            >
+              <MoreHorizontal size={26} />
+            </button>
 
-              <button
-                className="mobile-gallery-heart"
-                type="button"
-                aria-label="Add to favorites"
-              >
-                <Heart size={22} />
-              </button>
-
-              {photos.length > 1 && (
-                <>
-                  <button
-                    className="carousel-btn left"
-                    type="button"
-                    onClick={prevPhoto}
-                    aria-label="Previous photo"
-                  >
-                    <ChevronLeft />
-                  </button>
-
-                  <button
-                    className="carousel-btn right"
-                    type="button"
-                    onClick={nextPhoto}
-                    aria-label="Next photo"
-                  >
-                    <ChevronRight />
-                  </button>
-
-                  <div className="mobile-photo-dots">
-                    {photos.map((photo, index) => (
-                      <button
-                        key={`${photo}-${index}`}
-                        type="button"
-                        className={index === photoIndex ? "active" : ""}
-                        onClick={() => setPhotoIndex(index)}
-                        aria-label={`Show photo ${index + 1}`}
-                      />
-                    ))}
-                  </div>
-                </>
-              )}
-            </div>
+            <button
+              className="mobile-gallery-heart"
+              type="button"
+              aria-label="Add to favorites"
+            >
+              <Heart size={22} />
+            </button>
 
             {photos.length > 1 && (
-              <div className="thumb-row product-thumb-row">
-                {photos.map((photo, index) => (
-                  <button
-                    key={`${photo}-${index}`}
-                    className={index === photoIndex ? "thumb active" : "thumb"}
-                    onClick={() => setPhotoIndex(index)}
-                    type="button"
-                    aria-label={`Show photo ${index + 1}`}
-                  >
-                    <img src={photo} alt="" />
-                  </button>
-                ))}
-              </div>
-            )}
-          </section>
+              <>
+                <button
+                  className="carousel-btn left"
+                  type="button"
+                  onClick={prevPhoto}
+                  aria-label="Previous photo"
+                >
+                  <ChevronLeft />
+                </button>
 
-          <section className="detail-recommendations-slot product-mobile-recommendations">
-            <ListingRecommendations listing={recommendationListing} />
-          </section>
-        </div>
+                <button
+                  className="carousel-btn right"
+                  type="button"
+                  onClick={nextPhoto}
+                  aria-label="Next photo"
+                >
+                  <ChevronRight />
+                </button>
+
+                <div className="mobile-photo-dots">
+                  {photos.map((photo, index) => (
+                    <button
+                      key={`${photo}-${index}`}
+                      type="button"
+                      className={index === photoIndex ? "active" : ""}
+                      onClick={() => setPhotoIndex(index)}
+                      aria-label={`Show photo ${index + 1}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+
+          {photos.length > 1 && (
+            <div className="thumb-row product-thumb-row">
+              {photos.map((photo, index) => (
+                <button
+                  key={`${photo}-${index}`}
+                  className={index === photoIndex ? "thumb active" : "thumb"}
+                  onClick={() => setPhotoIndex(index)}
+                  type="button"
+                  aria-label={`Show photo ${index + 1}`}
+                >
+                  <img src={photo} alt="" />
+                </button>
+              ))}
+            </div>
+          )}
+        </section>
 
         <aside className="detail-card detail-sticky-card product-info-panel">
           <section className="product-summary-card">
@@ -439,9 +423,7 @@ export default function ListingDetail() {
 
           <section className="mobile-demand-box">
             <span>🔥</span>
-            <p>
-              In demand! Buyers recently viewed or saved similar items.
-            </p>
+            <p>In demand! Buyers recently viewed or saved similar items.</p>
           </section>
 
           <section className="product-description-card">
@@ -472,27 +454,32 @@ export default function ListingDetail() {
           </section>
 
           {seller && (
-            <Link
-              to={`/profile/${seller.username}`}
-              className="seller-card product-seller-card"
-            >
-              <div className="avatar-large">
-                {seller.avatar_url ? (
-                  <img src={seller.avatar_url} alt={seller.username} />
-                ) : (
-                  getInitials(seller.username)
-                )}
-              </div>
+            <section className="product-seller-card-vinted">
+              <Link to={`/profile/${seller.username}`} className="product-seller-main">
+                <div className="avatar-large">
+                  {seller.avatar_url ? (
+                    <img src={seller.avatar_url} alt={seller.username} />
+                  ) : (
+                    getInitials(seller.username)
+                  )}
+                </div>
 
-              <div>
-                <strong>{seller.username}</strong>
+                <div>
+                  <strong>{seller.username}</strong>
 
-                <p>
-                  <Star size={15} fill="currentColor" /> {seller.rating || 5} ·{" "}
-                  {seller.total_sales || 0} sales
-                </p>
-              </div>
-            </Link>
+                  <p>
+                    <Star size={15} fill="currentColor" /> {seller.rating || 5} ·{" "}
+                    {seller.total_sales || 0} sales
+                  </p>
+
+                  <span className="product-seller-active">Active seller</span>
+                </div>
+              </Link>
+
+              <button type="button" onClick={handleChatWithSeller}>
+                Message
+              </button>
+            </section>
           )}
 
           {listing.location && (
@@ -503,15 +490,27 @@ export default function ListingDetail() {
           )}
 
           <section className="shield-banner product-shield-banner">
-            <ShieldCheck size={21} />
+            <ShieldCheck size={23} />
 
             <div>
-              <strong>Buyer Protection</strong>
+              <strong>Buyer Protection fees</strong>
               <p>
-                Your payment is held securely until delivery. If there is an
-                issue, TindaHan can help.
+                For purchases made with the Buy button, TindaHan applies buyer
+                protection fees. Your payment is held securely until delivery.
               </p>
             </div>
+          </section>
+
+          <section className="product-shipping-row">
+            <strong>Shipping fees</strong>
+            <span>from ₱{shipping.toLocaleString("en-PH")}</span>
+          </section>
+
+          <section className="product-legal-note">
+            <p>
+              Buyer Protection includes secure payment support and issue handling
+              if the item is not delivered as expected.
+            </p>
           </section>
 
           <section className="price-table product-price-table">
@@ -537,7 +536,11 @@ export default function ListingDetail() {
           </section>
 
           <div className="detail-actions product-desktop-actions">
-            <button className="detail-action-btn detail-offer-btn" type="button">
+            <button
+              className="detail-action-btn detail-offer-btn"
+              type="button"
+              onClick={handleChatWithSeller}
+            >
               Make an offer
             </button>
 
@@ -554,6 +557,10 @@ export default function ListingDetail() {
             </button>
           </div>
         </aside>
+
+        <section className="detail-recommendations-slot product-recommendations-section">
+          <ListingRecommendations listing={recommendationListing} />
+        </section>
       </div>
 
       <div className="mobile-product-cta-bar">

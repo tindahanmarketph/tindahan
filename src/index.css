@@ -7086,7 +7086,6 @@ textarea:focus {
 }
 /* ========================= */
 /* PRODUCT DETAIL VINTED MOBILE - TINDAHAN */
-/* À coller à la toute fin du fichier */
 /* ========================= */
 
 .listing-detail-vinted-page {
@@ -7094,11 +7093,26 @@ textarea:focus {
 }
 
 .product-vinted-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 390px;
+  grid-template-areas:
+    "gallery info"
+    "recommendations info";
+  gap: 24px;
   align-items: start;
 }
 
 .product-gallery-panel {
+  grid-area: gallery;
   background: #ffffff;
+}
+
+.product-info-panel {
+  grid-area: info;
+}
+
+.product-recommendations-section {
+  grid-area: recommendations;
 }
 
 .product-main-photo {
@@ -7248,9 +7262,66 @@ textarea:focus {
   line-height: 1.25;
 }
 
-.product-seller-card {
+.product-seller-card-vinted {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--border);
   border-radius: 14px;
   background: #ffffff;
+}
+
+.product-seller-main {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.product-seller-main strong {
+  display: block;
+  color: #111111;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.product-seller-main p {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: 5px 0 0;
+  color: #5f6f75;
+  font-size: 14px;
+}
+
+.product-seller-active {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  margin-top: 8px;
+  padding: 5px 10px;
+  border-radius: 999px;
+  background: #e0f8f4;
+  color: #007782;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.product-seller-card-vinted > button {
+  min-height: 38px;
+  padding: 0 18px;
+  border: 1.5px solid var(--orange);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--orange);
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.product-seller-card-vinted > button:hover {
+  background: var(--orange-soft);
 }
 
 .product-location-line {
@@ -7267,11 +7338,46 @@ textarea:focus {
   color: #3d6565;
 }
 
+.product-shipping-row {
+  min-height: 58px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px 0;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.product-shipping-row strong {
+  color: #111111;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.product-shipping-row span {
+  color: #5f6f75;
+  font-size: 15px;
+  font-weight: 750;
+}
+
+.product-legal-note {
+  padding: 14px;
+  border-radius: 14px;
+  background: #eef3f3;
+}
+
+.product-legal-note p {
+  margin: 0;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
 .product-price-table {
   border-radius: 14px;
 }
 
-.mobile-product-topbar,
 .mobile-gallery-back,
 .mobile-gallery-more,
 .mobile-gallery-heart,
@@ -7308,10 +7414,6 @@ textarea:focus {
   }
 
   .product-vinted-layout {
-    display: block;
-  }
-
-  .product-vinted-left {
     display: block;
   }
 
@@ -7480,13 +7582,19 @@ textarea:focus {
   }
 
   .product-description-card h2 {
-    font-size: 19px;
+    color: #5f6f75;
+    font-size: 18px;
+    font-weight: 700;
   }
 
   .product-description-text {
     color: #1f2d33;
-    font-size: 15.5px;
+    font-size: 16px;
     line-height: 1.55;
+  }
+
+  .product-see-more-button {
+    color: #007782;
   }
 
   .product-characteristics-clean {
@@ -7499,17 +7607,25 @@ textarea:focus {
     padding: 11px 13px;
   }
 
-  .product-seller-card {
+  .product-seller-card-vinted {
+    grid-template-columns: minmax(0, 1fr) auto;
     margin: 0;
-    padding: 16px 20px;
+    padding: 18px 20px;
     border: none;
     border-bottom: 12px solid #eef3f3;
     border-radius: 0;
   }
 
-  .product-seller-card .avatar-large {
-    width: 46px;
-    height: 46px;
+  .product-seller-card-vinted .avatar-large {
+    width: 52px;
+    height: 52px;
+  }
+
+  .product-seller-card-vinted > button {
+    min-height: 40px;
+    border-color: #007782;
+    color: #007782;
+    border-radius: 8px;
   }
 
   .product-location-line {
@@ -7519,52 +7635,81 @@ textarea:focus {
 
   .product-shield-banner {
     margin: 0;
+    padding: 20px;
+    border-radius: 0;
+    border-bottom: 12px solid #eef3f3;
+    background: #ffffff;
+    color: #007782;
+  }
+
+  .product-shield-banner strong {
+    color: #111111;
+    font-size: 18px;
+  }
+
+  .product-shield-banner p {
+    color: #5f6f75;
+    font-size: 15px;
+    line-height: 1.45;
+  }
+
+  .product-shipping-row {
+    padding: 18px 20px;
+    border-top: none;
+    border-bottom: 12px solid #eef3f3;
+  }
+
+  .product-shipping-row strong {
+    font-size: 18px;
+  }
+
+  .product-shipping-row span {
+    color: #5f6f75;
+    font-size: 16px;
+  }
+
+  .product-legal-note {
     padding: 16px 20px;
     border-radius: 0;
     border-bottom: 12px solid #eef3f3;
-    background: #eef8f5;
+    background: #eef3f3;
   }
 
   .product-price-table {
-    margin: 0;
-    border: none;
-    border-radius: 0;
-    border-bottom: 12px solid #eef3f3;
-  }
-
-  .product-price-table div {
-    padding: 13px 20px;
+    display: none;
   }
 
   .product-desktop-actions {
     display: none;
   }
 
-  .product-mobile-recommendations {
+  .product-recommendations-section {
     padding: 0;
     background: #ffffff;
   }
 
-  .product-mobile-recommendations .listing-recommendations {
+  .product-recommendations-section .listing-recommendations {
     margin-top: 0;
     padding-top: 0;
     border-top: none;
   }
 
-  .product-mobile-recommendations .listing-reco-mobile-tabs {
+  .product-recommendations-section .listing-reco-mobile-tabs {
+    position: sticky;
     top: 0;
+    z-index: 20;
     margin-bottom: 18px;
   }
 
-  .product-mobile-recommendations .listing-reco-section {
+  .product-recommendations-section .listing-reco-section {
     padding: 0 20px 20px;
   }
 
-  .product-mobile-recommendations .listing-reco-header h2 {
+  .product-recommendations-section .listing-reco-header h2 {
     font-size: 20px;
   }
 
-  .product-mobile-recommendations .listing-reco-header p {
+  .product-recommendations-section .listing-reco-header p {
     font-size: 14px;
   }
 
@@ -7592,14 +7737,14 @@ textarea:focus {
   }
 
   .mobile-product-offer-button {
-    border: 1.5px solid var(--orange);
+    border: 1.5px solid #007782;
     background: #ffffff;
-    color: var(--orange);
+    color: #007782;
   }
 
   .mobile-product-buy-button {
-    border: 1.5px solid var(--orange);
-    background: var(--orange);
+    border: 1.5px solid #007782;
+    background: #007782;
     color: #ffffff;
   }
 }
@@ -7615,14 +7760,11 @@ textarea:focus {
 
   .product-summary-card,
   .product-description-card,
-  .product-seller-card,
+  .product-seller-card-vinted,
   .product-location-line,
-  .product-shield-banner {
-    padding-left: 17px;
-    padding-right: 17px;
-  }
-
-  .product-price-table div {
+  .product-shield-banner,
+  .product-shipping-row,
+  .product-legal-note {
     padding-left: 17px;
     padding-right: 17px;
   }

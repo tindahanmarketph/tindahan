@@ -1,4 +1,4 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
 import Navbar from "./components/Navbar";
@@ -39,6 +39,13 @@ function ProtectedRoute({ children }) {
 }
 
 export default function App() {
+  const location = useLocation();
+
+  const isProductPage =
+    location.pathname.startsWith("/item/") ||
+    location.pathname.startsWith("/listing/") ||
+    location.pathname.startsWith("/listings/");
+
   return (
     <>
       <Navbar />
@@ -115,7 +122,8 @@ export default function App() {
       </Routes>
 
       <Footer />
-      <MobileBottomNav />
+
+      {!isProductPage && <MobileBottomNav />}
     </>
   );
 }
