@@ -490,13 +490,16 @@ export default function ListingDetail() {
           )}
 
           <section className="shield-banner product-shield-banner">
-            <ShieldCheck size={23} />
+            <div className="product-shield-icon">
+              <ShieldCheck size={22} />
+            </div>
 
             <div>
-              <strong>Buyer Protection fees</strong>
+              <strong>Buyer Protection</strong>
               <p>
-                For purchases made with the Buy button, TindaHan applies buyer
-                protection fees. Your payment is held securely until delivery.
+                Your payment is secured by TindaHan until the item is delivered.
+                If there is an issue with your order, our protection helps
+                support a fair resolution.
               </p>
             </div>
           </section>
@@ -508,8 +511,8 @@ export default function ListingDetail() {
 
           <section className="product-legal-note">
             <p>
-              Buyer Protection includes secure payment support and issue handling
-              if the item is not delivered as expected.
+              Buyer Protection includes secure payment support and issue
+              handling if the item is not delivered as expected.
             </p>
           </section>
 
