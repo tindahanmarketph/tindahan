@@ -8247,3 +8247,14 @@ textarea:focus {
     font-size: 14px;
   }
 }
+/* ========================= */
+/* SEARCH PAGE CLEAN MOBILE */
+/* ========================= */
+
+.clean-mobile-search-page {
+  padding-top: 18px;
+}
+
+.clean-mobile-search-page .mobile-category-grid {
+  margin-top: 0;
+}
