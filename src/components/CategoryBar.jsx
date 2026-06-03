@@ -1,9 +1,16 @@
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { CATEGORIES } from "../lib/categories";
 
 export default function CategoryBar() {
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+
+  const isHomePage = location.pathname === "/";
+
+  if (!isHomePage) {
+    return null;
+  }
 
   const currentCategory = searchParams.get("category") || "all";
   const currentSubcategory = searchParams.get("subcategory") || "";
@@ -88,8 +95,7 @@ export default function CategoryBar() {
             onMouseEnter={closeMenu}
             onClick={handleCategoryClick}
           >
-            <span className="desktop-category-label">All</span>
-            <span className="mobile-category-label">See all</span>
+            See all
           </Link>
 
           {CATEGORIES.map((category) => (
@@ -120,7 +126,7 @@ export default function CategoryBar() {
                 onClick={handleCategoryClick}
               >
                 <span className="sidebar-icon">⋮⋮</span>
-                Voir tout
+                See all
               </Link>
 
               {openCategory.subcategories.map((subcategory) => (
@@ -156,7 +162,7 @@ export default function CategoryBar() {
                   className="vinted-mega-main-link"
                   onClick={handleCategoryClick}
                 >
-                  Voir tout {openCategory.label}
+                  See all {openCategory.label}
                 </Link>
 
                 {selectedSubcategory && (
@@ -165,7 +171,7 @@ export default function CategoryBar() {
                     className="vinted-mega-main-link"
                     onClick={handleCategoryClick}
                   >
-                    Voir tout {selectedSubcategory.label}
+                    See all {selectedSubcategory.label}
                   </Link>
                 )}
               </div>
