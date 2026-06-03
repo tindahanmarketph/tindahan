@@ -8116,3 +8116,134 @@ textarea:focus {
     height: 30px;
   }
 }
+/* ========================= */
+/* CATEGORY BAR TINDAHAN FIX */
+/* ========================= */
+
+/* La barre de catégories ne suit plus le scroll */
+.vinted-category-wrapper {
+  position: static !important;
+  top: auto !important;
+  z-index: 20;
+  background: #ffffff;
+  border-bottom: none;
+}
+
+/* Desktop */
+.vinted-category-nav {
+  height: 46px;
+  background: #ffffff;
+}
+
+.vinted-category-link {
+  color: #34444a;
+  border-bottom: 3px solid transparent;
+}
+
+.vinted-category-link:hover {
+  color: var(--orange);
+}
+
+.vinted-category-link.active {
+  color: #111111;
+  border-bottom-color: var(--orange);
+  font-weight: 800;
+}
+
+/* Mega menu desktop avec les couleurs TindaHan */
+.vinted-mega-sidebar-item:hover,
+.vinted-mega-sidebar-item.active {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.vinted-mega-link:hover,
+.vinted-mega-link.active,
+.vinted-mega-main-link:hover {
+  color: var(--orange);
+}
+
+.sidebar-icon {
+  color: var(--orange);
+}
+
+/* ========================= */
+/* MOBILE CATEGORY CHIPS */
+/* ========================= */
+
+@media (max-width: 900px) {
+  .vinted-category-wrapper {
+    position: static !important;
+    top: auto !important;
+    background: #ffffff;
+    border-bottom: none;
+  }
+
+  .vinted-category-nav {
+    height: auto;
+    padding: 0;
+    background: #ffffff;
+  }
+
+  .vinted-category-inner {
+    width: 100%;
+    height: auto;
+    display: flex;
+    gap: 10px;
+    overflow-x: auto;
+    padding: 10px 12px 12px;
+    scrollbar-width: none;
+  }
+
+  .vinted-category-inner::-webkit-scrollbar {
+    display: none;
+  }
+
+  .vinted-category-link {
+    height: 42px;
+    flex: none;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 18px;
+    border: 1.5px solid #cfd8dc;
+    border-radius: 999px;
+    background: #ffffff;
+    color: #34444a;
+    font-size: 15px;
+    font-weight: 800;
+    white-space: nowrap;
+    box-shadow: none;
+  }
+
+  .vinted-category-link:hover {
+    border-color: var(--orange);
+    background: var(--orange-soft);
+    color: var(--orange);
+  }
+
+  .vinted-category-link.active {
+    border-color: var(--orange);
+    background: var(--orange-soft);
+    color: var(--orange);
+    font-weight: 900;
+  }
+
+  .vinted-mega-menu {
+    display: none !important;
+  }
+}
+
+/* Encore plus compact sur très petits écrans */
+@media (max-width: 520px) {
+  .vinted-category-inner {
+    padding: 8px 10px 12px;
+    gap: 9px;
+  }
+
+  .vinted-category-link {
+    height: 40px;
+    padding: 0 16px;
+    font-size: 14px;
+  }
+}
