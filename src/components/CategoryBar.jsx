@@ -1,9 +1,12 @@
 import { useMemo, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useLocation, useSearchParams } from "react-router-dom";
 import { CATEGORIES } from "../lib/categories";
 
 export default function CategoryBar() {
+  const location = useLocation();
   const [searchParams] = useSearchParams();
+
+  const isHomePage = location.pathname === "/";
 
   const currentCategory = searchParams.get("category") || "all";
   const currentSubcategory = searchParams.get("subcategory") || "";
@@ -71,7 +74,15 @@ export default function CategoryBar() {
 
   function handleCategoryClick() {
     closeMenu();
-    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth"
+    });
+  }
+
+  if (!isHomePage) {
+    return null;
   }
 
   return (
