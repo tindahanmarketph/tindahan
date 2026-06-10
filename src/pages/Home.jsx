@@ -1,432 +1,215 @@
-import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "react-router-dom";
-import { ShieldCheck, Tag, BadgeCheck, HeartHandshake } from "lucide-react";
-import ListingCard from "../components/ListingCard";
-import GuestHero from "../components/GuestHero";
-import { useAuth } from "../context/AuthContext";
-import { supabaseConfig } from "../lib/supabase";
-import {
-  getCategoryLabel,
-  getSubcategoryLabel,
-  getChildCategoryLabel
-} from "../lib/categories";
+import { useMemo, useState } from "react";
+import { Link, useSearchParams } from "react-router-dom";
+import { CATEGORIES } from "../lib/categories";
 
-const SUPABASE_TIMEOUT_MS = 9000;
+export default function CategoryBar() {
+  const [searchParams] = useSearchParams();
 
-function ListingSkeleton() {
-  return (
-    <div className="skeleton-card">
-      <div className="skeleton skeleton-img" />
-      <div className="skeleton skeleton-line" />
-      <div className="skeleton skeleton-line short" />
-    </div>
-  );
-}
+  const currentCategory = searchParams.get("category") || "all";
+  const currentSubcategory = searchParams.get("subcategory") || "";
+  const currentChildCategory = searchParams.get("child_category") || "";
 
-function HomeTrustCards() {
-  const trustCards = [
-    {
-      icon: <ShieldCheck size={21} />,
-      title: "8% Buyer Protection",
-      text: "Secure payment until delivery"
-    },
-    {
-      icon: <Tag size={21} />,
-      title: "0% Seller Fees",
-      text: "List for free, always"
-    },
-    {
-      icon: <BadgeCheck size={21} />,
-      title: "Trusted Marketplace",
-      text: "Safer buying and selling on TindaHan"
-    },
-    {
-      icon: <HeartHandshake size={21} />,
-      title: "Made by Filipinos for Filipinos",
-      text: "Local, simple and built for the Philippines"
-    }
-  ];
+  const currentQuery = searchParams.get("q") || "";
+  const currentSort = searchParams.get("sort") || "";
 
-  return (
-    <section className="home-trust-section">
-      <div className="container home-trust-inner home-trust-card-mobile-slider">
-        {trustCards.map((card, index) => (
-          <div
-            key={card.title}
-            className="home-trust-card"
-            style={{ "--trust-index": index }}
-          >
-            <div className="home-trust-icon">{card.icon}</div>
+  const [openCategoryId, setOpenCategoryId] = useState(null);
+  const [hoveredSubcategoryId, setHoveredSubcategoryId] = useState(null);
 
-            <div>
-              <strong>{card.title}</strong>
-              <span>{card.text}</span>
-            </div>
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
+  const openCategory = useMemo(() => {
+    return CATEGORIES.find((category) => category.id === openCategoryId);
+  }, [openCategoryId]);
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = SUPABASE_TIMEOUT_MS) {
-  const controller = new AbortController();
+  const selectedSubcategory = useMemo(() => {
+    if (!openCategory) return null;
 
-  const timeoutId = setTimeout(() => {
-    controller.abort();
-  }, timeoutMs);
-
-  try {
-    const response = await fetch(url, {
-      ...options,
-      signal: controller.signal
-    });
-
-    return response;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-function getSupabaseHeaders() {
-  return {
-    apikey: supabaseConfig.anonKey,
-    Authorization: `Bearer ${supabaseConfig.anonKey}`,
-    "Content-Type": "application/json"
-  };
-}
-
-function buildListingsUrl({ category, subcategory, childCategory, query, sort }) {
-  const params = new URLSearchParams();
-
-  params.set("select", "*");
-  params.set("status", "eq.active");
-
-  if (category && category !== "all") {
-    params.set("category", `eq.${category}`);
-  }
-
-  if (subcategory) {
-    params.set("subcategory", `eq.${subcategory}`);
-  }
-
-  if (childCategory) {
-    params.set("child_category", `eq.${childCategory}`);
-  }
-
-  if (query) {
-    const cleanQuery = query.trim();
-
-    if (cleanQuery) {
-      params.set(
-        "or",
-        `(title.ilike.*${cleanQuery}*,description.ilike.*${cleanQuery}*,brand.ilike.*${cleanQuery}*)`
+    if (hoveredSubcategoryId) {
+      return openCategory.subcategories.find(
+        (subcategory) => subcategory.id === hoveredSubcategoryId
       );
     }
+
+    return openCategory.subcategories[0] || null;
+  }, [openCategory, hoveredSubcategoryId]);
+
+  function getUrl(categoryId = "all", subcategoryId = null, childCategoryId = null) {
+    const params = new URLSearchParams();
+
+    if (categoryId && categoryId !== "all") {
+      params.set("category", categoryId);
+    }
+
+    if (subcategoryId) {
+      params.set("subcategory", subcategoryId);
+    }
+
+    if (childCategoryId) {
+      params.set("child_category", childCategoryId);
+    }
+
+    if (currentQuery) {
+      params.set("q", currentQuery);
+    }
+
+    if (currentSort && currentSort !== "newest") {
+      params.set("sort", currentSort);
+    }
+
+    const queryString = params.toString();
+
+    return queryString ? `/?${queryString}` : "/";
   }
 
-  if (sort === "price-low") {
-    params.set("order", "price.asc");
-  } else if (sort === "price-high") {
-    params.set("order", "price.desc");
-  } else {
-    params.set("order", "created_at.desc");
+  function openMenu(categoryId) {
+    setOpenCategoryId(categoryId);
+    setHoveredSubcategoryId(null);
   }
 
-  return `${supabaseConfig.url}/rest/v1/listings?${params.toString()}`;
-}
-
-async function fetchListingsViaRest({
-  category,
-  subcategory,
-  childCategory,
-  query,
-  sort
-}) {
-  if (!supabaseConfig.isReady) {
-    return {
-      listings: [],
-      warning:
-        "Supabase environment variables are missing on Netlify. Add VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY."
-    };
+  function closeMenu() {
+    setOpenCategoryId(null);
+    setHoveredSubcategoryId(null);
   }
 
-  const listingsUrl = buildListingsUrl({
-    category,
-    subcategory,
-    childCategory,
-    query,
-    sort
-  });
-
-  const listingsResponse = await fetchWithTimeout(listingsUrl, {
-    headers: getSupabaseHeaders()
-  });
-
-  if (!listingsResponse.ok) {
-    const text = await listingsResponse.text();
-
-    throw new Error(`Listings request failed: ${listingsResponse.status} ${text}`);
-  }
-
-  const listings = await listingsResponse.json();
-
-  const sellerIds = [
-    ...new Set(listings.map((listing) => listing.seller_id).filter(Boolean))
-  ];
-
-  if (sellerIds.length === 0) {
-    return {
-      listings,
-      warning: ""
-    };
-  }
-
-  try {
-    const encodedIds = sellerIds.map((id) => `"${id}"`).join(",");
-
-    const profilesUrl =
-      `${supabaseConfig.url}/rest/v1/profiles` +
-      `?select=id,username,avatar_url,rating,is_verified,total_sales` +
-      `&id=in.(${encodedIds})`;
-
-    const profilesResponse = await fetchWithTimeout(profilesUrl, {
-      headers: getSupabaseHeaders()
-    });
-
-    if (!profilesResponse.ok) {
-      throw new Error(`Profiles request failed: ${profilesResponse.status}`);
-    }
-
-    const profiles = await profilesResponse.json();
-
-    const profilesById = profiles.reduce((acc, profile) => {
-      acc[profile.id] = profile;
-      return acc;
-    }, {});
-
-    const listingsWithProfiles = listings.map((listing) => ({
-      ...listing,
-      profiles: profilesById[listing.seller_id] || null
-    }));
-
-    return {
-      listings: listingsWithProfiles,
-      warning: ""
-    };
-  } catch (profileError) {
-    console.warn("Profiles loading skipped:", profileError.message);
-
-    return {
-      listings,
-      warning:
-        "Items loaded, but seller profiles could not be loaded. Check profiles RLS policies."
-    };
-  }
-}
-
-export default function Home() {
-  const { user, loadingAuth } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
-
-  const activeCategory = searchParams.get("category") || "all";
-  const activeSubcategory = searchParams.get("subcategory") || "";
-  const activeChildCategory = searchParams.get("child_category") || "";
-  const activeQuery = searchParams.get("q") || "";
-  const activeSort = searchParams.get("sort") || "newest";
-
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadMessage, setLoadMessage] = useState("");
-
-  const isFilteredPage =
-    activeQuery ||
-    activeCategory !== "all" ||
-    activeSubcategory ||
-    activeChildCategory;
-
-  const shouldShowGuestHero = !loadingAuth && !user && !isFilteredPage;
-
-  const pageTitle = useMemo(() => {
-    if (activeQuery && activeChildCategory) {
-      return `${getChildCategoryLabel(activeChildCategory)} results for "${activeQuery}"`;
-    }
-
-    if (activeQuery && activeSubcategory) {
-      return `${getSubcategoryLabel(activeSubcategory)} results for "${activeQuery}"`;
-    }
-
-    if (activeQuery && activeCategory !== "all") {
-      return `${getCategoryLabel(activeCategory)} results for "${activeQuery}"`;
-    }
-
-    if (activeQuery) {
-      return `Results for "${activeQuery}"`;
-    }
-
-    if (activeChildCategory) {
-      return getChildCategoryLabel(activeChildCategory);
-    }
-
-    if (activeSubcategory) {
-      return getSubcategoryLabel(activeSubcategory);
-    }
-
-    if (activeCategory !== "all") {
-      return getCategoryLabel(activeCategory);
-    }
-
-    return "Fresh finds";
-  }, [activeCategory, activeSubcategory, activeChildCategory, activeQuery]);
-
-  const pageSubtitle = useMemo(() => {
-    if (activeChildCategory) {
-      return `Explore second-hand ${getChildCategoryLabel(
-        activeChildCategory
-      ).toLowerCase()} items across the Philippines.`;
-    }
-
-    if (activeSubcategory) {
-      return `Explore second-hand ${getSubcategoryLabel(
-        activeSubcategory
-      ).toLowerCase()} items across the Philippines.`;
-    }
-
-    if (activeCategory !== "all") {
-      return `Explore second-hand ${getCategoryLabel(
-        activeCategory
-      ).toLowerCase()} items across the Philippines.`;
-    }
-
-    return "Buy and sell second-hand treasures across the Philippines.";
-  }, [activeCategory, activeSubcategory, activeChildCategory]);
-
-  useEffect(() => {
-    let isMounted = true;
-
-    async function loadListings() {
-      setLoading(true);
-      setLoadMessage("");
-
-      try {
-        const result = await fetchListingsViaRest({
-          category: activeCategory,
-          subcategory: activeSubcategory,
-          childCategory: activeChildCategory,
-          query: activeQuery,
-          sort: activeSort
-        });
-
-        if (!isMounted) return;
-
-        setListings(result.listings || []);
-        setLoadMessage(result.warning || "");
-      } catch (error) {
-        console.error("Home listings loading error:", error);
-
-        if (!isMounted) return;
-
-        setListings([]);
-        setLoadMessage(error?.message || "Unable to load listings from Supabase.");
-      } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
-      }
-    }
-
-    loadListings();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [
-    activeCategory,
-    activeSubcategory,
-    activeChildCategory,
-    activeQuery,
-    activeSort
-  ]);
-
-  function handleSortChange(event) {
-    const nextSort = event.target.value;
-
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("sort", nextSort);
-
-    setSearchParams(nextParams);
+  function handleCategoryClick() {
+    closeMenu();
+    window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
   return (
-    <>
-      {shouldShowGuestHero && (
-        <>
-          <GuestHero />
-          <HomeTrustCards />
-        </>
-      )}
+    <div className="vinted-category-wrapper" onMouseLeave={closeMenu}>
+      <nav className="vinted-category-nav">
+        <div className="container vinted-category-inner">
+          <Link
+            to={getUrl("all")}
+            className={
+              currentCategory === "all"
+                ? "vinted-category-link active"
+                : "vinted-category-link"
+            }
+            onMouseEnter={closeMenu}
+            onClick={handleCategoryClick}
+          >
+            <span className="desktop-category-label">All</span>
+            <span className="mobile-category-label">See all</span>
+          </Link>
 
-      <main className="page">
-        <div className="container">
-          <div className="page-header">
-            <div>
-              <h1>{pageTitle}</h1>
-              <p>{pageSubtitle}</p>
-            </div>
-
-            <select className="select" value={activeSort} onChange={handleSortChange}>
-              <option value="newest">Newest first</option>
-              <option value="price-low">Price low to high</option>
-              <option value="price-high">Price high to low</option>
-            </select>
-          </div>
-
-          {loading && (
-            <div className="grid">
-              {Array.from({ length: 12 }).map((_, index) => (
-                <ListingSkeleton key={index} />
-              ))}
-            </div>
-          )}
-
-          {!loading && loadMessage && listings.length === 0 && (
-            <div className="empty-state">
-              <h2>Unable to load items</h2>
-              <p>{loadMessage}</p>
-              <p className="debug-id">
-                Check Netlify environment variables, Supabase table name, columns and
-                RLS policies.
-              </p>
-            </div>
-          )}
-
-          {!loading && !loadMessage && listings.length === 0 && (
-            <div className="empty-state">
-              <h2>No items found</h2>
-              <p>
-                {isFilteredPage
-                  ? "There are no active items matching this selection yet."
-                  : "Be the first to list an item on TindaHan."}
-              </p>
-            </div>
-          )}
-
-          {!loading && loadMessage && listings.length > 0 && (
-            <div className="empty-state" style={{ marginBottom: 20 }}>
-              <h2>Items loaded with a warning</h2>
-              <p>{loadMessage}</p>
-            </div>
-          )}
-
-          {!loading && listings.length > 0 && (
-            <div className="grid">
-              {listings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          )}
+          {CATEGORIES.map((category) => (
+            <Link
+              key={category.id}
+              to={getUrl(category.id)}
+              className={
+                currentCategory === category.id
+                  ? "vinted-category-link active"
+                  : "vinted-category-link"
+              }
+              onMouseEnter={() => openMenu(category.id)}
+              onClick={handleCategoryClick}
+            >
+              {category.label}
+            </Link>
+          ))}
         </div>
-      </main>
-    </>
+      </nav>
+
+      {openCategory && (
+        <div className="vinted-mega-menu">
+          <div className="container vinted-mega-inner">
+            <aside className="vinted-mega-sidebar">
+              <Link
+                to={getUrl(openCategory.id)}
+                className="vinted-mega-sidebar-item see-all"
+                onClick={handleCategoryClick}
+              >
+                <span className="sidebar-icon">⋮⋮</span>
+                Voir tout
+              </Link>
+
+              {openCategory.subcategories.map((subcategory) => (
+                <Link
+                  key={subcategory.id}
+                  to={getUrl(openCategory.id, subcategory.id)}
+                  onMouseEnter={() => setHoveredSubcategoryId(subcategory.id)}
+                  onClick={handleCategoryClick}
+                  className={
+                    currentSubcategory === subcategory.id ||
+                    selectedSubcategory?.id === subcategory.id
+                      ? "vinted-mega-sidebar-item active"
+                      : "vinted-mega-sidebar-item"
+                  }
+                >
+                  <span className="sidebar-icon">
+                    {subcategory.children?.length ? "▸" : "•"}
+                  </span>
+
+                  <span>{subcategory.label}</span>
+
+                  {subcategory.children?.length > 0 && (
+                    <span className="sidebar-arrow">›</span>
+                  )}
+                </Link>
+              ))}
+            </aside>
+
+            <section className="vinted-mega-content">
+              <div className="vinted-mega-title-row">
+                <Link
+                  to={getUrl(openCategory.id)}
+                  className="vinted-mega-main-link"
+                  onClick={handleCategoryClick}
+                >
+                  Voir tout {openCategory.label}
+                </Link>
+
+                {selectedSubcategory && (
+                  <Link
+                    to={getUrl(openCategory.id, selectedSubcategory.id)}
+                    className="vinted-mega-main-link"
+                    onClick={handleCategoryClick}
+                  >
+                    Voir tout {selectedSubcategory.label}
+                  </Link>
+                )}
+              </div>
+
+              {selectedSubcategory?.children?.length > 0 ? (
+                <div className="vinted-mega-grid">
+                  {selectedSubcategory.children.map((child) => (
+                    <Link
+                      key={child.id}
+                      to={getUrl(openCategory.id, selectedSubcategory.id, child.id)}
+                      onClick={handleCategoryClick}
+                      className={
+                        currentChildCategory === child.id
+                          ? "vinted-mega-link active"
+                          : "vinted-mega-link"
+                      }
+                    >
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <div className="vinted-mega-grid">
+                  {openCategory.subcategories.map((subcategory) => (
+                    <Link
+                      key={subcategory.id}
+                      to={getUrl(openCategory.id, subcategory.id)}
+                      onMouseEnter={() => setHoveredSubcategoryId(subcategory.id)}
+                      onClick={handleCategoryClick}
+                      className={
+                        currentSubcategory === subcategory.id
+                          ? "vinted-mega-link active"
+                          : "vinted-mega-link"
+                      }
+                    >
+                      {subcategory.label}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </section>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

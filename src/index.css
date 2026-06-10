@@ -8258,3 +8258,20 @@ textarea:focus {
 .clean-mobile-search-page .mobile-category-grid {
   margin-top: 0;
 }
+
+/* ========================= */
+/* HOME MOBILE CLEANUP */
+/* Masque le header Fresh finds, le tri et le warning uniquement sur la vraie home mobile */
+/* ========================= */
+
+@media (max-width: 760px) {
+  .home-mobile-header-hidden,
+  .home-mobile-warning-hidden {
+    display: none !important;
+  }
+
+  .page > .container > .home-mobile-header-hidden + .grid,
+  .page > .container > .home-mobile-header-hidden ~ .grid {
+    margin-top: 4px;
+  }
+}
