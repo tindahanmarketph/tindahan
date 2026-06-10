@@ -8753,3 +8753,16 @@ textarea:focus {
     font-size: 16px;
   }
 }
+/* ========================= */
+/* REMOVE MOBILE PROFILE TITLE */
+/* ========================= */
+
+@media (max-width: 760px) {
+  .own-profile-page .mobile-profile-header {
+    display: none !important;
+  }
+
+  .own-profile-page .mobile-profile-content {
+    padding-top: 18px;
+  }
+}
