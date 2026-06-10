@@ -8258,3 +8258,28 @@ textarea:focus {
 .clean-mobile-search-page .mobile-category-grid {
   margin-top: 0;
 }
+/* ========================= */
+/* MOBILE HOME CLEANUP */
+/* ========================= */
+
+@media (max-width: 760px) {
+  .home-page-unfiltered {
+    padding-top: 14px;
+  }
+
+  .home-page-unfiltered .home-page-header {
+    display: none !important;
+  }
+
+  .home-page-unfiltered .home-warning-state {
+    display: none !important;
+  }
+
+  .home-page-unfiltered .home-error-state {
+    display: none !important;
+  }
+
+  .home-page-unfiltered .grid {
+    margin-top: 0;
+  }
+}

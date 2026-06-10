@@ -366,9 +366,15 @@ export default function Home() {
         </>
       )}
 
-      <main className="page">
+      <main
+        className={
+          isFilteredPage
+            ? "page home-page"
+            : "page home-page home-page-unfiltered"
+        }
+      >
         <div className="container">
-          <div className="page-header">
+          <div className="page-header home-page-header">
             <div>
               <h1>{pageTitle}</h1>
               <p>{pageSubtitle}</p>
@@ -390,7 +396,7 @@ export default function Home() {
           )}
 
           {!loading && loadMessage && listings.length === 0 && (
-            <div className="empty-state">
+            <div className="empty-state home-error-state">
               <h2>Unable to load items</h2>
               <p>{loadMessage}</p>
               <p className="debug-id">
@@ -412,7 +418,7 @@ export default function Home() {
           )}
 
           {!loading && loadMessage && listings.length > 0 && (
-            <div className="empty-state" style={{ marginBottom: 20 }}>
+            <div className="empty-state home-warning-state">
               <h2>Items loaded with a warning</h2>
               <p>{loadMessage}</p>
             </div>
