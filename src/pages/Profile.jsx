@@ -1,14 +1,29 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import {
-  CheckCircle2,
-  Clock3,
+  BadgeCheck,
+  ChevronRight,
+  CircleHelp,
+  Cookie,
+  FileText,
+  Gift,
+  Heart,
+  HomeIcon,
   Info,
   MapPin,
+  Megaphone,
+  Palette,
   Pencil,
-  Rss,
+  Plane,
+  ReceiptText,
+  Settings,
+  ShieldCheck,
   Shirt,
-  Truck
+  SlidersHorizontal,
+  Star,
+  Truck,
+  Wallet,
+  WalletCards
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import ListingCard from "../components/ListingCard";
@@ -76,6 +91,205 @@ async function fetchUserListings(profileId) {
   return [];
 }
 
+function MobileProfileMenuItem({
+  icon,
+  title,
+  subtitle,
+  value,
+  to = "#",
+  disabled = false
+}) {
+  const content = (
+    <>
+      <span className="mobile-profile-menu-icon">{icon}</span>
+
+      <span className="mobile-profile-menu-main">
+        <strong>{title}</strong>
+        {subtitle && <small>{subtitle}</small>}
+      </span>
+
+      {value && <span className="mobile-profile-menu-value">{value}</span>}
+
+      <ChevronRight size={22} className="mobile-profile-menu-chevron" />
+    </>
+  );
+
+  if (disabled) {
+    return (
+      <div className="mobile-profile-menu-item disabled">
+        {content}
+      </div>
+    );
+  }
+
+  return (
+    <Link to={to} className="mobile-profile-menu-item">
+      {content}
+    </Link>
+  );
+}
+
+function MobileProfileDashboard({
+  profile,
+  displayedUsername,
+  displayedAvatar,
+  listingsCount
+}) {
+  return (
+    <section className="mobile-profile-dashboard">
+      <header className="mobile-profile-header">
+        <h1>Profile</h1>
+      </header>
+
+      <div className="mobile-profile-content">
+        <Link
+          to={`/profile/${displayedUsername}#profile-listings`}
+          className="mobile-profile-user-card"
+        >
+          <div className="mobile-profile-avatar">
+            {displayedAvatar ? (
+              <img src={displayedAvatar} alt={`${displayedUsername} profile`} />
+            ) : (
+              getInitial(displayedUsername)
+            )}
+          </div>
+
+          <div>
+            <strong>{displayedUsername}</strong>
+            <span>View my listings</span>
+          </div>
+        </Link>
+
+        <div className="mobile-profile-badges-card">
+          <div className="mobile-profile-badges-row">
+            <div>
+              <BadgeCheck size={28} />
+              <strong>Badges earned</strong>
+            </div>
+
+            <span>0 of 2</span>
+          </div>
+
+          <div className="mobile-profile-progress">
+            <span />
+          </div>
+        </div>
+      </div>
+
+      <div className="mobile-profile-section">
+        <MobileProfileMenuItem
+          icon={<Heart size={29} />}
+          title="Favorites"
+          to="/favorites"
+        />
+      </div>
+
+      <div className="mobile-profile-section">
+        <MobileProfileMenuItem
+          icon={<Gift size={28} />}
+          title="Invite friends"
+          subtitle="Share TindaHan with your friends"
+          to="/invite"
+        />
+
+        <MobileProfileMenuItem
+          icon={<Wallet size={28} />}
+          title="My wallet"
+          value="₱0.00"
+          to="/wallet"
+        />
+
+        <MobileProfileMenuItem
+          icon={<ReceiptText size={28} />}
+          title="My sales and purchases"
+          to="/orders"
+        />
+
+        <MobileProfileMenuItem
+          icon={<Megaphone size={28} />}
+          title="Promotion tools"
+          to="/promotion-tools"
+        />
+      </div>
+
+      <div className="mobile-profile-section">
+        <MobileProfileMenuItem
+          icon={<SlidersHorizontal size={28} />}
+          title="Personalisation"
+          to="/settings/profile"
+        />
+
+        <MobileProfileMenuItem
+          icon={<WalletCards size={28} />}
+          title="Bundle discounts"
+          value="Disabled"
+          to="/settings/bundles"
+        />
+
+        <MobileProfileMenuItem
+          icon={<Plane size={28} />}
+          title="Holiday mode"
+          to="/settings/holiday-mode"
+        />
+      </div>
+
+      <div className="mobile-profile-section">
+        <MobileProfileMenuItem
+          icon={<CircleHelp size={29} />}
+          title="TindaHan Guide"
+          to="/how-it-works"
+        />
+
+        <MobileProfileMenuItem
+          icon={<ShieldCheck size={29} />}
+          title="Help Center"
+          to="/help-center"
+        />
+      </div>
+
+      <div className="mobile-profile-section">
+        <MobileProfileMenuItem
+          icon={<Settings size={29} />}
+          title="Settings"
+          to="/settings/profile"
+        />
+
+        <MobileProfileMenuItem
+          icon={<Cookie size={29} />}
+          title="Cookie settings"
+          to="/cookie-settings"
+        />
+
+        <MobileProfileMenuItem
+          icon={<Info size={29} />}
+          title="About us"
+          to="/about"
+        />
+
+        <MobileProfileMenuItem
+          icon={<FileText size={29} />}
+          title="Legal information"
+          to="/terms"
+        />
+
+        <MobileProfileMenuItem
+          icon={<HomeIcon size={29} />}
+          title="Our platform"
+          to="/platform"
+        />
+      </div>
+
+      <footer className="mobile-profile-footer-links">
+        <Link to="/privacy">Protection Center</Link>
+        <span>•</span>
+        <Link to="/terms">Terms</Link>
+        <span>•</span>
+        <Link to="/cookies">Cookie Policy</Link>
+      </footer>
+    </section>
+  );
+}
+
 export default function Profile() {
   const { username } = useParams();
   const { user } = useAuth();
@@ -107,11 +321,6 @@ export default function Profile() {
       profileData = usernameResponse.data;
       profileError = usernameResponse.error;
 
-      /*
-        Sécurité utile après modification du username :
-        si l’URL contient encore l’ancien username mais que c’est ton compte,
-        on recharge le profil avec user.id.
-      */
       if (!profileData && user?.id) {
         const idResponse = await supabase
           .from("profiles")
@@ -171,7 +380,16 @@ export default function Profile() {
   const displayedLocation = getProfileLocation(profile);
 
   return (
-    <main className="profile-page">
+    <main className={isOwnProfile ? "profile-page own-profile-page" : "profile-page"}>
+      {isOwnProfile && (
+        <MobileProfileDashboard
+          profile={profile}
+          displayedUsername={displayedUsername}
+          displayedAvatar={displayedAvatar}
+          listingsCount={listings.length}
+        />
+      )}
+
       <div className="container profile-container">
         <section className="profile-overview">
           <div className="profile-avatar-wrap">
@@ -217,12 +435,12 @@ export default function Profile() {
                 </div>
 
                 <div className="profile-meta-line">
-                  <Clock3 size={18} />
+                  <ShieldCheck size={18} />
                   <span>{getLastSeenText(profile)}</span>
                 </div>
 
                 <div className="profile-meta-line">
-                  <Rss size={18} />
+                  <Palette size={18} />
 
                   <Link to={`/profile/${displayedUsername}/followers`}>
                     0 followers
@@ -240,12 +458,12 @@ export default function Profile() {
                 <span className="profile-info-label">Verified information:</span>
 
                 <div className="profile-meta-line">
-                  <CheckCircle2 size={18} />
+                  <ShieldCheck size={18} />
                   <span>Google</span>
                 </div>
 
                 <div className="profile-meta-line">
-                  <CheckCircle2 size={18} />
+                  <ShieldCheck size={18} />
                   <span>Email</span>
                 </div>
               </div>
@@ -297,7 +515,7 @@ export default function Profile() {
         </section>
 
         {listings.length > 0 ? (
-          <section className="profile-listings-section">
+          <section className="profile-listings-section" id="profile-listings">
             <div className="profile-section-header">
               <h2>
                 {listings.length} listed item{listings.length > 1 ? "s" : ""}
@@ -311,7 +529,7 @@ export default function Profile() {
             </div>
           </section>
         ) : (
-          <section className="profile-empty-listings">
+          <section className="profile-empty-listings" id="profile-listings">
             <div className="profile-empty-icon">
               <Shirt size={44} />
             </div>
