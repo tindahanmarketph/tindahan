@@ -8283,3 +8283,142 @@ textarea:focus {
     margin-top: 0;
   }
 }
+/* ========================= */
+/* TINDAHAN MOBILE SEARCH COLORS */
+/* ========================= */
+
+@media (max-width: 760px) {
+  .clean-mobile-search-page {
+    min-height: calc(100vh - 78px);
+    padding: 16px 16px 96px;
+    background: var(--bg);
+  }
+
+  /* Barre de recherche générale en haut */
+  .navbar-search {
+    background: #fff7f3;
+    border: 1px solid var(--orange-border);
+    box-shadow: 0 6px 18px rgba(255, 107, 44, 0.08);
+  }
+
+  .search-input-wrapper {
+    color: var(--orange);
+  }
+
+  .search-input-wrapper input {
+    color: #222222;
+    font-weight: 600;
+  }
+
+  .search-input-wrapper input::placeholder {
+    color: #8a8a8a;
+    font-weight: 500;
+  }
+
+  .search-camera-button {
+    color: var(--orange);
+  }
+
+  .search-camera-button:hover {
+    background: var(--orange-soft);
+    color: var(--orange-dark);
+  }
+
+  /* Page Search : grille catégories */
+  .clean-mobile-search-page .mobile-category-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
+  }
+
+  .clean-mobile-search-page .mobile-category-card {
+    position: relative;
+    min-height: 132px;
+    overflow: hidden;
+    padding: 16px;
+    border: 1px solid var(--orange-border);
+    border-radius: 12px;
+    background: linear-gradient(145deg, #ffffff 0%, #fff6f1 100%);
+    box-shadow: 0 10px 24px rgba(255, 107, 44, 0.08);
+    transition: transform 0.16s ease, box-shadow 0.16s ease,
+      border-color 0.16s ease;
+  }
+
+  .clean-mobile-search-page .mobile-category-card:hover,
+  .clean-mobile-search-page .mobile-category-card:active {
+    transform: translateY(-1px);
+    border-color: var(--orange);
+    box-shadow: 0 14px 28px rgba(255, 107, 44, 0.14);
+  }
+
+  .clean-mobile-search-page .mobile-category-card strong {
+    position: relative;
+    z-index: 2;
+    display: block;
+    color: #111111;
+    font-size: 20px;
+    line-height: 1.15;
+    font-weight: 950;
+    letter-spacing: -0.35px;
+  }
+
+  .clean-mobile-search-page .mobile-category-emoji {
+    position: absolute;
+    right: 18px;
+    bottom: 16px;
+    z-index: 1;
+    font-size: 48px;
+    line-height: 1;
+    filter: drop-shadow(0 8px 14px rgba(255, 107, 44, 0.16));
+  }
+
+  .clean-mobile-search-page .mobile-category-card::after {
+    content: "";
+    position: absolute;
+    right: -28px;
+    bottom: -32px;
+    width: 92px;
+    height: 92px;
+    border-radius: 50%;
+    background: rgba(255, 107, 44, 0.11);
+  }
+
+  /* Retire les anciens styles verts/teal si présents */
+  .mobile-search-chip.active,
+  .mobile-bottom-link.active,
+  .mobile-bottom-link.active svg,
+  .mobile-bottom-link.active span {
+    color: var(--orange);
+  }
+
+  .mobile-search-chip.active {
+    border-color: var(--orange);
+    background: var(--orange-soft);
+  }
+}
+
+@media (max-width: 420px) {
+  .clean-mobile-search-page {
+    padding-left: 14px;
+    padding-right: 14px;
+  }
+
+  .clean-mobile-search-page .mobile-category-grid {
+    gap: 12px;
+  }
+
+  .clean-mobile-search-page .mobile-category-card {
+    min-height: 126px;
+    padding: 14px;
+  }
+
+  .clean-mobile-search-page .mobile-category-card strong {
+    font-size: 18px;
+  }
+
+  .clean-mobile-search-page .mobile-category-emoji {
+    right: 15px;
+    bottom: 14px;
+    font-size: 44px;
+  }
+}
