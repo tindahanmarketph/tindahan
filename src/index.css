@@ -9939,3 +9939,369 @@ textarea:focus {
     border-radius: 0 0 18px 18px;
   }
 }
+/* ========================= */
+/* FIX PROFILE SUBPAGES MOBILE */
+/* Bundle discounts, Holiday mode, Donations, Guide, Badges */
+/* À coller tout en bas de src/index.css */
+/* ========================= */
+
+@media (max-width: 760px) {
+  body:has(.mobile-subpage) {
+    padding-bottom: 76px !important;
+    background: #eef3f3 !important;
+  }
+
+  body:has(.mobile-subpage) .navbar,
+  body:has(.mobile-subpage) .vinted-category-wrapper,
+  body:has(.mobile-subpage) .site-footer {
+    display: none !important;
+  }
+
+  .mobile-subpage {
+    width: 100% !important;
+    min-height: calc(100vh - 76px) !important;
+    margin: 0 !important;
+    padding: 0 0 86px !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+  }
+
+  .mobile-subpage.tint-background,
+  .tindahan-simple-page.tint-background {
+    background: #eef3f3 !important;
+  }
+
+  .mobile-subpage-header {
+    position: sticky !important;
+    top: 0 !important;
+    z-index: 90 !important;
+    width: 100% !important;
+    min-height: 58px !important;
+    display: grid !important;
+    grid-template-columns: 52px minmax(0, 1fr) 52px !important;
+    align-items: center !important;
+    margin: 0 !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    border-radius: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .mobile-subpage-header h1 {
+    margin: 0 !important;
+    color: #111111 !important;
+    font-size: 17px !important;
+    line-height: 1.1 !important;
+    font-weight: 950 !important;
+    text-align: center !important;
+    letter-spacing: -0.25px !important;
+  }
+
+  .mobile-subpage-header button {
+    width: 44px !important;
+    height: 44px !important;
+    display: grid !important;
+    place-items: center !important;
+    justify-self: center !important;
+    border: none !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    color: #1f2d33 !important;
+  }
+
+  .mobile-subpage-header button:hover,
+  .mobile-subpage-header button:active {
+    background: var(--orange-soft) !important;
+    color: var(--orange) !important;
+  }
+
+  /* ========================= */
+  /* Bundle discounts / Holiday mode */
+  /* ========================= */
+
+  .tindahan-toggle-row {
+    width: 100% !important;
+    min-height: 58px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 18px !important;
+    margin: 0 !important;
+    padding: 0 20px !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    background: #ffffff !important;
+  }
+
+  .tindahan-toggle-row strong {
+    color: #111111 !important;
+    font-size: 16px !important;
+    line-height: 1.2 !important;
+    font-weight: 950 !important;
+  }
+
+  .tindahan-switch {
+    width: 46px !important;
+    height: 28px !important;
+    position: relative !important;
+    border: none !important;
+    border-radius: 999px !important;
+    background: #b8c3c7 !important;
+    padding: 3px !important;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.04) !important;
+    transition: background 0.18s ease !important;
+  }
+
+  .tindahan-switch span {
+    width: 22px !important;
+    height: 22px !important;
+    display: block !important;
+    border-radius: 50% !important;
+    background: #ffffff !important;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18) !important;
+    transition: transform 0.18s ease !important;
+  }
+
+  .tindahan-switch.active {
+    background: var(--orange) !important;
+  }
+
+  .tindahan-switch.active span {
+    transform: translateX(18px) !important;
+  }
+
+  .tindahan-info-note {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 14px 20px !important;
+    border: none !important;
+    background: #eef3f3 !important;
+  }
+
+  .tindahan-info-note p {
+    max-width: 100% !important;
+    margin: 0 !important;
+    color: #5f6f75 !important;
+    font-size: 14px !important;
+    line-height: 1.38 !important;
+  }
+
+  .tindahan-info-note a,
+  .tindahan-info-note button {
+    color: var(--orange) !important;
+    font-weight: 850 !important;
+    text-decoration: underline !important;
+    text-underline-offset: 2px !important;
+  }
+
+  /* ========================= */
+  /* Donations */
+  /* ========================= */
+
+  .tindahan-donations-block {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 18px 20px !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+
+  .tindahan-donations-block h2 {
+    margin: 0 0 4px !important;
+    color: #111111 !important;
+    font-size: 17px !important;
+    font-weight: 950 !important;
+  }
+
+  .tindahan-donations-block p {
+    margin: 0 0 16px !important;
+    color: #5f6f75 !important;
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+  }
+
+  .tindahan-donations-block p button {
+    color: var(--orange) !important;
+  }
+
+  .tindahan-primary-wide {
+    width: 100% !important;
+    min-height: 42px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: none !important;
+    border-radius: 7px !important;
+    background: var(--orange) !important;
+    color: #ffffff !important;
+    font-size: 15px !important;
+    font-weight: 950 !important;
+    text-align: center !important;
+    box-shadow: 0 8px 18px rgba(255, 107, 44, 0.22) !important;
+  }
+
+  .tindahan-primary-wide:hover,
+  .tindahan-primary-wide:active {
+    background: var(--orange-dark) !important;
+  }
+
+  /* ========================= */
+  /* Guide */
+  /* ========================= */
+
+  .tindahan-guide-list {
+    width: 100% !important;
+    margin: 0 !important;
+    border: none !important;
+    background: #ffffff !important;
+  }
+
+  .tindahan-guide-row {
+    min-height: 56px !important;
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) auto !important;
+    align-items: center !important;
+    gap: 16px !important;
+    padding: 0 20px !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    background: #ffffff !important;
+    color: #111111 !important;
+    text-align: left !important;
+  }
+
+  .tindahan-guide-row span {
+    color: #111111 !important;
+    font-size: 16px !important;
+    line-height: 1.25 !important;
+    font-weight: 850 !important;
+  }
+
+  .tindahan-guide-row svg {
+    color: #5f6f75 !important;
+  }
+
+  .tindahan-guide-row:hover,
+  .tindahan-guide-row:active {
+    background: var(--orange-soft) !important;
+  }
+
+  .tindahan-guide-row:hover span,
+  .tindahan-guide-row:active span,
+  .tindahan-guide-row:hover svg,
+  .tindahan-guide-row:active svg {
+    color: var(--orange) !important;
+  }
+
+  /* ========================= */
+  /* Badges */
+  /* ========================= */
+
+  .tindahan-badges-page {
+    background: #ffffff !important;
+  }
+
+  .tindahan-badge-card {
+    width: 100% !important;
+    position: relative !important;
+    display: grid !important;
+    grid-template-columns: 52px minmax(0, 1fr) 32px !important;
+    gap: 12px !important;
+    margin: 0 !important;
+    padding: 20px !important;
+    border: none !important;
+    border-bottom: 1px solid var(--border) !important;
+    background: #ffffff !important;
+  }
+
+  .tindahan-badge-icon {
+    width: 48px !important;
+    height: 48px !important;
+    display: grid !important;
+    place-items: center !important;
+    border: 4px solid var(--orange-border) !important;
+    border-radius: 50% !important;
+    background: var(--orange-soft) !important;
+    color: var(--orange) !important;
+  }
+
+  .tindahan-badge-content h2 {
+    margin: 0 0 4px !important;
+    color: #111111 !important;
+    font-size: 17px !important;
+    line-height: 1.2 !important;
+    font-weight: 950 !important;
+  }
+
+  .tindahan-badge-content p {
+    margin: 0 !important;
+    color: #5f6f75 !important;
+    font-size: 16px !important;
+    line-height: 1.35 !important;
+  }
+
+  .tindahan-badge-content .tindahan-primary-wide {
+    margin-top: 16px !important;
+  }
+
+  .tindahan-info-button {
+    width: 32px !important;
+    height: 32px !important;
+    display: grid !important;
+    place-items: center !important;
+    align-self: center !important;
+    border: none !important;
+    border-radius: 50% !important;
+    background: transparent !important;
+    color: #5f6f75 !important;
+  }
+
+  .tindahan-info-button:hover,
+  .tindahan-info-button:active {
+    background: var(--orange-soft) !important;
+    color: var(--orange) !important;
+  }
+
+  /* ========================= */
+  /* Profile menu rows concernées */
+  /* ========================= */
+
+  .mobile-profile-menu-icon {
+    color: var(--orange) !important;
+  }
+
+  .mobile-profile-menu-item:hover,
+  .mobile-profile-menu-item:active {
+    background: var(--orange-soft) !important;
+  }
+
+  .mobile-profile-menu-item:hover .mobile-profile-menu-icon,
+  .mobile-profile-menu-item:active .mobile-profile-menu-icon,
+  .mobile-profile-menu-item:hover .mobile-profile-menu-main strong,
+  .mobile-profile-menu-item:active .mobile-profile-menu-main strong,
+  .mobile-profile-menu-item:hover .mobile-profile-menu-chevron,
+  .mobile-profile-menu-item:active .mobile-profile-menu-chevron {
+    color: var(--orange) !important;
+  }
+
+  .mobile-profile-menu-value {
+    color: #5f6f75 !important;
+  }
+
+  .mobile-profile-badges-card {
+    color: inherit !important;
+  }
+
+  .mobile-profile-badges-card:hover,
+  .mobile-profile-badges-card:active {
+    background: var(--orange-soft) !important;
+  }
+
+  .mobile-profile-badges-row svg,
+  .mobile-profile-badges-card svg {
+    color: var(--orange) !important;
+  }
+
+  .mobile-profile-progress span {
+    background: var(--orange) !important;
+  }
+}
