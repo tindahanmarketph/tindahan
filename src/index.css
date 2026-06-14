@@ -10305,3 +10305,92 @@ textarea:focus {
     background: var(--orange) !important;
   }
 }
+/* ========================= */
+/* FIX BACKGROUND PROFILE SUBPAGES - TINDAHAN GREY */
+/* À coller tout en bas de src/index.css */
+/* ========================= */
+
+@media (max-width: 760px) {
+  body:has(.mobile-subpage) {
+    background: var(--bg) !important;
+    padding-bottom: 76px !important;
+  }
+
+  .mobile-subpage,
+  .mobile-subpage.tint-background,
+  .tindahan-simple-page,
+  .tindahan-simple-page.tint-background {
+    min-height: calc(100vh - 76px) !important;
+    background: var(--bg) !important;
+    color: #111111 !important;
+    padding: 0 0 86px !important;
+  }
+
+  .mobile-subpage-header {
+    background: #ffffff !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  .tindahan-toggle-row {
+    background: #ffffff !important;
+    border-bottom: 1px solid var(--border) !important;
+  }
+
+  .tindahan-info-note {
+    background: var(--bg) !important;
+  }
+
+  .tindahan-info-note p {
+    color: #5f6f75 !important;
+  }
+
+  .tindahan-donations-block,
+  .tindahan-guide-list,
+  .tindahan-guide-row,
+  .tindahan-badge-card {
+    background: #ffffff !important;
+  }
+
+  .tindahan-badges-page {
+    background: var(--bg) !important;
+  }
+
+  .tindahan-switch {
+    background: #b8c3c7 !important;
+  }
+
+  .tindahan-switch.active {
+    background: var(--orange) !important;
+  }
+
+  .tindahan-primary-wide {
+    background: var(--orange) !important;
+    color: #ffffff !important;
+  }
+
+  .tindahan-primary-wide:hover,
+  .tindahan-primary-wide:active {
+    background: var(--orange-dark) !important;
+  }
+
+  .mobile-bottom-nav {
+    background: #ffffff !important;
+    border-top: 1px solid var(--orange-border) !important;
+  }
+
+  .mobile-bottom-link.active,
+  .mobile-bottom-link.active svg,
+  .mobile-bottom-link.active span {
+    color: var(--orange) !important;
+  }
+
+  .mobile-sell-link,
+  .mobile-sell-link span {
+    color: var(--orange) !important;
+  }
+
+  .mobile-sell-link svg {
+    fill: var(--orange) !important;
+    stroke: var(--orange) !important;
+  }
+}
