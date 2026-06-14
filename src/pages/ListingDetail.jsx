@@ -15,6 +15,8 @@ import {
   getSubcategoryLabel
 } from "../lib/categories";
 import { supabase } from "../lib/supabase";
+import { useAuth } from "../context/AuthContext";
+import { checkIsFavorite, toggleFavorite } from "../lib/favorites";
 import ListingRecommendations from "../components/ListingRecommendations";
 
 const conditionLabels = {
@@ -69,6 +71,7 @@ function getInitials(name) {
 export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { user } = useAuth();
 
   const [listing, setListing] = useState(null);
   const [seller, setSeller] = useState(null);
@@ -76,6 +79,8 @@ export default function ListingDetail() {
   const [photoIndex, setPhotoIndex] = useState(0);
   const [errorMessage, setErrorMessage] = useState("");
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -146,6 +151,29 @@ export default function ListingDetail() {
   }, [id]);
 
   useEffect(() => {
+    let isMounted = true;
+
+    async function loadFavoriteState() {
+      if (!user?.id || !listing?.id) {
+        setIsFavorite(false);
+        return;
+      }
+
+      const favoriteState = await checkIsFavorite(user.id, listing.id);
+
+      if (isMounted) {
+        setIsFavorite(favoriteState);
+      }
+    }
+
+    loadFavoriteState();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user?.id, listing?.id]);
+
+  useEffect(() => {
     async function incrementViews() {
       if (!listing?.id) return;
 
@@ -178,12 +206,6 @@ export default function ListingDetail() {
 
   const conditionLabel =
     conditionLabels[listing?.condition] || listing?.condition || "";
-
-  const sellerName =
-    seller?.username ||
-    listing?.profiles?.username ||
-    listing?.seller?.username ||
-    "Member";
 
   const categoryLabel = listing?.category
     ? getCategoryLabel(listing.category)
@@ -260,6 +282,34 @@ export default function ListingDetail() {
     navigate(`/messages?${params.toString()}`);
   }
 
+  async function handleFavoriteClick(event) {
+    event.preventDefault();
+    event.stopPropagation();
+
+    if (!user) {
+      navigate("/login");
+      return;
+    }
+
+    if (!listing?.id || favoriteLoading) return;
+
+    const previousValue = isFavorite;
+    const nextValue = !previousValue;
+
+    setIsFavorite(nextValue);
+    setFavoriteLoading(true);
+
+    try {
+      await toggleFavorite(user.id, listing.id, previousValue);
+    } catch (error) {
+      console.error("Favorite update error:", error);
+      setIsFavorite(previousValue);
+      alert(error.message || "Unable to update favorites.");
+    } finally {
+      setFavoriteLoading(false);
+    }
+  }
+
   function handleBack() {
     if (window.history.length > 1) {
       navigate(-1);
@@ -325,11 +375,18 @@ export default function ListingDetail() {
             </button>
 
             <button
-              className="mobile-gallery-heart"
+              className={
+                isFavorite
+                  ? "mobile-gallery-heart favorited"
+                  : "mobile-gallery-heart"
+              }
               type="button"
-              aria-label="Add to favorites"
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              aria-pressed={isFavorite}
+              disabled={favoriteLoading}
+              onClick={handleFavoriteClick}
             >
-              <Heart size={22} />
+              <Heart size={22} fill={isFavorite ? "currentColor" : "none"} />
             </button>
 
             {photos.length > 1 && (
@@ -390,11 +447,18 @@ export default function ListingDetail() {
               <h1>{listing.title}</h1>
 
               <button
-                className="product-favorite-button"
+                className={
+                  isFavorite
+                    ? "product-favorite-button favorited"
+                    : "product-favorite-button"
+                }
                 type="button"
-                aria-label="Add to favorites"
+                aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                aria-pressed={isFavorite}
+                disabled={favoriteLoading}
+                onClick={handleFavoriteClick}
               >
-                <Heart size={24} />
+                <Heart size={24} fill={isFavorite ? "currentColor" : "none"} />
               </button>
             </div>
 

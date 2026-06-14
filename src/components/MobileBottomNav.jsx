@@ -1,13 +1,19 @@
 import { Home, Mail, PlusCircle, Search, UserRound } from "lucide-react";
-import { NavLink } from "react-router-dom";
+import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export default function MobileBottomNav() {
+  const location = useLocation();
   const { user, profile } = useAuth();
 
   const profileUrl = user
     ? `/profile/${profile?.username || user?.email?.split("@")[0] || ""}`
     : "/login";
+
+  const isProfileArea =
+    location.pathname.startsWith("/profile") ||
+    location.pathname.startsWith("/favorites") ||
+    location.pathname.startsWith("/settings");
 
   return (
     <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
@@ -59,8 +65,8 @@ export default function MobileBottomNav() {
 
       <NavLink
         to={profileUrl}
-        className={({ isActive }) =>
-          isActive ? "mobile-bottom-link active" : "mobile-bottom-link"
+        className={() =>
+          isProfileArea ? "mobile-bottom-link active" : "mobile-bottom-link"
         }
       >
         <UserRound size={29} />

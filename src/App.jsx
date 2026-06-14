@@ -12,6 +12,7 @@ import Login from "./pages/Login";
 import Register from "./pages/Register";
 import ListingDetail from "./pages/ListingDetail";
 import Profile from "./pages/Profile";
+import Favorites from "./pages/Favorites";
 import NewListing from "./pages/NewListing";
 import HowItWorks from "./pages/HowItWorks";
 import StaticPage from "./pages/StaticPage";
@@ -58,6 +59,15 @@ export default function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/favorites"
+          element={
+            <ProtectedRoute>
+              <Favorites />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/sell"

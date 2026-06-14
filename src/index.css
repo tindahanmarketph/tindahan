@@ -8766,3 +8766,282 @@ textarea:focus {
     padding-top: 18px;
   }
 }
+/* ========================= */
+/* FAVORITES FEATURE - TINDAHAN */
+/* À placer tout en bas de src/index.css */
+/* ========================= */
+
+.heart-floating.favorited,
+.product-favorite-button.favorited,
+.mobile-gallery-heart.favorited {
+  color: var(--orange) !important;
+  background: #ffffff !important;
+}
+
+.heart-floating.favorited {
+  box-shadow: 0 6px 18px rgba(255, 107, 44, 0.22);
+}
+
+.heart-floating:disabled,
+.product-favorite-button:disabled,
+.mobile-gallery-heart:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+.favorites-page {
+  min-height: calc(100vh - 110px);
+  padding: 34px 0 80px;
+  background: #ffffff;
+}
+
+.favorites-container {
+  max-width: 1240px;
+}
+
+.favorites-mobile-header {
+  display: none;
+}
+
+.favorites-desktop-header {
+  margin-bottom: 26px;
+}
+
+.favorites-desktop-header h1 {
+  margin: 0;
+  color: #111111;
+  font-size: 34px;
+  line-height: 1.1;
+  font-weight: 950;
+  letter-spacing: -0.8px;
+}
+
+.favorites-desktop-header p {
+  margin: 8px 0 0;
+  color: #5f6f75;
+  font-size: 16px;
+}
+
+.favorites-grid-section {
+  width: 100%;
+}
+
+.favorites-empty-state {
+  width: min(520px, 100%);
+  margin: 72px auto 0;
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  padding: 38px 26px;
+  border: 1px solid var(--orange-border);
+  border-radius: 22px;
+  background: #ffffff;
+  box-shadow: 0 14px 34px rgba(255, 107, 44, 0.1);
+  text-align: center;
+}
+
+.favorites-empty-icon {
+  width: 74px;
+  height: 74px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.favorites-empty-state h2 {
+  margin: 6px 0 0;
+  color: #111111;
+  font-size: 24px;
+  line-height: 1.15;
+  font-weight: 950;
+}
+
+.favorites-empty-state p {
+  max-width: 360px;
+  margin: 0;
+  color: #5f6f75;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.favorites-empty-button {
+  min-height: 42px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 8px;
+  padding: 0 20px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.25);
+}
+
+.favorites-empty-button:hover {
+  background: var(--orange-dark);
+}
+
+/* ========================= */
+/* MOBILE FAVORITES PAGE */
+/* ========================= */
+
+@media (max-width: 760px) {
+  body:has(.favorites-page) {
+    padding-bottom: 78px;
+    background: #ffffff;
+  }
+
+  body:has(.favorites-page) .navbar,
+  body:has(.favorites-page) .vinted-category-wrapper,
+  body:has(.favorites-page) .site-footer {
+    display: none !important;
+  }
+
+  .favorites-page {
+    min-height: calc(100vh - 76px);
+    padding: 0 0 92px;
+    background: #ffffff;
+  }
+
+  .favorites-mobile-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    height: 92px;
+    display: grid;
+    grid-template-columns: 54px minmax(0, 1fr) 54px;
+    align-items: end;
+    padding: 0 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #ffffff;
+  }
+
+  .favorites-mobile-header h1 {
+    margin: 0;
+    align-self: center;
+    color: #111111;
+    font-size: 24px;
+    line-height: 1;
+    font-weight: 950;
+    letter-spacing: -0.45px;
+    text-align: center;
+  }
+
+  .favorites-mobile-header button,
+  .favorites-mobile-header a {
+    width: 46px;
+    height: 46px;
+    display: grid;
+    place-items: center;
+    align-self: center;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #111111;
+  }
+
+  .favorites-mobile-header button:active,
+  .favorites-mobile-header a:active {
+    background: var(--orange-soft);
+    color: var(--orange);
+  }
+
+  .favorites-container {
+    width: 100%;
+    padding: 14px 10px 0;
+  }
+
+  .favorites-desktop-header {
+    display: none;
+  }
+
+  .favorites-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px 12px;
+  }
+
+  .favorites-page .listing-card {
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+    overflow: visible;
+  }
+
+  .favorites-page .listing-card:hover {
+    transform: none;
+  }
+
+  .favorites-page .listing-image-wrap {
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .favorites-page .listing-info {
+    padding: 8px 0 0;
+  }
+
+  .favorites-page .listing-info h3 {
+    color: #5f6f75;
+    font-size: 16px;
+    font-weight: 500;
+    line-height: 1.22;
+  }
+
+  .favorites-page .listing-price {
+    margin-top: 7px;
+    color: #111111;
+    font-size: 16px;
+    font-weight: 650;
+  }
+
+  .favorites-page .listing-condition {
+    color: #5f6f75;
+    font-size: 15px;
+  }
+
+  .favorites-page .heart-floating {
+    width: 42px;
+    height: 42px;
+    right: 10px;
+    bottom: 10px;
+    color: var(--orange);
+  }
+
+  .favorites-empty-state {
+    width: calc(100% - 32px);
+    margin-top: 82px;
+    padding: 34px 22px;
+    border-radius: 20px;
+  }
+
+  .favorites-empty-state h2 {
+    font-size: 23px;
+  }
+}
+
+@media (max-width: 420px) {
+  .favorites-container {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+
+  .favorites-grid {
+    gap: 20px 10px;
+  }
+
+  .favorites-mobile-header {
+    height: 86px;
+  }
+
+  .favorites-page .listing-info h3 {
+    font-size: 15px;
+  }
+
+  .favorites-page .listing-condition {
+    font-size: 14px;
+  }
+}
