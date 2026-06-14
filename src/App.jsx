@@ -27,6 +27,12 @@ import PromotionTools from "./pages/PromotionTools";
 import Wallet from "./pages/Wallet";
 import Orders from "./pages/Orders";
 
+import Donations from "./pages/Donations";
+import TindaHanGuide from "./pages/TindaHanGuide";
+import HolidayMode from "./pages/HolidayMode";
+import BundleDiscounts from "./pages/BundleDiscounts";
+import Badges from "./pages/Badges";
+
 function ProtectedRoute({ children }) {
   const { user, loadingAuth } = useAuth();
 
@@ -73,6 +79,51 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Favorites />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/badges"
+          element={
+            <ProtectedRoute>
+              <Badges />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/donations"
+          element={
+            <ProtectedRoute>
+              <Donations />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tindahan-guide"
+          element={
+            <ProtectedRoute>
+              <TindaHanGuide />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/holiday-mode"
+          element={
+            <ProtectedRoute>
+              <HolidayMode />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/bundle-discounts"
+          element={
+            <ProtectedRoute>
+              <BundleDiscounts />
             </ProtectedRoute>
           }
         />

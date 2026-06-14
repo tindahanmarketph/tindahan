@@ -9624,3 +9624,318 @@ textarea:focus {
     border-right: 1px solid var(--border);
   }
 }
+/* ========================= */
+/* TINDAHAN MOBILE PROFILE SUBPAGES */
+/* Donations, guide, holiday mode, bundle discounts, badges */
+/* À coller tout en bas de src/index.css */
+/* ========================= */
+
+.mobile-subpage {
+  min-height: 100vh;
+  background: #ffffff;
+  color: #111111;
+  padding-bottom: 86px;
+}
+
+.tint-background {
+  background: #eef3f3;
+}
+
+.mobile-subpage-header {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 52px;
+  align-items: center;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.mobile-subpage-header h1 {
+  margin: 0;
+  color: #111111;
+  font-size: 17px;
+  font-weight: 850;
+  text-align: center;
+  letter-spacing: -0.2px;
+}
+
+.mobile-subpage-header button {
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  justify-self: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #1f2d33;
+}
+
+.mobile-subpage-header button:active {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+/* Donations */
+
+.tindahan-donations-block {
+  padding: 18px 20px;
+  background: #ffffff;
+}
+
+.tindahan-donations-block h2 {
+  margin: 0 0 4px;
+  color: #111111;
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.tindahan-donations-block p {
+  margin: 0 0 16px;
+  color: #5f6f75;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.tindahan-donations-block p button {
+  display: inline;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--orange);
+  font: inherit;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tindahan-primary-wide {
+  width: 100%;
+  min-height: 42px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 7px;
+  background: var(--orange);
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 900;
+  text-align: center;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.22);
+}
+
+.tindahan-primary-wide:hover {
+  background: var(--orange-dark);
+}
+
+/* Guide */
+
+.tindahan-guide-list {
+  display: grid;
+  background: #ffffff;
+}
+
+.tindahan-guide-row {
+  min-height: 56px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  padding: 0 20px;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+  color: #111111;
+  text-align: left;
+}
+
+.tindahan-guide-row span {
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 750;
+}
+
+.tindahan-guide-row svg {
+  color: #5f6f75;
+}
+
+.tindahan-guide-row:active {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.tindahan-guide-row:active svg {
+  color: var(--orange);
+}
+
+/* Toggle pages */
+
+.tindahan-toggle-row {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 18px;
+  padding: 0 20px;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.tindahan-toggle-row strong {
+  color: #111111;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.tindahan-switch {
+  width: 46px;
+  height: 28px;
+  position: relative;
+  border: none;
+  border-radius: 999px;
+  background: #b9c4c7;
+  padding: 3px;
+  transition: background 0.18s ease;
+}
+
+.tindahan-switch span {
+  width: 22px;
+  height: 22px;
+  display: block;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: transform 0.18s ease;
+}
+
+.tindahan-switch.active {
+  background: var(--orange);
+}
+
+.tindahan-switch.active span {
+  transform: translateX(18px);
+}
+
+.tindahan-info-note {
+  padding: 14px 20px;
+  background: #eef3f3;
+}
+
+.tindahan-info-note p {
+  margin: 0;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.tindahan-info-note a,
+.tindahan-info-note button {
+  color: var(--orange);
+}
+
+/* Badges */
+
+.tindahan-badges-page {
+  background: #ffffff;
+}
+
+.tindahan-badge-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr) 32px;
+  gap: 12px;
+  padding: 20px;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.tindahan-badge-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border: 4px solid #cfd8d8;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.tindahan-badge-content h2 {
+  margin: 0 0 4px;
+  color: #111111;
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 900;
+}
+
+.tindahan-badge-content p {
+  margin: 0;
+  color: #5f6f75;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.tindahan-badge-content .tindahan-primary-wide {
+  margin-top: 16px;
+}
+
+.tindahan-info-button {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  align-self: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #5f6f75;
+}
+
+.tindahan-info-button:active {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+/* Desktop fallback */
+
+@media (min-width: 761px) {
+  .mobile-subpage {
+    min-height: calc(100vh - 110px);
+    padding: 40px 0 80px;
+    background: var(--bg);
+  }
+
+  .mobile-subpage-header,
+  .tindahan-donations-block,
+  .tindahan-guide-list,
+  .tindahan-toggle-row,
+  .tindahan-info-note,
+  .tindahan-badge-card {
+    width: min(520px, calc(100% - 32px));
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .mobile-subpage-header {
+    border: 1px solid var(--border);
+    border-radius: 18px 18px 0 0;
+  }
+
+  .tindahan-donations-block,
+  .tindahan-guide-list,
+  .tindahan-toggle-row,
+  .tindahan-info-note,
+  .tindahan-badge-card {
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
+  .tindahan-badge-card:last-child,
+  .tindahan-guide-list {
+    border-bottom: 1px solid var(--border);
+    border-radius: 0 0 18px 18px;
+  }
+}

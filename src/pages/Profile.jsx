@@ -115,11 +115,7 @@ function MobileProfileMenuItem({
   );
 
   if (disabled) {
-    return (
-      <div className="mobile-profile-menu-item disabled">
-        {content}
-      </div>
-    );
+    return <div className="mobile-profile-menu-item disabled">{content}</div>;
   }
 
   return (
@@ -130,10 +126,8 @@ function MobileProfileMenuItem({
 }
 
 function MobileProfileDashboard({
-  profile,
   displayedUsername,
-  displayedAvatar,
-  listingsCount
+  displayedAvatar
 }) {
   return (
     <section className="mobile-profile-dashboard">
@@ -160,7 +154,7 @@ function MobileProfileDashboard({
           </div>
         </Link>
 
-        <div className="mobile-profile-badges-card">
+        <Link to="/badges" className="mobile-profile-badges-card">
           <div className="mobile-profile-badges-row">
             <div>
               <BadgeCheck size={28} />
@@ -173,7 +167,7 @@ function MobileProfileDashboard({
           <div className="mobile-profile-progress">
             <span />
           </div>
-        </div>
+        </Link>
       </div>
 
       <div className="mobile-profile-section">
@@ -223,13 +217,13 @@ function MobileProfileDashboard({
           icon={<WalletCards size={28} />}
           title="Bundle discounts"
           value="Disabled"
-          to="/settings/bundles"
+          to="/bundle-discounts"
         />
 
         <MobileProfileMenuItem
           icon={<Plane size={28} />}
           title="Holiday mode"
-          to="/settings/holiday-mode"
+          to="/holiday-mode"
         />
       </div>
 
@@ -237,7 +231,7 @@ function MobileProfileDashboard({
         <MobileProfileMenuItem
           icon={<CircleHelp size={29} />}
           title="TindaHan Guide"
-          to="/how-it-works"
+          to="/tindahan-guide"
         />
 
         <MobileProfileMenuItem
@@ -383,10 +377,8 @@ export default function Profile() {
     <main className={isOwnProfile ? "profile-page own-profile-page" : "profile-page"}>
       {isOwnProfile && (
         <MobileProfileDashboard
-          profile={profile}
           displayedUsername={displayedUsername}
           displayedAvatar={displayedAvatar}
-          listingsCount={listings.length}
         />
       )}
 
@@ -412,9 +404,7 @@ export default function Profile() {
                 <h1>{displayedUsername}</h1>
                 <p>No reviews yet</p>
 
-                {displayedBio && (
-                  <p className="profile-bio">{displayedBio}</p>
-                )}
+                {displayedBio && <p className="profile-bio">{displayedBio}</p>}
               </div>
 
               {isOwnProfile && (
