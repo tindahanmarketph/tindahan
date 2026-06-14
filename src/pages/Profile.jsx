@@ -216,7 +216,7 @@ function MobileProfileDashboard({
         <MobileProfileMenuItem
           icon={<SlidersHorizontal size={28} />}
           title="Personalisation"
-          to="/settings/profile"
+          to="/personalisation"
         />
 
         <MobileProfileMenuItem

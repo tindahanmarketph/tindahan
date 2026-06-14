@@ -19,6 +19,14 @@ import StaticPage from "./pages/StaticPage";
 import Settings from "./pages/Settings";
 import Messages from "./pages/Messages";
 
+import Personalisation from "./pages/Personalisation";
+import PreferredSizes from "./pages/PreferredSizes";
+import Brands from "./pages/Brands";
+import Members from "./pages/Members";
+import PromotionTools from "./pages/PromotionTools";
+import Wallet from "./pages/Wallet";
+import Orders from "./pages/Orders";
+
 function ProtectedRoute({ children }) {
   const { user, loadingAuth } = useAuth();
 
@@ -65,6 +73,69 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Favorites />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/personalisation"
+          element={
+            <ProtectedRoute>
+              <Personalisation />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/personalisation/sizes"
+          element={
+            <ProtectedRoute>
+              <PreferredSizes />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/personalisation/brands"
+          element={
+            <ProtectedRoute>
+              <Brands />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/personalisation/members"
+          element={
+            <ProtectedRoute>
+              <Members />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/promotion-tools"
+          element={
+            <ProtectedRoute>
+              <PromotionTools />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/wallet"
+          element={
+            <ProtectedRoute>
+              <Wallet />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/orders"
+          element={
+            <ProtectedRoute>
+              <Orders />
             </ProtectedRoute>
           }
         />
