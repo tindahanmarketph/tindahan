@@ -81,6 +81,8 @@ export default function ListingDetail() {
   const [descriptionExpanded, setDescriptionExpanded] = useState(false);
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [showOwnerActions, setShowOwnerActions] = useState(false);
+  const [ownerActionLoading, setOwnerActionLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -92,6 +94,7 @@ export default function ListingDetail() {
       setSeller(null);
       setPhotoIndex(0);
       setDescriptionExpanded(false);
+      setShowOwnerActions(false);
 
       if (!id) {
         setErrorMessage("Missing listing ID.");
@@ -196,6 +199,12 @@ export default function ListingDetail() {
     if (!listing?.photos || !Array.isArray(listing.photos)) return [];
     return listing.photos.filter(Boolean);
   }, [listing]);
+
+  const isOwner = Boolean(
+    user?.id &&
+      listing?.seller_id &&
+      String(user.id) === String(listing.seller_id)
+  );
 
   const price = Number(listing?.price || 0);
   const protection = price * 0.08;
@@ -310,6 +319,71 @@ export default function ListingDetail() {
     }
   }
 
+  async function updateListingStatus(nextStatus) {
+    if (!isOwner || !listing?.id || ownerActionLoading) return;
+
+    setOwnerActionLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("listings")
+        .update({ status: nextStatus })
+        .eq("id", listing.id)
+        .eq("seller_id", user.id);
+
+      if (error) throw error;
+
+      setListing((currentListing) => ({
+        ...currentListing,
+        status: nextStatus
+      }));
+
+      setShowOwnerActions(false);
+    } catch (error) {
+      console.error("Listing status update error:", error);
+      alert(error.message || "Unable to update this listing.");
+    } finally {
+      setOwnerActionLoading(false);
+    }
+  }
+
+  async function deleteOwnerListing() {
+    if (!isOwner || !listing?.id || ownerActionLoading) return;
+
+    const confirmed = window.confirm(
+      "Are you sure you want to delete this listing? This action cannot be undone."
+    );
+
+    if (!confirmed) return;
+
+    setOwnerActionLoading(true);
+
+    try {
+      const { error } = await supabase
+        .from("listings")
+        .delete()
+        .eq("id", listing.id)
+        .eq("seller_id", user.id);
+
+      if (error) throw error;
+
+      setShowOwnerActions(false);
+      navigate("/");
+    } catch (error) {
+      console.error("Listing delete error:", error);
+      alert(error.message || "Unable to delete this listing.");
+    } finally {
+      setOwnerActionLoading(false);
+    }
+  }
+
+  function editOwnerListing() {
+    if (!isOwner || !listing?.id) return;
+
+    setShowOwnerActions(false);
+    navigate(`/sell?edit=${listing.id}`);
+  }
+
   function handleBack() {
     if (window.history.length > 1) {
       navigate(-1);
@@ -366,13 +440,16 @@ export default function ListingDetail() {
               <ChevronLeft size={28} />
             </button>
 
-            <button
-              className="mobile-gallery-more"
-              type="button"
-              aria-label="More options"
-            >
-              <MoreHorizontal size={26} />
-            </button>
+            {isOwner && (
+              <button
+                className="mobile-gallery-more"
+                type="button"
+                aria-label="More options"
+                onClick={() => setShowOwnerActions(true)}
+              >
+                <MoreHorizontal size={26} />
+              </button>
+            )}
 
             <button
               className={
@@ -602,27 +679,29 @@ export default function ListingDetail() {
             </div>
           </section>
 
-          <div className="detail-actions product-desktop-actions">
-            <button
-              className="detail-action-btn detail-offer-btn"
-              type="button"
-              onClick={handleChatWithSeller}
-            >
-              Make an offer
-            </button>
+          {!isOwner && (
+            <div className="detail-actions product-desktop-actions">
+              <button
+                className="detail-action-btn detail-offer-btn"
+                type="button"
+                onClick={handleChatWithSeller}
+              >
+                Make an offer
+              </button>
 
-            <button className="detail-action-btn detail-buy-btn" type="button">
-              Buy
-            </button>
+              <button className="detail-action-btn detail-buy-btn" type="button">
+                Buy
+              </button>
 
-            <button
-              className="detail-action-btn detail-chat-btn"
-              type="button"
-              onClick={handleChatWithSeller}
-            >
-              Chat with seller
-            </button>
-          </div>
+              <button
+                className="detail-action-btn detail-chat-btn"
+                type="button"
+                onClick={handleChatWithSeller}
+              >
+                Chat with seller
+              </button>
+            </div>
+          )}
         </aside>
 
         <section className="detail-recommendations-slot product-recommendations-section">
@@ -630,19 +709,91 @@ export default function ListingDetail() {
         </section>
       </div>
 
-      <div className="mobile-product-cta-bar">
-        <button
-          className="mobile-product-offer-button"
-          type="button"
-          onClick={handleChatWithSeller}
+      {isOwner && showOwnerActions && (
+        <div
+          className="owner-actions-overlay"
+          role="presentation"
+          onClick={() => setShowOwnerActions(false)}
         >
-          Make an offer
-        </button>
+          <section
+            className="owner-actions-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Listing owner actions"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              disabled={ownerActionLoading}
+              onClick={() => updateListingStatus("sold")}
+            >
+              Mark as sold
+            </button>
 
-        <button className="mobile-product-buy-button" type="button">
-          Buy
-        </button>
-      </div>
+            <button
+              type="button"
+              disabled={ownerActionLoading}
+              onClick={() => updateListingStatus("reserved")}
+            >
+              Mark as reserved
+            </button>
+
+            <button
+              type="button"
+              disabled={ownerActionLoading}
+              onClick={() => updateListingStatus("hidden")}
+            >
+              Hide
+            </button>
+
+            <button
+              type="button"
+              disabled={ownerActionLoading}
+              onClick={editOwnerListing}
+            >
+              Edit
+            </button>
+
+            <button
+              type="button"
+              className="danger"
+              disabled={ownerActionLoading}
+              onClick={deleteOwnerListing}
+            >
+              Delete
+            </button>
+          </section>
+
+          <section
+            className="owner-actions-cancel"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              disabled={ownerActionLoading}
+              onClick={() => setShowOwnerActions(false)}
+            >
+              Close
+            </button>
+          </section>
+        </div>
+      )}
+
+      {!isOwner && (
+        <div className="mobile-product-cta-bar">
+          <button
+            className="mobile-product-offer-button"
+            type="button"
+            onClick={handleChatWithSeller}
+          >
+            Make an offer
+          </button>
+
+          <button className="mobile-product-buy-button" type="button">
+            Buy
+          </button>
+        </div>
+      )}
     </main>
   );
 }

@@ -10394,3 +10394,94 @@ textarea:focus {
     stroke: var(--orange) !important;
   }
 }
+/* ========================= */
+/* OWNER LISTING ACTION SHEET - TINDAHAN */
+/* ========================= */
+
+.owner-actions-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  display: grid;
+  align-items: end;
+  padding: 0 16px calc(14px + env(safe-area-inset-bottom));
+  background: rgba(0, 0, 0, 0.42);
+  backdrop-filter: blur(2px);
+}
+
+.owner-actions-sheet,
+.owner-actions-cancel {
+  width: min(420px, 100%);
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.24);
+}
+
+.owner-actions-sheet {
+  margin-bottom: 10px;
+}
+
+.owner-actions-sheet button,
+.owner-actions-cancel button {
+  width: 100%;
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+  color: var(--orange);
+  font-size: 18px;
+  font-weight: 750;
+  text-align: center;
+}
+
+.owner-actions-sheet button:last-child {
+  border-bottom: none;
+}
+
+.owner-actions-sheet button:hover,
+.owner-actions-sheet button:active,
+.owner-actions-cancel button:hover,
+.owner-actions-cancel button:active {
+  background: var(--orange-soft);
+  color: var(--orange-dark);
+}
+
+.owner-actions-sheet button.danger {
+  color: #e3342f;
+  font-weight: 850;
+}
+
+.owner-actions-sheet button.danger:hover,
+.owner-actions-sheet button.danger:active {
+  background: #fff1f0;
+  color: #c62828;
+}
+
+.owner-actions-sheet button:disabled,
+.owner-actions-cancel button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.owner-actions-cancel button {
+  min-height: 56px;
+  border-bottom: none;
+  color: var(--orange);
+  font-weight: 950;
+}
+
+@media (min-width: 761px) {
+  .owner-actions-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .owner-actions-sheet,
+  .owner-actions-cancel {
+    width: 380px;
+  }
+}
