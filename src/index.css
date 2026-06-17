@@ -10485,3 +10485,269 @@ textarea:focus {
     width: 380px;
   }
 }
+/* ========================= */
+/* LISTING CARD PROTECTED PRICE - TINDAHAN */
+/* ========================= */
+
+.listing-protected-price {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--orange);
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 850;
+  text-align: left;
+  cursor: pointer;
+}
+
+.listing-protected-price svg {
+  flex: none;
+  color: var(--orange);
+  stroke-width: 2.5;
+}
+
+.listing-protected-price:hover {
+  color: var(--orange-dark);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+/* ========================= */
+/* PRICE DETAILS BOTTOM SHEET - TINDAHAN */
+/* ========================= */
+
+.price-details-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 280;
+  display: grid;
+  align-items: end;
+  background: rgba(0, 0, 0, 0.46);
+  backdrop-filter: blur(2px);
+}
+
+.price-details-sheet {
+  width: min(480px, 100%);
+  max-height: 86vh;
+  margin: 0 auto;
+  overflow: hidden;
+  border-radius: 18px 18px 0 0;
+  background: #ffffff;
+  box-shadow: 0 -18px 60px rgba(0, 0, 0, 0.22);
+  animation: priceDetailsIn 0.18s ease forwards;
+}
+
+.price-details-header {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.price-details-header h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 18px;
+  line-height: 1.1;
+  font-weight: 950;
+  text-align: center;
+}
+
+.price-details-header button {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #1f2d33;
+}
+
+.price-details-header button:hover,
+.price-details-header button:active {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.price-details-body {
+  display: grid;
+  max-height: calc(86vh - 58px);
+  overflow-y: auto;
+  background: #ffffff;
+}
+
+.price-details-product {
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.price-details-product-image {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eeeeee;
+  color: #5f6f75;
+}
+
+.price-details-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.price-details-product strong {
+  display: block;
+  overflow: hidden;
+  color: #111111;
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 900;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.price-details-product span {
+  display: block;
+  margin-top: 3px;
+  color: #111111;
+  font-size: 17px;
+  font-weight: 850;
+}
+
+.price-details-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 13px;
+  padding: 18px 20px;
+  border-bottom: 1px solid var(--border);
+}
+
+.price-details-icon {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.price-details-row strong {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #111111;
+  font-size: 16px;
+  line-height: 1.25;
+  font-weight: 950;
+}
+
+.price-details-row strong svg {
+  color: #5f6f75;
+}
+
+.price-details-row span {
+  display: block;
+  margin-top: 4px;
+  color: #111111;
+  font-size: 16px;
+  font-weight: 850;
+}
+
+.price-details-row small {
+  display: block;
+  margin-top: 3px;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.25;
+}
+
+.price-details-muted-label {
+  padding: 16px 20px 0;
+  color: #7a858a;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.price-details-note {
+  margin: 0;
+  padding: 18px 20px 24px;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.45;
+  background: #ffffff;
+}
+
+@keyframes priceDetailsIn {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Desktop fallback */
+
+@media (min-width: 761px) {
+  .price-details-overlay {
+    align-items: center;
+    padding: 24px;
+  }
+
+  .price-details-sheet {
+    border-radius: 18px;
+  }
+}
+
+/* Mobile listing card refinement */
+
+@media (max-width: 760px) {
+  .listing-protected-price {
+    max-width: 100%;
+    font-size: 13px;
+    font-weight: 900;
+  }
+
+  .listing-price {
+    margin-top: 5px;
+  }
+
+  .price-details-sheet {
+    width: 100%;
+  }
+}
+
+@media (max-width: 420px) {
+  .listing-protected-price {
+    font-size: 12.5px;
+  }
+
+  .price-details-product,
+  .price-details-row,
+  .price-details-muted-label,
+  .price-details-note {
+    padding-left: 17px;
+    padding-right: 17px;
+  }
+}
