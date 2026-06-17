@@ -10751,3 +10751,207 @@ textarea:focus {
     padding-right: 17px;
   }
 }
+/* ========================= */
+/* BUYER PROTECTION INFO PAGE - TINDAHAN */
+/* ========================= */
+
+.price-details-title-with-info {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 6px;
+}
+
+.price-details-info-button {
+  width: 26px;
+  height: 26px;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  border: 1.5px solid #8b989c;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #5f6f75;
+  padding: 0;
+}
+
+.price-details-info-button:hover,
+.price-details-info-button:active {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: var(--orange-soft);
+}
+
+.buyer-protection-info-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 420;
+  display: grid;
+  place-items: center;
+  background: rgba(0, 0, 0, 0.46);
+  backdrop-filter: blur(2px);
+}
+
+.buyer-protection-info-page {
+  width: min(430px, 100%);
+  height: min(100vh, 900px);
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  overflow: hidden;
+  background: #ffffff;
+  color: #111111;
+}
+
+.buyer-protection-info-content {
+  overflow-y: auto;
+  padding: 54px 28px 24px;
+  text-align: left;
+}
+
+.buyer-protection-info-icon {
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto 18px;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.buyer-protection-info-content h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 24px;
+  line-height: 1.1;
+  font-weight: 950;
+  text-align: center;
+  letter-spacing: -0.4px;
+}
+
+.buyer-protection-info-link {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin: 8px auto 28px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--orange);
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 750;
+  text-align: center;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.buyer-protection-info-intro {
+  margin: 0 0 26px;
+  color: #5f6f75;
+  font-size: 17px;
+  line-height: 1.45;
+}
+
+.buyer-protection-info-section {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: 12px;
+  margin-bottom: 30px;
+}
+
+.buyer-protection-info-section > svg {
+  margin-top: 2px;
+  color: var(--orange);
+  stroke-width: 2.2;
+}
+
+.buyer-protection-info-section h3 {
+  margin: 0 0 4px;
+  color: #111111;
+  font-size: 17px;
+  line-height: 1.25;
+  font-weight: 950;
+}
+
+.buyer-protection-info-section p {
+  margin: 0 0 16px;
+  color: #5f6f75;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.buyer-protection-info-section p:last-child {
+  margin-bottom: 0;
+}
+
+.buyer-protection-info-section strong {
+  color: #34444a;
+  font-weight: 950;
+}
+
+.buyer-protection-info-section ul {
+  margin: 4px 0 22px;
+  padding-left: 22px;
+  color: #5f6f75;
+  font-size: 16px;
+  line-height: 1.35;
+}
+
+.buyer-protection-info-cta {
+  padding: 14px 28px calc(14px + env(safe-area-inset-bottom));
+  background: #ffffff;
+  border-top: 1px solid var(--border);
+}
+
+.buyer-protection-info-cta button {
+  width: 100%;
+  min-height: 46px;
+  border: none;
+  border-radius: 8px;
+  background: var(--orange);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.25);
+}
+
+.buyer-protection-info-cta button:hover,
+.buyer-protection-info-cta button:active {
+  background: var(--orange-dark);
+}
+
+/* Mobile full screen */
+
+@media (max-width: 760px) {
+  .buyer-protection-info-overlay {
+    display: block;
+    background: rgba(0, 0, 0, 0.48);
+  }
+
+  .buyer-protection-info-page {
+    width: 100%;
+    height: 100vh;
+    height: 100dvh;
+  }
+
+  .buyer-protection-info-content {
+    padding: 56px 28px 24px;
+  }
+}
+
+@media (max-width: 420px) {
+  .buyer-protection-info-content {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .buyer-protection-info-cta {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+
+  .buyer-protection-info-section p,
+  .buyer-protection-info-section ul {
+    font-size: 15.5px;
+  }
+}

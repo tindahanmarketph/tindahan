@@ -1,4 +1,13 @@
-import { Heart, Info, Package, ShieldCheck, X } from "lucide-react";
+import {
+  Heart,
+  Info,
+  LockKeyhole,
+  MessageCircle,
+  Package,
+  Receipt,
+  ShieldCheck,
+  X
+} from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
@@ -32,6 +41,7 @@ export default function ListingCard({ listing }) {
   const [isFavorite, setIsFavorite] = useState(false);
   const [favoriteLoading, setFavoriteLoading] = useState(false);
   const [showPriceDetails, setShowPriceDetails] = useState(false);
+  const [showProtectionInfo, setShowProtectionInfo] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -106,6 +116,22 @@ export default function ListingCard({ listing }) {
     }
 
     setShowPriceDetails(false);
+    setShowProtectionInfo(false);
+  }
+
+  function openProtectionInfo(event) {
+    event.preventDefault();
+    event.stopPropagation();
+    setShowProtectionInfo(true);
+  }
+
+  function closeProtectionInfo(event) {
+    if (event) {
+      event.preventDefault();
+      event.stopPropagation();
+    }
+
+    setShowProtectionInfo(false);
   }
 
   return (
@@ -224,9 +250,18 @@ export default function ListingCard({ listing }) {
                 </div>
 
                 <div>
-                  <strong>
-                    Buyer Protection fees <Info size={16} />
+                  <strong className="price-details-title-with-info">
+                    Buyer Protection fees
+                    <button
+                      type="button"
+                      className="price-details-info-button"
+                      onClick={openProtectionInfo}
+                      aria-label="Learn more about Buyer Protection"
+                    >
+                      <Info size={16} />
+                    </button>
                   </strong>
+
                   <span>₱{formatPrice(buyerProtection)}</span>
                 </div>
               </div>
@@ -252,6 +287,95 @@ export default function ListingCard({ listing }) {
                 TindaHan. These fees are added every time a purchase is validated.
                 The item price is set by the seller and can be negotiated.
               </p>
+            </div>
+          </section>
+        </div>
+      )}
+
+      {showProtectionInfo && (
+        <div
+          className="buyer-protection-info-overlay"
+          role="presentation"
+          onClick={closeProtectionInfo}
+        >
+          <section
+            className="buyer-protection-info-page"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Buyer Protection information"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="buyer-protection-info-content">
+              <div className="buyer-protection-info-icon">
+                <ShieldCheck size={36} />
+              </div>
+
+              <h2>Buyer Protection</h2>
+
+              <button
+                type="button"
+                className="buyer-protection-info-link"
+                onClick={(event) => event.preventDefault()}
+              >
+                Learn how we calculate Buyer Protection fees
+              </button>
+
+              <p className="buyer-protection-info-intro">
+                For every purchase made on TindaHan, we help protect your order.
+              </p>
+
+              <article className="buyer-protection-info-section">
+                <Receipt size={22} />
+                <div>
+                  <h3>Refund policy</h3>
+                  <p>You may be eligible for a refund if your order:</p>
+                  <ul>
+                    <li>is lost or never delivered</li>
+                    <li>arrives damaged</li>
+                    <li>is significantly not as described</li>
+                  </ul>
+
+                  <p>
+                    You have <strong>2 days to submit a claim</strong> from the
+                    moment the delivery is marked as completed or notified.
+                    Unless agreed otherwise, buyers cover return shipping fees.
+                  </p>
+                </div>
+              </article>
+
+              <article className="buyer-protection-info-section">
+                <LockKeyhole size={22} />
+                <div>
+                  <h3>Secure transactions</h3>
+                  <p>
+                    Your payment is kept secure during the transaction. We do not
+                    transfer the money to the seller until you have received your
+                    order and confirmed that everything is okay.
+                  </p>
+
+                  <p>
+                    Payments are processed securely, and the seller never has
+                    access to your payment information.
+                  </p>
+                </div>
+              </article>
+
+              <article className="buyer-protection-info-section">
+                <MessageCircle size={22} />
+                <div>
+                  <h3>Dedicated support</h3>
+                  <p>
+                    Our support team is here to help if something goes wrong with
+                    your order.
+                  </p>
+                </div>
+              </article>
+            </div>
+
+            <div className="buyer-protection-info-cta">
+              <button type="button" onClick={closeProtectionInfo}>
+                I understand
+              </button>
             </div>
           </section>
         </div>
