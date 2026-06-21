@@ -19,6 +19,7 @@ import StaticPage from "./pages/StaticPage";
 import Settings from "./pages/Settings";
 import Messages from "./pages/Messages";
 import Checkout from "./pages/Checkout";
+import SafeMeetUp from "./pages/SafeMeetUp";
 
 import Personalisation from "./pages/Personalisation";
 import PreferredSizes from "./pages/PreferredSizes";
@@ -61,7 +62,8 @@ export default function App() {
     location.pathname.startsWith("/item/") ||
     location.pathname.startsWith("/listing/") ||
     location.pathname.startsWith("/listings/") ||
-    location.pathname.startsWith("/checkout/");
+    location.pathname.startsWith("/checkout/") ||
+    location.pathname.startsWith("/safe-meetup/");
 
   return (
     <>
@@ -81,6 +83,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Checkout />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/safe-meetup/:id"
+          element={
+            <ProtectedRoute>
+              <SafeMeetUp />
             </ProtectedRoute>
           }
         />

@@ -238,7 +238,7 @@ export default function Checkout() {
 
   function handleDeliveryDetailsClick() {
     if (selectedDelivery === "meetup") {
-      navigate(`/safe-meetup/${id}?mode=popup`);
+      navigate(`/safe-meetup/${id}`);
       return;
     }
 
@@ -254,7 +254,7 @@ export default function Checkout() {
     if (!listing || isPaying) return;
 
     if (selectedDelivery === "meetup" && !meetupPlan) {
-      navigate(`/safe-meetup/${id}?mode=popup`);
+      navigate(`/safe-meetup/${id}`);
       return;
     }
 
