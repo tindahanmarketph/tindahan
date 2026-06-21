@@ -12649,3 +12649,20 @@ textarea:focus {
     grid-template-columns: 1fr;
   }
 }
+/* ========================= */
+/* CHECKOUT MEET-UP DETAILS BUTTON FIX */
+/* ========================= */
+
+.checkout-meetup-details-button {
+  border-color: var(--orange) !important;
+  background: var(--orange-soft) !important;
+}
+
+.checkout-meetup-details-button span {
+  color: #111111 !important;
+  font-weight: 900 !important;
+}
+
+.checkout-meetup-details-button strong {
+  color: var(--orange) !important;
+}

@@ -22,7 +22,8 @@ const deliveryOptions = [
   {
     id: "meetup",
     title: "Meet Up In Person",
-    subtitle: "Meet safely at a verified public location recommended by TindaHan.",
+    subtitle:
+      "Meet safely at a verified public location recommended by TindaHan.",
     price: 0,
     icon: Users
   },
@@ -210,12 +211,6 @@ export default function Checkout() {
   const firstPhoto = listing?.photos?.[0];
 
   function handleDeliverySelect(optionId) {
-    if (optionId === "meetup") {
-      setSelectedDelivery("meetup");
-      navigate(`/safe-meetup/${id}`);
-      return;
-    }
-
     setSelectedDelivery(optionId);
   }
 
@@ -243,7 +238,12 @@ export default function Checkout() {
 
   function handleDeliveryDetailsClick() {
     if (selectedDelivery === "meetup") {
-      navigate(`/safe-meetup/${id}`);
+      navigate(`/safe-meetup/${id}?mode=popup`);
+      return;
+    }
+
+    if (selectedDelivery === "pickup") {
+      alert("Pick-up point selection will be available in the next prototype step.");
       return;
     }
 
@@ -252,6 +252,11 @@ export default function Checkout() {
 
   function handlePay() {
     if (!listing || isPaying) return;
+
+    if (selectedDelivery === "meetup" && !meetupPlan) {
+      navigate(`/safe-meetup/${id}?mode=popup`);
+      return;
+    }
 
     setIsPaying(true);
 
@@ -309,7 +314,9 @@ export default function Checkout() {
           <button type="button" onClick={() => navigate(-1)} aria-label="Go back">
             <ChevronLeft size={26} />
           </button>
+
           <h1>Checkout</h1>
+
           <span />
         </header>
 
@@ -344,8 +351,13 @@ export default function Checkout() {
 
         <div className="checkout-product-info">
           <h2>{listing.title}</h2>
+
           {listing.brand && <p>{listing.brand}</p>}
-          {listing.condition && <span>{listing.condition.replaceAll("_", " ")}</span>}
+
+          {listing.condition && (
+            <span>{listing.condition.replaceAll("_", " ")}</span>
+          )}
+
           <strong>₱{formatPrice(itemPrice)}</strong>
         </div>
       </section>
@@ -412,11 +424,19 @@ export default function Checkout() {
       </section>
 
       <section className="checkout-section">
-        <h2>{selectedDelivery === "meetup" ? "Safe Meet-Up details" : "Delivery details"}</h2>
+        <h2>
+          {selectedDelivery === "meetup"
+            ? "Safe Meet-Up details"
+            : "Delivery details"}
+        </h2>
 
         <button
           type="button"
-          className="checkout-row-button"
+          className={
+            selectedDelivery === "meetup"
+              ? "checkout-row-button checkout-meetup-details-button"
+              : "checkout-row-button"
+          }
           onClick={handleDeliveryDetailsClick}
         >
           <span>
@@ -428,12 +448,14 @@ export default function Checkout() {
               ? "Choose a pick-up point"
               : "Add delivery instructions"}
           </span>
+
           <strong>{selectedDelivery === "meetup" && meetupPlan ? "›" : "+"}</strong>
         </button>
 
         {selectedDelivery === "meetup" && meetupPlan && (
           <div className="checkout-meetup-summary">
             <ShieldCheck size={19} />
+
             <div>
               <strong>{meetupPlan.spot.name}</strong>
               <p>
@@ -485,7 +507,9 @@ export default function Checkout() {
         </div>
 
         <div className="checkout-price-row">
-          <span>{selectedDelivery === "meetup" ? "Meet-up fee" : "Shipping fees"}</span>
+          <span>
+            {selectedDelivery === "meetup" ? "Meet-up fee" : "Shipping fees"}
+          </span>
           <strong>₱{formatPrice(delivery.price)}</strong>
         </div>
       </section>
@@ -500,7 +524,7 @@ export default function Checkout() {
           type="button"
           className={getPaymentButtonClass(payment.id)}
           onClick={handlePay}
-          disabled={isPaying || (selectedDelivery === "meetup" && !meetupPlan)}
+          disabled={isPaying}
         >
           {selectedDelivery === "meetup" && !meetupPlan
             ? "Choose a meeting point"
@@ -665,6 +689,7 @@ export default function Checkout() {
             <header>
               <span />
               <h2>Payment methods</h2>
+
               <button
                 type="button"
                 onClick={() => setShowPaymentSheet(false)}
