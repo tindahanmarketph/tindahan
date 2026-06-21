@@ -229,7 +229,6 @@ export default function ListingDetail() {
     : "";
 
   const description = listing?.description?.trim() || "No description provided.";
-
   const shouldShowDescriptionToggle = description.length > 150;
 
   const displayedDescription =
@@ -289,6 +288,11 @@ export default function ListingDetail() {
     }
 
     navigate(`/messages?${params.toString()}`);
+  }
+
+  function handleBuyNow() {
+    if (!listing?.id) return;
+    navigate(`/checkout/${listing.id}`);
   }
 
   async function handleFavoriteClick(event) {
@@ -688,7 +692,11 @@ export default function ListingDetail() {
               Make an offer
             </button>
 
-            <button className="detail-action-btn detail-buy-btn" type="button">
+            <button
+              className="detail-action-btn detail-buy-btn"
+              type="button"
+              onClick={handleBuyNow}
+            >
               Buy
             </button>
 
@@ -786,7 +794,11 @@ export default function ListingDetail() {
           Make an offer
         </button>
 
-        <button className="mobile-product-buy-button" type="button">
+        <button
+          className="mobile-product-buy-button"
+          type="button"
+          onClick={handleBuyNow}
+        >
           Buy
         </button>
       </div>
