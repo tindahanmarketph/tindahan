@@ -7,18 +7,25 @@ import {
   Landmark,
   MapPin,
   Package,
-  Phone,
   ShieldCheck,
   Smartphone,
   Truck,
+  Users,
   X
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 
 const deliveryOptions = [
+  {
+    id: "meetup",
+    title: "Meet Up In Person",
+    subtitle: "Meet safely at a verified public location recommended by TindaHan.",
+    price: 0,
+    icon: Users
+  },
   {
     id: "pickup",
     title: "Pick-up point",
@@ -97,10 +104,15 @@ function getPaymentButtonClass(paymentId) {
   return `checkout-pay-button ${paymentId}`;
 }
 
+function getMeetupStorageKey(listingId) {
+  return `tindahan_safe_meetup_${listingId}`;
+}
+
 export default function Checkout() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
 
   const [listing, setListing] = useState(null);
   const [seller, setSeller] = useState(null);
@@ -112,6 +124,7 @@ export default function Checkout() {
   const [address, setAddress] = useState(defaultAddress);
   const [draftAddress, setDraftAddress] = useState(defaultAddress);
   const [isPaying, setIsPaying] = useState(false);
+  const [meetupPlan, setMeetupPlan] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -148,6 +161,24 @@ export default function Checkout() {
         }
       }
 
+      try {
+        const savedMeetup = JSON.parse(
+          localStorage.getItem(getMeetupStorageKey(id)) || "null"
+        );
+
+        if (savedMeetup) {
+          setMeetupPlan(savedMeetup);
+        }
+
+        if (savedMeetup || searchParams.get("delivery") === "meetup") {
+          setSelectedDelivery("meetup");
+        }
+      } catch {
+        if (searchParams.get("delivery") === "meetup") {
+          setSelectedDelivery("meetup");
+        }
+      }
+
       setLoading(false);
     }
 
@@ -156,7 +187,7 @@ export default function Checkout() {
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [id, searchParams]);
 
   const itemPrice = Number(listing?.price || 0);
   const buyerProtection = itemPrice * 0.08;
@@ -177,6 +208,16 @@ export default function Checkout() {
 
   const total = itemPrice + buyerProtection + delivery.price;
   const firstPhoto = listing?.photos?.[0];
+
+  function handleDeliverySelect(optionId) {
+    if (optionId === "meetup") {
+      setSelectedDelivery("meetup");
+      navigate(`/safe-meetup/${id}`);
+      return;
+    }
+
+    setSelectedDelivery(optionId);
+  }
 
   function openAddressEditor() {
     setDraftAddress(address);
@@ -200,6 +241,15 @@ export default function Checkout() {
     setShowPaymentSheet(false);
   }
 
+  function handleDeliveryDetailsClick() {
+    if (selectedDelivery === "meetup") {
+      navigate(`/safe-meetup/${id}`);
+      return;
+    }
+
+    alert("Delivery details will be available in the next prototype step.");
+  }
+
   function handlePay() {
     if (!listing || isPaying) return;
 
@@ -209,6 +259,7 @@ export default function Checkout() {
       id: `order-${Date.now()}`,
       listingId: listing.id,
       listingTitle: listing.title,
+      listingPhoto: firstPhoto || "",
       buyerId: user?.id || null,
       sellerId: listing.seller_id || null,
       sellerUsername: seller?.username || "",
@@ -219,8 +270,9 @@ export default function Checkout() {
       deliveryMethod: selectedDelivery,
       paymentMethod: selectedPayment,
       address,
+      meetup: selectedDelivery === "meetup" ? meetupPlan : null,
       createdAt: new Date().toISOString(),
-      status: "pending"
+      status: selectedDelivery === "meetup" ? "meetup_request_sent" : "pending"
     };
 
     try {
@@ -298,26 +350,28 @@ export default function Checkout() {
         </div>
       </section>
 
-      <section className="checkout-section">
-        <h2>Delivery address</h2>
+      {selectedDelivery !== "meetup" && (
+        <section className="checkout-section">
+          <h2>Delivery address</h2>
 
-        <button
-          type="button"
-          className="checkout-address-card"
-          onClick={openAddressEditor}
-        >
-          <div>
-            <strong>{address.fullName}</strong>
-            <span>{address.mobileNumber}</span>
-            <p>
-              {address.street}, {address.barangay}, {address.city},{" "}
-              {address.province}, {address.region}, {address.postalCode}
-            </p>
-          </div>
+          <button
+            type="button"
+            className="checkout-address-card"
+            onClick={openAddressEditor}
+          >
+            <div>
+              <strong>{address.fullName}</strong>
+              <span>{address.mobileNumber}</span>
+              <p>
+                {address.street}, {address.barangay}, {address.city},{" "}
+                {address.province}, {address.region}, {address.postalCode}
+              </p>
+            </div>
 
-          <Edit3 size={21} />
-        </button>
-      </section>
+            <Edit3 size={21} />
+          </button>
+        </section>
+      )}
 
       <section className="checkout-section">
         <h2>Delivery options</h2>
@@ -336,14 +390,18 @@ export default function Checkout() {
                     ? "checkout-delivery-option active"
                     : "checkout-delivery-option"
                 }
-                onClick={() => setSelectedDelivery(option.id)}
+                onClick={() => handleDeliverySelect(option.id)}
               >
                 <Icon size={24} />
 
                 <div>
                   <strong>{option.title}</strong>
                   <span>{option.subtitle}</span>
-                  <p>from ₱{formatPrice(option.price)}</p>
+                  <p>
+                    {option.id === "meetup"
+                      ? "Free"
+                      : `from ₱${formatPrice(option.price)}`}
+                  </p>
                 </div>
 
                 <span className="checkout-radio">{isActive && "✓"}</span>
@@ -354,16 +412,37 @@ export default function Checkout() {
       </section>
 
       <section className="checkout-section">
-        <h2>Delivery details</h2>
+        <h2>{selectedDelivery === "meetup" ? "Safe Meet-Up details" : "Delivery details"}</h2>
 
-        <button type="button" className="checkout-row-button">
+        <button
+          type="button"
+          className="checkout-row-button"
+          onClick={handleDeliveryDetailsClick}
+        >
           <span>
-            {selectedDelivery === "pickup"
+            {selectedDelivery === "meetup"
+              ? meetupPlan
+                ? `${meetupPlan.spot.name} · ${meetupPlan.time}`
+                : "Choose a safe meeting point"
+              : selectedDelivery === "pickup"
               ? "Choose a pick-up point"
               : "Add delivery instructions"}
           </span>
-          <strong>+</strong>
+          <strong>{selectedDelivery === "meetup" && meetupPlan ? "›" : "+"}</strong>
         </button>
+
+        {selectedDelivery === "meetup" && meetupPlan && (
+          <div className="checkout-meetup-summary">
+            <ShieldCheck size={19} />
+            <div>
+              <strong>{meetupPlan.spot.name}</strong>
+              <p>
+                Safety Score {meetupPlan.spot.score}/100 · {meetupPlan.date} at{" "}
+                {meetupPlan.time}
+              </p>
+            </div>
+          </div>
+        )}
       </section>
 
       <section className="checkout-section">
@@ -406,7 +485,7 @@ export default function Checkout() {
         </div>
 
         <div className="checkout-price-row">
-          <span>Shipping fees</span>
+          <span>{selectedDelivery === "meetup" ? "Meet-up fee" : "Shipping fees"}</span>
           <strong>₱{formatPrice(delivery.price)}</strong>
         </div>
       </section>
@@ -421,9 +500,13 @@ export default function Checkout() {
           type="button"
           className={getPaymentButtonClass(payment.id)}
           onClick={handlePay}
-          disabled={isPaying}
+          disabled={isPaying || (selectedDelivery === "meetup" && !meetupPlan)}
         >
-          {isPaying ? "Processing..." : payment.buttonLabel}
+          {selectedDelivery === "meetup" && !meetupPlan
+            ? "Choose a meeting point"
+            : isPaying
+            ? "Processing..."
+            : payment.buttonLabel}
         </button>
 
         <p>
