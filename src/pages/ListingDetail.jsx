@@ -679,29 +679,27 @@ export default function ListingDetail() {
             </div>
           </section>
 
-          {!isOwner && (
-            <div className="detail-actions product-desktop-actions">
-              <button
-                className="detail-action-btn detail-offer-btn"
-                type="button"
-                onClick={handleChatWithSeller}
-              >
-                Make an offer
-              </button>
+          <div className="detail-actions product-desktop-actions">
+            <button
+              className="detail-action-btn detail-offer-btn"
+              type="button"
+              onClick={handleChatWithSeller}
+            >
+              Make an offer
+            </button>
 
-              <button className="detail-action-btn detail-buy-btn" type="button">
-                Buy
-              </button>
+            <button className="detail-action-btn detail-buy-btn" type="button">
+              Buy
+            </button>
 
-              <button
-                className="detail-action-btn detail-chat-btn"
-                type="button"
-                onClick={handleChatWithSeller}
-              >
-                Chat with seller
-              </button>
-            </div>
-          )}
+            <button
+              className="detail-action-btn detail-chat-btn"
+              type="button"
+              onClick={handleChatWithSeller}
+            >
+              Chat with seller
+            </button>
+          </div>
         </aside>
 
         <section className="detail-recommendations-slot product-recommendations-section">
@@ -779,21 +777,19 @@ export default function ListingDetail() {
         </div>
       )}
 
-      {!isOwner && (
-        <div className="mobile-product-cta-bar">
-          <button
-            className="mobile-product-offer-button"
-            type="button"
-            onClick={handleChatWithSeller}
-          >
-            Make an offer
-          </button>
+      <div className="mobile-product-cta-bar">
+        <button
+          className="mobile-product-offer-button"
+          type="button"
+          onClick={handleChatWithSeller}
+        >
+          Make an offer
+        </button>
 
-          <button className="mobile-product-buy-button" type="button">
-            Buy
-          </button>
-        </div>
-      )}
+        <button className="mobile-product-buy-button" type="button">
+          Buy
+        </button>
+      </div>
     </main>
   );
 }
