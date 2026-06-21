@@ -18,6 +18,7 @@ import HowItWorks from "./pages/HowItWorks";
 import StaticPage from "./pages/StaticPage";
 import Settings from "./pages/Settings";
 import Messages from "./pages/Messages";
+import Checkout from "./pages/Checkout";
 
 import Personalisation from "./pages/Personalisation";
 import PreferredSizes from "./pages/PreferredSizes";
@@ -59,7 +60,8 @@ export default function App() {
   const isProductPage =
     location.pathname.startsWith("/item/") ||
     location.pathname.startsWith("/listing/") ||
-    location.pathname.startsWith("/listings/");
+    location.pathname.startsWith("/listings/") ||
+    location.pathname.startsWith("/checkout/");
 
   return (
     <>
@@ -73,6 +75,15 @@ export default function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/checkout/:id"
+          element={
+            <ProtectedRoute>
+              <Checkout />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/favorites"
