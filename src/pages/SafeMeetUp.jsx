@@ -7,6 +7,7 @@ import {
   Navigation,
   ShieldCheck,
   ShoppingBag,
+  Star,
   Store,
   Sun,
   Utensils,
@@ -15,7 +16,14 @@ import {
 import { useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
-const filters = ["Recommended", "Mall", "Coffee Shop", "Fast Food", "Bank", "Nearby"];
+const filters = [
+  "Recommended",
+  "Mall",
+  "Coffee Shop",
+  "Fast Food",
+  "Bank",
+  "Nearby"
+];
 
 const safeSpots = [
   {
@@ -26,9 +34,9 @@ const safeSpots = [
     score: 95,
     buyerDistance: "2.1 km",
     sellerDistance: "1.2 km",
-    address: "SM Megamall, Mandaluyong City",
-    tags: ["CCTV monitored", "High foot traffic", "Indoor location", "Well-lit area"],
-    position: { top: "28%", left: "55%" }
+    address: "SM Megamall, Mandaluyong City, Metro Manila",
+    googleQuery: "Starbucks SM Megamall Mandaluyong",
+    tags: ["CCTV monitored", "High foot traffic", "Indoor location", "Well-lit area"]
   },
   {
     id: "sm-megamall",
@@ -38,9 +46,9 @@ const safeSpots = [
     score: 94,
     buyerDistance: "2.4 km",
     sellerDistance: "1.5 km",
-    address: "SM Megamall, Ortigas Center",
-    tags: ["Security guards nearby", "Indoor location", "High foot traffic", "Open late"],
-    position: { top: "38%", left: "42%" }
+    address: "SM Megamall, Ortigas Center, Mandaluyong",
+    googleQuery: "SM Megamall Mandaluyong",
+    tags: ["Security guards nearby", "Indoor location", "High foot traffic", "Open late"]
   },
   {
     id: "jollibee-ortigas",
@@ -51,8 +59,8 @@ const safeSpots = [
     buyerDistance: "1.8 km",
     sellerDistance: "1.7 km",
     address: "Ortigas Center, Pasig City",
-    tags: ["Public location", "High foot traffic", "Well-lit area", "Easy to find"],
-    position: { top: "50%", left: "62%" }
+    googleQuery: "Jollibee Ortigas Center Pasig",
+    tags: ["Public location", "High foot traffic", "Well-lit area", "Easy to find"]
   },
   {
     id: "bdo-megamall",
@@ -63,8 +71,8 @@ const safeSpots = [
     buyerDistance: "2.2 km",
     sellerDistance: "1.4 km",
     address: "SM Megamall, Mandaluyong City",
-    tags: ["CCTV monitored", "Bank security", "Indoor location", "Bright area"],
-    position: { top: "60%", left: "46%" }
+    googleQuery: "BDO SM Megamall Mandaluyong",
+    tags: ["CCTV monitored", "Bank security", "Indoor location", "Bright area"]
   },
   {
     id: "seven-eleven-shaw",
@@ -75,8 +83,8 @@ const safeSpots = [
     buyerDistance: "1.1 km",
     sellerDistance: "2.3 km",
     address: "Shaw Boulevard, Mandaluyong City",
-    tags: ["Open 24/7", "Public location", "Well-lit area", "Easy access"],
-    position: { top: "44%", left: "25%" }
+    googleQuery: "7-Eleven Shaw Boulevard Mandaluyong",
+    tags: ["Open 24/7", "Public location", "Well-lit area", "Easy access"]
   },
   {
     id: "police-desk-ortigas",
@@ -87,8 +95,8 @@ const safeSpots = [
     buyerDistance: "2.7 km",
     sellerDistance: "1.8 km",
     address: "Ortigas Center, Pasig City",
-    tags: ["Police nearby", "Highly visible", "Public area", "High security"],
-    position: { top: "22%", left: "34%" }
+    googleQuery: "Police Assistance Desk Ortigas Center",
+    tags: ["Police nearby", "Highly visible", "Public area", "High security"]
   }
 ];
 
@@ -102,6 +110,11 @@ function getNextSaturdayLabel() {
   return "Saturday, June 20";
 }
 
+function buildGoogleMapUrl(spot) {
+  const query = encodeURIComponent(spot?.googleQuery || "SM Megamall Mandaluyong");
+  return `https://www.google.com/maps?q=${query}&output=embed`;
+}
+
 export default function SafeMeetUp() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -109,9 +122,6 @@ export default function SafeMeetUp() {
   const [activeFilter, setActiveFilter] = useState("Recommended");
   const [selectedSpot, setSelectedSpot] = useState(safeSpots[0]);
   const [selectedTime, setSelectedTime] = useState("3:00 PM");
-  const [step, setStep] = useState("select");
-  const [buyerArrived, setBuyerArrived] = useState(false);
-  const [sellerArrived, setSellerArrived] = useState(false);
 
   const visibleSpots = useMemo(() => {
     if (activeFilter === "Recommended") {
@@ -119,45 +129,27 @@ export default function SafeMeetUp() {
     }
 
     if (activeFilter === "Nearby") {
-      return safeSpots.filter((spot) => spot.type === "Nearby" || spot.buyerDistance.startsWith("1."));
+      return safeSpots.filter(
+        (spot) => spot.type === "Nearby" || spot.buyerDistance.startsWith("1.")
+      );
     }
 
     return safeSpots.filter((spot) => spot.type === activeFilter);
   }, [activeFilter]);
 
-  function selectSpot(spot) {
+  function handleSelectSpot(spot) {
     setSelectedSpot(spot);
   }
 
-  function continueToConfirm() {
-    setStep("confirm");
-  }
-
-  function sendMeetupRequest() {
-    const meetup = {
-      listingId: id,
-      spot: selectedSpot,
-      date: getNextSaturdayLabel(),
-      time: selectedTime,
-      status: "request_sent",
-      buyerArrived: false,
-      sellerArrived: false,
-      createdAt: new Date().toISOString()
-    };
-
-    localStorage.setItem(getStorageKey(id), JSON.stringify(meetup));
-    setStep("status");
-  }
-
-  function confirmMeetingPoint() {
+  function handleConfirmMeetingPoint() {
     const meetup = {
       listingId: id,
       spot: selectedSpot,
       date: getNextSaturdayLabel(),
       time: selectedTime,
       status: "selected",
-      buyerArrived,
-      sellerArrived,
+      buyerArrived: false,
+      sellerArrived: false,
       createdAt: new Date().toISOString()
     };
 
@@ -168,167 +160,61 @@ export default function SafeMeetUp() {
   function openDirections() {
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        selectedSpot.name + " " + selectedSpot.address
+        `${selectedSpot.name} ${selectedSpot.address}`
       )}`,
       "_blank",
       "noopener,noreferrer"
     );
   }
 
-  if (step === "confirm") {
-    return (
-      <main className="safe-meetup-page">
-        <header className="safe-meetup-header">
-          <button type="button" onClick={() => setStep("select")} aria-label="Go back">
-            <ChevronLeft size={27} />
-          </button>
-          <h1>Safe Meet-Up Request</h1>
-          <span />
-        </header>
-
-        <section className="safe-confirm-card">
-          <div className="safe-confirm-icon">
-            <ShieldCheck size={42} />
-          </div>
-
-          <h2>{selectedSpot.name}</h2>
-          <p>{selectedSpot.address}</p>
-
-          <div className="safe-confirm-details">
-            <div>
-              <span>Date</span>
-              <strong>{getNextSaturdayLabel()}</strong>
-            </div>
-            <div>
-              <span>Time</span>
-              <strong>{selectedTime}</strong>
-            </div>
-            <div>
-              <span>Safety Score</span>
-              <strong>{selectedSpot.score}/100</strong>
-            </div>
-          </div>
-
-          <div className="safe-guidelines-card">
-            <h3>🛡️ TindaHan Safe Meet-Up Guidelines</h3>
-            <p>✔ Meet in public places</p>
-            <p>✔ Meet during daylight hours</p>
-            <p>✔ Inspect the item before paying</p>
-            <p>✔ Never share OTPs or banking passwords</p>
-            <p>✔ Report suspicious activity</p>
-          </div>
-        </section>
-
-        <section className="safe-fixed-cta">
-          <button type="button" onClick={sendMeetupRequest}>
-            Send Meet-Up Request
-          </button>
-        </section>
-      </main>
-    );
-  }
-
-  if (step === "status") {
-    return (
-      <main className="safe-meetup-page">
-        <header className="safe-meetup-header">
-          <button type="button" onClick={() => setStep("confirm")} aria-label="Go back">
-            <ChevronLeft size={27} />
-          </button>
-          <h1>Meet-Up Confirmed</h1>
-          <span />
-        </header>
-
-        <section className="safe-status-card">
-          <div className="safe-confirm-icon">
-            <ShieldCheck size={42} />
-          </div>
-
-          <h2>Meet-Up Confirmed</h2>
-          <p>{selectedSpot.name}</p>
-
-          <div className="safe-confirm-details">
-            <div>
-              <span>Location</span>
-              <strong>{selectedSpot.address}</strong>
-            </div>
-            <div>
-              <span>Date & Time</span>
-              <strong>
-                {getNextSaturdayLabel()} · {selectedTime}
-              </strong>
-            </div>
-          </div>
-
-          <button type="button" className="safe-directions-button" onClick={openDirections}>
-            <Navigation size={18} />
-            Open Directions
-          </button>
-
-          <div className="safe-arrival-card">
-            <h3>I'm Here</h3>
-            <p>Both buyer and seller can confirm once they arrive.</p>
-
-            <button
-              type="button"
-              className={buyerArrived ? "arrived" : ""}
-              onClick={() => setBuyerArrived(true)}
-            >
-              {buyerArrived ? "🟢 Buyer arrived" : "I am here as buyer"}
-            </button>
-
-            <button
-              type="button"
-              className={sellerArrived ? "arrived" : ""}
-              onClick={() => setSellerArrived(true)}
-            >
-              {sellerArrived ? "🟢 Seller arrived" : "I am here as seller"}
-            </button>
-          </div>
-
-          {buyerArrived && sellerArrived && (
-            <div className="safe-completed-card">
-              <h3>Was the transaction completed?</h3>
-              <button type="button" onClick={confirmMeetingPoint}>
-                ✅ Yes, Item Received
-              </button>
-              <button type="button" className="secondary">
-                ❌ No
-              </button>
-            </div>
-          )}
-        </section>
-
-        <section className="safe-fixed-cta">
-          <button type="button" onClick={confirmMeetingPoint}>
-            Confirm Meeting Point
-          </button>
-        </section>
-      </main>
-    );
-  }
-
   return (
-    <main className="safe-meetup-page">
-      <header className="safe-meetup-header">
+    <main className="safe-meetup-page safe-meetup-single-page">
+      <header className="safe-meetup-header safe-single-header">
         <button type="button" onClick={() => navigate(-1)} aria-label="Go back">
           <ChevronLeft size={27} />
         </button>
-        <h1>🛡️ Safe Meet-Up</h1>
-        <button type="button" onClick={() => navigate(`/checkout/${id}`)} aria-label="Close">
+
+        <h1>
+          <ShieldCheck size={20} />
+          Safe Meet-Up
+        </h1>
+
+        <button
+          type="button"
+          onClick={() => navigate(`/checkout/${id}`)}
+          aria-label="Close"
+        >
           <X size={24} />
         </button>
       </header>
 
-      <section className="safe-meetup-intro">
-        <h2>Choose a public location where you and the seller can meet safely.</h2>
+      <section className="safe-single-intro">
+        <h2>Choose a safe public place</h2>
         <p>
-          TindaHan recommends verified, public and high-traffic locations to help
-          protect both buyer and seller.
+          Meet at a verified public location recommended by TindaHan to protect
+          both buyer and seller.
         </p>
       </section>
 
-      <section className="safe-filter-row">
+      <section className="safe-single-map-section">
+        <div className="safe-single-map-card">
+          <iframe
+            title={`Map for ${selectedSpot.name}`}
+            src={buildGoogleMapUrl(selectedSpot)}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            allowFullScreen
+          />
+
+          <div className="safe-map-floating-score">
+            <ShieldCheck size={17} />
+            <span>Safety Score</span>
+            <strong>{selectedSpot.score}/100</strong>
+          </div>
+        </div>
+      </section>
+
+      <section className="safe-single-filters">
         {filters.map((filter) => (
           <button
             key={filter}
@@ -341,78 +227,21 @@ export default function SafeMeetUp() {
         ))}
       </section>
 
-      <section className="safe-map-card">
-        <div className="safe-map-background">
-          <span className="safe-user-dot">You</span>
-
-          {visibleSpots.map((spot) => {
-            const Icon = spot.icon;
-            const isActive = selectedSpot.id === spot.id;
-
-            return (
-              <button
-                key={spot.id}
-                type="button"
-                className={isActive ? "safe-map-pin active" : "safe-map-pin"}
-                style={{
-                  top: spot.position.top,
-                  left: spot.position.left
-                }}
-                onClick={() => selectSpot(spot)}
-                aria-label={spot.name}
-              >
-                <Icon size={18} />
-              </button>
-            );
-          })}
-        </div>
-      </section>
-
-      <section className="safe-spot-list">
-        <h2>🟢 Recommended Safe Spots</h2>
-
-        {visibleSpots.map((spot) => {
-          const Icon = spot.icon;
-          const isActive = selectedSpot.id === spot.id;
-
-          return (
-            <button
-              key={spot.id}
-              type="button"
-              className={isActive ? "safe-spot-card active" : "safe-spot-card"}
-              onClick={() => selectSpot(spot)}
-            >
-              <div className="safe-spot-icon">
-                <Icon size={23} />
-              </div>
-
-              <div>
-                <strong>{spot.name}</strong>
-                <span>{spot.type}</span>
-                <p>Safety Score: {spot.score}/100</p>
-              </div>
-
-              <em>⭐⭐⭐⭐⭐</em>
-            </button>
-          );
-        })}
-      </section>
-
-      {selectedSpot && (
-        <section className="safe-bottom-sheet">
-          <div className="safe-sheet-handle" />
-
-          <h2>Meeting Point Selected</h2>
-
-          <div className="safe-selected-title">
-            <MapPin size={20} />
+      <section className="safe-single-content">
+        <div className="safe-single-selected-card">
+          <div className="safe-selected-header">
             <div>
-              <strong>{selectedSpot.name}</strong>
-              <span>{selectedSpot.address}</span>
+              <span>Meeting Point Selected</span>
+              <h2>{selectedSpot.name}</h2>
+              <p>{selectedSpot.address}</p>
             </div>
+
+            <button type="button" onClick={openDirections}>
+              <Navigation size={17} />
+            </button>
           </div>
 
-          <div className="safe-distance-grid">
+          <div className="safe-single-score-row">
             <div>
               <span>Seller</span>
               <strong>{selectedSpot.sellerDistance}</strong>
@@ -422,39 +251,97 @@ export default function SafeMeetUp() {
               <strong>{selectedSpot.buyerDistance}</strong>
             </div>
             <div>
-              <span>Safety Score</span>
+              <span>Safety</span>
               <strong>{selectedSpot.score}/100</strong>
             </div>
           </div>
 
-          <div className="safe-tags">
+          <div className="safe-single-tags">
             {selectedSpot.tags.map((tag) => (
               <span key={tag}>✓ {tag}</span>
             ))}
           </div>
+        </div>
 
-          <div className="safe-times">
-            <h3>Suggested Meeting Times</h3>
+        <div className="safe-single-times-card">
+          <h3>Suggested Meeting Times</h3>
 
-            <div>
-              {suggestedTimes.map((time) => (
-                <button
-                  key={time}
-                  type="button"
-                  className={selectedTime === time ? "active" : ""}
-                  onClick={() => setSelectedTime(time)}
-                >
-                  {time}
-                </button>
-              ))}
-            </div>
+          <div>
+            {suggestedTimes.map((time) => (
+              <button
+                key={time}
+                type="button"
+                className={selectedTime === time ? "active" : ""}
+                onClick={() => setSelectedTime(time)}
+              >
+                {time}
+              </button>
+            ))}
           </div>
+        </div>
 
-          <button type="button" className="safe-sheet-continue" onClick={continueToConfirm}>
-            Continue
-          </button>
+        <section className="safe-single-spots-section">
+          <h3>
+            <span />
+            Recommended Safe Spots
+          </h3>
+
+          <div className="safe-single-spots-list">
+            {visibleSpots.map((spot) => {
+              const Icon = spot.icon;
+              const isActive = selectedSpot.id === spot.id;
+
+              return (
+                <button
+                  key={spot.id}
+                  type="button"
+                  className={
+                    isActive ? "safe-single-spot-card active" : "safe-single-spot-card"
+                  }
+                  onClick={() => handleSelectSpot(spot)}
+                >
+                  <div className="safe-single-spot-icon">
+                    <Icon size={23} />
+                  </div>
+
+                  <div>
+                    <strong>{spot.name}</strong>
+                    <span>{spot.type}</span>
+                    <p>Safety Score: {spot.score}/100</p>
+                  </div>
+
+                  <div className="safe-single-stars" aria-label="5 stars">
+                    <Star size={13} fill="currentColor" />
+                    <Star size={13} fill="currentColor" />
+                    <Star size={13} fill="currentColor" />
+                    <Star size={13} fill="currentColor" />
+                    <Star size={13} fill="currentColor" />
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </section>
-      )}
+
+        <section className="safe-single-guidelines">
+          <h3>
+            <Sun size={18} />
+            TindaHan Safe Meet-Up Guidelines
+          </h3>
+
+          <p>✔ Meet in public places</p>
+          <p>✔ Meet during daylight hours</p>
+          <p>✔ Inspect the item before paying</p>
+          <p>✔ Never share OTPs or banking passwords</p>
+          <p>✔ Report suspicious activity</p>
+        </section>
+      </section>
+
+      <section className="safe-single-fixed-cta">
+        <button type="button" onClick={handleConfirmMeetingPoint}>
+          Confirm Meeting Point
+        </button>
+      </section>
     </main>
   );
 }
