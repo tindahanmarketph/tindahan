@@ -13800,3 +13800,55 @@ textarea:focus {
 .mobile-sell-link.active .mobile-sell-plus {
   color: #ffffff;
 }
+/* ========================= */
+/* MOBILE BOTTOM NAV - SELL PLUS FIX */
+/* ========================= */
+
+.mobile-bottom-nav .mobile-sell-link {
+  position: relative !important;
+}
+
+.mobile-bottom-nav .mobile-sell-link svg {
+  display: block !important;
+}
+
+.mobile-bottom-nav .mobile-sell-circle {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+  display: grid !important;
+  place-items: center !important;
+  margin: 0 auto 2px !important;
+  border-radius: 999px !important;
+  background: var(--orange) !important;
+  color: #ffffff !important;
+  line-height: 1 !important;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.22) !important;
+}
+
+.mobile-bottom-nav .mobile-sell-circle svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+  width: 21px !important;
+  height: 21px !important;
+}
+
+.mobile-bottom-nav .mobile-sell-link span:last-child {
+  color: var(--orange) !important;
+  font-weight: 850 !important;
+}
+
+.mobile-bottom-nav .mobile-sell-link.active .mobile-sell-circle {
+  background: var(--orange) !important;
+  color: #ffffff !important;
+}
+
+.mobile-bottom-nav .mobile-sell-link.active .mobile-sell-circle svg {
+  color: #ffffff !important;
+  stroke: #ffffff !important;
+}
+
+.mobile-bottom-nav .mobile-sell-link.active span:last-child {
+  color: var(--orange) !important;
+}

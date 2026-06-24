@@ -1,4 +1,4 @@
-import { Home, Mail, Search, UserRound } from "lucide-react";
+import { Home, Mail, Plus, Search, UserRound } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -56,7 +56,7 @@ export default function MobileBottomNav() {
         }
       >
         <span className="mobile-sell-circle">
-          <span className="mobile-sell-plus">+</span>
+          <Plus size={22} strokeWidth={3.2} />
         </span>
         <span>Sell</span>
       </NavLink>
