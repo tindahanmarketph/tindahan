@@ -13402,7 +13402,6 @@ textarea:focus {
 }
 /* ========================= */
 /* MAKE OFFER PAGE - TINDAHAN COLORS */
-/* À placer tout en bas de src/index.css */
 /* ========================= */
 
 .make-offer-tindahan-page {
@@ -13523,17 +13522,9 @@ textarea:focus {
   font-weight: 800;
 }
 
-.make-offer-tindahan-page .make-offer-input-section {
-  padding: 0 22px;
-}
-
-.make-offer-tindahan-page .make-offer-input-section.hidden {
-  display: none;
-}
-
 .make-offer-tindahan-page .make-offer-input-section.visible {
   display: block;
-  padding-top: 16px;
+  padding: 16px 22px 0;
 }
 
 .make-offer-tindahan-page .make-offer-input-wrap {
@@ -13749,7 +13740,7 @@ textarea:focus {
 
   .make-offer-tindahan-page .make-offer-product,
   .make-offer-tindahan-page .make-offer-suggestions,
-  .make-offer-tindahan-page .make-offer-input-section,
+  .make-offer-tindahan-page .make-offer-input-section.visible,
   .make-offer-tindahan-page .make-offer-protection-summary,
   .make-offer-tindahan-page .make-offer-submit-section {
     padding-left: 16px;
