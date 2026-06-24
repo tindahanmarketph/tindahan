@@ -295,6 +295,11 @@ export default function ListingDetail() {
     navigate(`/checkout/${listing.id}`);
   }
 
+  function handleMakeOffer() {
+    if (!listing?.id) return;
+    navigate(`/offer/${listing.id}`);
+  }
+
   async function handleFavoriteClick(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -687,7 +692,7 @@ export default function ListingDetail() {
             <button
               className="detail-action-btn detail-offer-btn"
               type="button"
-              onClick={handleChatWithSeller}
+              onClick={handleMakeOffer}
             >
               Make an offer
             </button>
@@ -789,7 +794,7 @@ export default function ListingDetail() {
         <button
           className="mobile-product-offer-button"
           type="button"
-          onClick={handleChatWithSeller}
+          onClick={handleMakeOffer}
         >
           Make an offer
         </button>
