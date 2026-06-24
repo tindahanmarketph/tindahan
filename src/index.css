@@ -13400,3 +13400,376 @@ textarea:focus {
     font-size: 15px;
   }
 }
+/* ========================= */
+/* MAKE OFFER PAGE - TINDAHAN COLORS */
+/* À placer tout en bas de src/index.css */
+/* ========================= */
+
+.make-offer-tindahan-page {
+  min-height: 100vh;
+  padding: 0;
+  background: #ffffff;
+  color: #111111;
+}
+
+.make-offer-tindahan-page .make-offer-header {
+  height: 96px;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 92px;
+  align-items: end;
+  padding: 0 22px 20px;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.make-offer-tindahan-page .make-offer-header button {
+  border: none;
+  background: transparent;
+  color: #111111;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: left;
+}
+
+.make-offer-tindahan-page .make-offer-header h1 {
+  margin: 0;
+  color: #111111;
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 950;
+  text-align: center;
+  letter-spacing: -0.35px;
+}
+
+.make-offer-tindahan-page .make-offer-product {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 20px 22px 16px;
+  background: #ffffff;
+}
+
+.make-offer-tindahan-page .make-offer-product-image {
+  width: 68px;
+  height: 68px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eeeeee;
+  color: #6f7f83;
+  font-size: 12px;
+}
+
+.make-offer-tindahan-page .make-offer-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.make-offer-tindahan-page .make-offer-product h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 20px;
+  line-height: 1.18;
+  font-weight: 950;
+}
+
+.make-offer-tindahan-page .make-offer-product p {
+  margin: 4px 0 0;
+  color: #5f6f75;
+  font-size: 17px;
+  line-height: 1.25;
+}
+
+.make-offer-tindahan-page .make-offer-suggestions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  padding: 14px 22px 8px;
+}
+
+.make-offer-tindahan-page .make-offer-suggestions button {
+  min-height: 94px;
+  display: grid;
+  align-content: center;
+  gap: 8px;
+  padding: 13px;
+  border: 1.5px solid var(--border);
+  border-radius: 9px;
+  background: #ffffff;
+  text-align: left;
+  box-shadow: none;
+}
+
+.make-offer-tindahan-page .make-offer-suggestions button.active {
+  border-color: var(--orange) !important;
+  background: var(--orange-soft) !important;
+  box-shadow: inset 0 0 0 1px var(--orange) !important;
+}
+
+.make-offer-tindahan-page .make-offer-suggestions strong {
+  color: #111111;
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.make-offer-tindahan-page .make-offer-suggestions span {
+  color: var(--orange) !important;
+  font-size: 14px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.make-offer-tindahan-page .make-offer-input-section {
+  padding: 0 22px;
+}
+
+.make-offer-tindahan-page .make-offer-input-section.hidden {
+  display: none;
+}
+
+.make-offer-tindahan-page .make-offer-input-section.visible {
+  display: block;
+  padding-top: 16px;
+}
+
+.make-offer-tindahan-page .make-offer-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1.5px solid var(--orange);
+}
+
+.make-offer-tindahan-page .make-offer-input-wrap span,
+.make-offer-tindahan-page .make-offer-input-wrap input {
+  color: #5f6f75;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 500;
+}
+
+.make-offer-tindahan-page .make-offer-input-wrap input {
+  width: 100%;
+  min-height: 54px;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+}
+
+.make-offer-tindahan-page .make-offer-input-wrap input:focus {
+  border: none;
+  box-shadow: none;
+}
+
+.make-offer-tindahan-page .make-offer-input-wrap input::-webkit-outer-spin-button,
+.make-offer-tindahan-page .make-offer-input-wrap input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.make-offer-tindahan-page .make-offer-input-section small {
+  display: block;
+  margin-top: 8px;
+  color: #d93025;
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.make-offer-tindahan-page .make-offer-protection-summary {
+  padding: 10px 22px 0;
+}
+
+.make-offer-tindahan-page .make-offer-protection-summary p {
+  margin: 0;
+  color: var(--orange);
+  font-size: 15px;
+  line-height: 1.35;
+  font-weight: 900;
+}
+
+.make-offer-tindahan-page .make-offer-protection-summary span {
+  display: block;
+  margin-top: 4px;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.make-offer-tindahan-page .make-offer-submit-section {
+  padding: 34px 22px 24px;
+  text-align: center;
+}
+
+.make-offer-tindahan-page .make-offer-submit-section > button {
+  width: 100%;
+  min-height: 54px;
+  border: none;
+  border-radius: 8px;
+  background: var(--orange) !important;
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.25);
+}
+
+.make-offer-tindahan-page .make-offer-submit-section > button:hover:not(:disabled) {
+  background: var(--orange-dark) !important;
+}
+
+.make-offer-tindahan-page .make-offer-submit-section > button:disabled {
+  background: #ffc0a3 !important;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.make-offer-tindahan-page .make-offer-submit-section p {
+  margin: 26px 0 0;
+  color: #5f6f75;
+  font-size: 15px;
+  line-height: 1.4;
+}
+
+.make-offer-tindahan-page .make-offer-submit-section p button {
+  border: none;
+  background: transparent;
+  color: var(--orange);
+  font: inherit;
+  font-weight: 850;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.make-offer-modal-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  display: grid;
+  place-items: center;
+  padding: 22px;
+  background: rgba(0, 0, 0, 0.42);
+}
+
+.make-offer-limit-modal {
+  width: min(370px, 100%);
+  padding: 26px 18px 18px;
+  border-radius: 14px;
+  background: #ffffff;
+  box-shadow: 0 24px 70px rgba(0, 0, 0, 0.24);
+  text-align: center;
+  animation: makeOfferModalIn 0.18s ease forwards;
+}
+
+.make-offer-limit-modal h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 950;
+  letter-spacing: -0.35px;
+}
+
+.make-offer-limit-modal p {
+  margin: 18px 0 22px;
+  color: #5f6f75;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.make-offer-limit-modal button {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 7px;
+  background: var(--orange);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 950;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.25);
+}
+
+.make-offer-limit-modal button:hover {
+  background: var(--orange-dark);
+}
+
+@keyframes makeOfferModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 760px) {
+  body:has(.make-offer-page) {
+    padding-bottom: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body:has(.make-offer-page) .navbar,
+  body:has(.make-offer-page) .vinted-category-wrapper,
+  body:has(.make-offer-page) .mobile-bottom-nav,
+  body:has(.make-offer-page) .site-footer {
+    display: none !important;
+  }
+}
+
+@media (min-width: 761px) {
+  .make-offer-tindahan-page {
+    width: min(430px, 100%);
+    margin: 0 auto;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+  }
+
+  body:has(.make-offer-page) .navbar,
+  body:has(.make-offer-page) .vinted-category-wrapper,
+  body:has(.make-offer-page) .site-footer {
+    display: none !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .make-offer-tindahan-page .make-offer-header {
+    grid-template-columns: 76px minmax(0, 1fr) 76px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .make-offer-tindahan-page .make-offer-header h1 {
+    font-size: 21px;
+  }
+
+  .make-offer-tindahan-page .make-offer-product,
+  .make-offer-tindahan-page .make-offer-suggestions,
+  .make-offer-tindahan-page .make-offer-input-section,
+  .make-offer-tindahan-page .make-offer-protection-summary,
+  .make-offer-tindahan-page .make-offer-submit-section {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .make-offer-tindahan-page .make-offer-suggestions {
+    gap: 9px;
+  }
+
+  .make-offer-tindahan-page .make-offer-suggestions button {
+    min-height: 88px;
+    padding: 10px;
+  }
+
+  .make-offer-tindahan-page .make-offer-suggestions strong {
+    font-size: 16px;
+  }
+
+  .make-offer-tindahan-page .make-offer-suggestions span {
+    font-size: 12px;
+  }
+}
