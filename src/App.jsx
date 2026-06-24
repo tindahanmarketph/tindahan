@@ -20,6 +20,7 @@ import Settings from "./pages/Settings";
 import Messages from "./pages/Messages";
 import Checkout from "./pages/Checkout";
 import SafeMeetUp from "./pages/SafeMeetUp";
+import MakeOffer from "./pages/MakeOffer";
 
 import Personalisation from "./pages/Personalisation";
 import PreferredSizes from "./pages/PreferredSizes";
@@ -63,7 +64,8 @@ export default function App() {
     location.pathname.startsWith("/listing/") ||
     location.pathname.startsWith("/listings/") ||
     location.pathname.startsWith("/checkout/") ||
-    location.pathname.startsWith("/safe-meetup/");
+    location.pathname.startsWith("/safe-meetup/") ||
+    location.pathname.startsWith("/offer/");
 
   return (
     <>
@@ -83,6 +85,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <Checkout />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/offer/:id"
+          element={
+            <ProtectedRoute>
+              <MakeOffer />
             </ProtectedRoute>
           }
         />

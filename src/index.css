@@ -13125,3 +13125,278 @@ textarea:focus {
     grid-column: 2;
   }
 }
+/* ========================= */
+/* MAKE OFFER PAGE - VINTED STYLE */
+/* ========================= */
+
+.make-offer-page {
+  min-height: 100vh;
+  padding: 0;
+  background: #ffffff;
+  color: #111111;
+}
+
+.make-offer-header {
+  height: 96px;
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr) 92px;
+  align-items: end;
+  padding: 0 22px 20px;
+  border-bottom: 1px solid #e5e5e5;
+  background: #ffffff;
+}
+
+.make-offer-header button {
+  border: none;
+  background: transparent;
+  color: #111111;
+  font-size: 18px;
+  font-weight: 500;
+  text-align: left;
+}
+
+.make-offer-header h1 {
+  margin: 0;
+  color: #111111;
+  font-size: 24px;
+  line-height: 1;
+  font-weight: 850;
+  text-align: center;
+}
+
+.make-offer-product {
+  display: grid;
+  grid-template-columns: 82px minmax(0, 1fr);
+  gap: 16px;
+  align-items: center;
+  padding: 22px;
+  background: #ffffff;
+}
+
+.make-offer-product-image {
+  width: 82px;
+  height: 82px;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: 8px;
+  background: #eeeeee;
+  color: #6f7f83;
+  font-size: 12px;
+}
+
+.make-offer-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.make-offer-product h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 22px;
+  line-height: 1.2;
+  font-weight: 850;
+}
+
+.make-offer-product p {
+  margin: 5px 0 0;
+  color: #6f7f83;
+  font-size: 20px;
+  line-height: 1.25;
+}
+
+.make-offer-suggestions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 14px;
+  padding: 18px 22px 12px;
+}
+
+.make-offer-suggestions button {
+  min-height: 112px;
+  display: grid;
+  align-content: center;
+  gap: 12px;
+  padding: 15px;
+  border: 1.5px solid #d9dedf;
+  border-radius: 8px;
+  background: #ffffff;
+  text-align: left;
+}
+
+.make-offer-suggestions button.active {
+  border-color: #007782;
+  background: #eefafa;
+  box-shadow: inset 0 0 0 1px #007782;
+}
+
+.make-offer-suggestions strong {
+  color: #111111;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 900;
+}
+
+.make-offer-suggestions span {
+  color: #007782;
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 500;
+}
+
+.make-offer-input-section {
+  padding: 18px 22px;
+}
+
+.make-offer-input-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-bottom: 1.5px solid #007782;
+}
+
+.make-offer-input-wrap span,
+.make-offer-input-wrap input {
+  color: #6f7f83;
+  font-size: 30px;
+  line-height: 1;
+  font-weight: 400;
+}
+
+.make-offer-input-wrap input {
+  width: 100%;
+  min-height: 54px;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0;
+}
+
+.make-offer-input-wrap input:focus {
+  border: none;
+  box-shadow: none;
+}
+
+.make-offer-input-wrap input::-webkit-outer-spin-button,
+.make-offer-input-wrap input::-webkit-inner-spin-button {
+  margin: 0;
+  appearance: none;
+}
+
+.make-offer-input-section p {
+  margin: 10px 0 0;
+  color: #6f7f83;
+  font-size: 18px;
+}
+
+.make-offer-input-section small {
+  display: block;
+  margin-top: 8px;
+  color: #e3342f;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.make-offer-submit-section {
+  padding: 42px 22px 24px;
+  text-align: center;
+}
+
+.make-offer-submit-section > button {
+  width: 100%;
+  min-height: 58px;
+  border: none;
+  border-radius: 8px;
+  background: #007782;
+  color: #ffffff;
+  font-size: 22px;
+  font-weight: 850;
+}
+
+.make-offer-submit-section > button:disabled {
+  background: #88c5c9;
+  cursor: not-allowed;
+}
+
+.make-offer-submit-section p {
+  margin: 28px 0 0;
+  color: #6f7f83;
+  font-size: 17px;
+  line-height: 1.4;
+}
+
+.make-offer-submit-section p button {
+  border: none;
+  background: transparent;
+  color: #007782;
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.make-offer-loading,
+.make-offer-empty {
+  padding: 40px 22px;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  body:has(.make-offer-page) {
+    padding-bottom: 0 !important;
+    background: #ffffff !important;
+  }
+
+  body:has(.make-offer-page) .navbar,
+  body:has(.make-offer-page) .vinted-category-wrapper,
+  body:has(.make-offer-page) .mobile-bottom-nav,
+  body:has(.make-offer-page) .site-footer {
+    display: none !important;
+  }
+}
+
+@media (min-width: 761px) {
+  .make-offer-page {
+    width: min(430px, 100%);
+    margin: 0 auto;
+    border-left: 1px solid #e5e5e5;
+    border-right: 1px solid #e5e5e5;
+  }
+
+  body:has(.make-offer-page) .navbar,
+  body:has(.make-offer-page) .vinted-category-wrapper,
+  body:has(.make-offer-page) .site-footer {
+    display: none !important;
+  }
+}
+
+@media (max-width: 390px) {
+  .make-offer-header {
+    grid-template-columns: 78px minmax(0, 1fr) 78px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .make-offer-header h1 {
+    font-size: 21px;
+  }
+
+  .make-offer-suggestions {
+    gap: 10px;
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+
+  .make-offer-suggestions button {
+    min-height: 102px;
+    padding: 12px;
+  }
+
+  .make-offer-suggestions strong {
+    font-size: 19px;
+  }
+
+  .make-offer-suggestions span {
+    font-size: 15px;
+  }
+}
