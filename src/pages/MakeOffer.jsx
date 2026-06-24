@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -11,11 +11,13 @@ function formatPrice(value) {
 }
 
 function parseOfferValue(value) {
-  return Number(
+  const parsedValue = Number(
     String(value || "")
       .replace(",", ".")
       .replace(/[^\d.]/g, "")
   );
+
+  return Number.isFinite(parsedValue) ? parsedValue : 0;
 }
 
 function getOfferStorageKey(listingId) {
@@ -26,6 +28,7 @@ export default function MakeOffer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const customInputRef = useRef(null);
 
   const [listing, setListing] = useState(null);
   const [seller, setSeller] = useState(null);
@@ -86,6 +89,17 @@ export default function MakeOffer() {
     };
   }, [id]);
 
+  useEffect(() => {
+    if (selectedType === "custom") {
+      requestAnimationFrame(() => {
+        if (customInputRef.current) {
+          customInputRef.current.focus();
+          customInputRef.current.select();
+        }
+      });
+    }
+  }, [selectedType]);
+
   const itemPrice = Number(listing?.price || 0);
   const firstPhoto = listing?.photos?.[0];
 
@@ -111,15 +125,62 @@ export default function MakeOffer() {
 
   function selectCustomOffer() {
     setSelectedType("custom");
+    setOfferValue("0");
+  }
 
-    if (!offerValue || cleanOfferValue <= 0) {
-      setOfferValue(Number(itemPrice).toFixed(2));
-    }
+  function handleCustomFocus(event) {
+    event.target.select();
   }
 
   function handleCustomChange(event) {
+    let nextValue = event.target.value;
+
+    nextValue = nextValue.replace(",", ".");
+    nextValue = nextValue.replace(/[^\d.]/g, "");
+
+    const dotCount = (nextValue.match(/\./g) || []).length;
+    if (dotCount > 1) {
+      const firstDotIndex = nextValue.indexOf(".");
+      nextValue =
+        nextValue.slice(0, firstDotIndex + 1) +
+        nextValue.slice(firstDotIndex + 1).replace(/\./g, "");
+    }
+
+    if (nextValue.length > 1 && nextValue.startsWith("0") && !nextValue.startsWith("0.")) {
+      nextValue = nextValue.replace(/^0+/, "");
+    }
+
+    if (nextValue === "") {
+      nextValue = "0";
+    }
+
     setSelectedType("custom");
-    setOfferValue(event.target.value);
+    setOfferValue(nextValue);
+  }
+
+  function handleCustomKeyDown(event) {
+    const isNumberKey = /^[0-9]$/.test(event.key);
+    const isDecimalKey = event.key === "." || event.key === ",";
+
+    if ((offerValue === "0" || offerValue === "0.00") && isNumberKey) {
+      event.preventDefault();
+      setOfferValue(event.key);
+      return;
+    }
+
+    if ((offerValue === "0" || offerValue === "0.00") && isDecimalKey) {
+      event.preventDefault();
+      setOfferValue("0.");
+    }
+  }
+
+  function handleCustomBlur() {
+    if (!offerValue || parseOfferValue(offerValue) === 0) {
+      setOfferValue("0");
+      return;
+    }
+
+    setOfferValue(String(parseOfferValue(offerValue)));
   }
 
   function submitOffer() {
@@ -331,14 +392,15 @@ export default function MakeOffer() {
             <span>₱</span>
 
             <input
-              type="number"
+              ref={customInputRef}
+              type="text"
               inputMode="decimal"
-              min="1"
-              max={itemPrice}
-              step="0.01"
               value={offerValue}
+              onFocus={handleCustomFocus}
               onChange={handleCustomChange}
-              autoFocus
+              onKeyDown={handleCustomKeyDown}
+              onBlur={handleCustomBlur}
+              aria-label="Custom offer amount"
             />
           </div>
 
