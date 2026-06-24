@@ -13764,3 +13764,39 @@ textarea:focus {
     font-size: 12px;
   }
 }
+/* ========================= */
+/* MOBILE BOTTOM NAV SELL PLUS */
+/* ========================= */
+
+.mobile-sell-link {
+  position: relative;
+}
+
+.mobile-sell-circle {
+  width: 31px;
+  height: 31px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.24);
+}
+
+.mobile-sell-plus {
+  display: block;
+  margin-top: -1px;
+  color: #ffffff;
+  font-size: 26px;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.mobile-sell-link.active .mobile-sell-circle {
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.mobile-sell-link.active .mobile-sell-plus {
+  color: #ffffff;
+}

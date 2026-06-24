@@ -1,4 +1,4 @@
-import { Home, Mail, PlusCircle, Search, UserRound } from "lucide-react";
+import { Home, Mail, Search, UserRound } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
@@ -13,7 +13,16 @@ export default function MobileBottomNav() {
   const isProfileArea =
     location.pathname.startsWith("/profile") ||
     location.pathname.startsWith("/favorites") ||
-    location.pathname.startsWith("/settings");
+    location.pathname.startsWith("/settings") ||
+    location.pathname.startsWith("/wallet") ||
+    location.pathname.startsWith("/orders") ||
+    location.pathname.startsWith("/badges") ||
+    location.pathname.startsWith("/donations") ||
+    location.pathname.startsWith("/holiday-mode") ||
+    location.pathname.startsWith("/bundle-discounts") ||
+    location.pathname.startsWith("/personalisation") ||
+    location.pathname.startsWith("/promotion-tools") ||
+    location.pathname.startsWith("/tindahan-guide");
 
   return (
     <nav className="mobile-bottom-nav" aria-label="Mobile navigation">
@@ -46,7 +55,9 @@ export default function MobileBottomNav() {
             : "mobile-bottom-link mobile-sell-link"
         }
       >
-        <PlusCircle size={31} />
+        <span className="mobile-sell-circle">
+          <span className="mobile-sell-plus">+</span>
+        </span>
         <span>Sell</span>
       </NavLink>
 
