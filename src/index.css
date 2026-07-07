@@ -14548,3 +14548,50 @@ textarea:focus {
     font-size: 15px !important;
   }
 }
+/* ========================= */
+/* MOBILE PROFILE LOG OUT */
+/* ========================= */
+
+.mobile-profile-menu-item.mobile-profile-menu-logout {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  min-height: 62px;
+  padding: 14px 18px;
+  border: none;
+  border-radius: 0;
+  background: #ffffff;
+  color: #d93025;
+  text-align: left;
+  cursor: pointer;
+}
+
+.mobile-profile-menu-item.mobile-profile-menu-logout:hover,
+.mobile-profile-menu-item.mobile-profile-menu-logout:active {
+  background: #fff1ef;
+}
+
+.mobile-profile-menu-logout .mobile-profile-menu-icon {
+  color: #d93025;
+}
+
+.mobile-profile-menu-logout .mobile-profile-menu-icon svg {
+  color: #d93025;
+  stroke: #d93025;
+}
+
+.mobile-profile-menu-logout .mobile-profile-menu-main strong {
+  color: #d93025;
+}
+
+.mobile-profile-menu-logout .mobile-profile-menu-main small {
+  color: #8f3b32;
+}
+
+.mobile-profile-logout-section {
+  margin-top: 10px;
+  border-top: 1px solid #ffe0dc;
+  border-bottom: 1px solid #ffe0dc;
+}

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link, useParams } from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   BadgeCheck,
   ChevronRight,
@@ -10,6 +10,7 @@ import {
   Heart,
   HomeIcon,
   Info,
+  LogOut,
   MapPin,
   Megaphone,
   Palette,
@@ -97,7 +98,9 @@ function MobileProfileMenuItem({
   subtitle,
   value,
   to = "#",
-  disabled = false
+  disabled = false,
+  danger = false,
+  onClick
 }) {
   const content = (
     <>
@@ -110,12 +113,32 @@ function MobileProfileMenuItem({
 
       {value && <span className="mobile-profile-menu-value">{value}</span>}
 
-      <ChevronRight size={22} className="mobile-profile-menu-chevron" />
+      {!onClick && <ChevronRight size={22} className="mobile-profile-menu-chevron" />}
     </>
   );
 
   if (disabled) {
-    return <div className="mobile-profile-menu-item disabled">{content}</div>;
+    return (
+      <div className="mobile-profile-menu-item disabled">
+        {content}
+      </div>
+    );
+  }
+
+  if (onClick) {
+    return (
+      <button
+        type="button"
+        className={
+          danger
+            ? "mobile-profile-menu-item mobile-profile-menu-logout"
+            : "mobile-profile-menu-item"
+        }
+        onClick={onClick}
+      >
+        {content}
+      </button>
+    );
   }
 
   return (
@@ -127,7 +150,8 @@ function MobileProfileMenuItem({
 
 function MobileProfileDashboard({
   displayedUsername,
-  displayedAvatar
+  displayedAvatar,
+  onLogout
 }) {
   return (
     <section className="mobile-profile-dashboard">
@@ -273,6 +297,16 @@ function MobileProfileDashboard({
         />
       </div>
 
+      <div className="mobile-profile-section mobile-profile-logout-section">
+        <MobileProfileMenuItem
+          icon={<LogOut size={29} />}
+          title="Log out"
+          subtitle="Sign out from your TindaHan account"
+          danger
+          onClick={onLogout}
+        />
+      </div>
+
       <footer className="mobile-profile-footer-links">
         <Link to="/privacy">Protection Center</Link>
         <span>•</span>
@@ -285,8 +319,9 @@ function MobileProfileDashboard({
 }
 
 export default function Profile() {
+  const navigate = useNavigate();
   const { username } = useParams();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   const [profile, setProfile] = useState(null);
   const [listings, setListings] = useState([]);
@@ -345,6 +380,20 @@ export default function Profile() {
     loadProfile();
   }, [username, user?.id]);
 
+  async function handleLogout() {
+    const confirmed = window.confirm("Do you want to log out from TindaHan?");
+
+    if (!confirmed) return;
+
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Logout error:", error);
+      alert(error.message || "Unable to log out.");
+    }
+  }
+
   if (loading) {
     return (
       <main className="profile-page page">
@@ -379,6 +428,7 @@ export default function Profile() {
         <MobileProfileDashboard
           displayedUsername={displayedUsername}
           displayedAvatar={displayedAvatar}
+          onLogout={handleLogout}
         />
       )}
 
