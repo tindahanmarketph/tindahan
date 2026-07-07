@@ -13852,3 +13852,38 @@ textarea:focus {
 .mobile-bottom-nav .mobile-sell-link.active span:last-child {
   color: var(--orange) !important;
 }
+/* ========================= */
+/* PRODUCT PHOTO SWIPE */
+/* ========================= */
+
+.swipeable-photo {
+  touch-action: pan-y;
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  overscroll-behavior: contain;
+}
+
+.swipeable-photo-image {
+  user-select: none;
+  -webkit-user-select: none;
+  -webkit-user-drag: none;
+  pointer-events: none;
+  animation: productPhotoSwipeFade 0.16s ease;
+}
+
+@keyframes productPhotoSwipeFade {
+  from {
+    opacity: 0.72;
+    transform: scale(1.01);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.mobile-photo-dots button {
+  cursor: pointer;
+}

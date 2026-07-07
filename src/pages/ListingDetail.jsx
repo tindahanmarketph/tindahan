@@ -7,7 +7,7 @@ import {
   ShieldCheck,
   Star
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import {
   getCategoryLabel,
@@ -72,6 +72,12 @@ export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+
+  const touchStartRef = useRef({
+    x: 0,
+    y: 0,
+    time: 0
+  });
 
   const [listing, setListing] = useState(null);
   const [seller, setSeller] = useState(null);
@@ -257,13 +263,57 @@ export default function ListingDetail() {
   }, [listing, seller]);
 
   function prevPhoto() {
-    if (photos.length === 0) return;
+    if (photos.length <= 1) return;
+
     setPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
   }
 
   function nextPhoto() {
-    if (photos.length === 0) return;
+    if (photos.length <= 1) return;
+
     setPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+  }
+
+  function handlePhotoTouchStart(event) {
+    if (photos.length <= 1) return;
+
+    const touch = event.touches[0];
+
+    touchStartRef.current = {
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now()
+    };
+  }
+
+  function handlePhotoTouchEnd(event) {
+    if (photos.length <= 1) return;
+
+    const touch = event.changedTouches[0];
+
+    const startX = touchStartRef.current.x;
+    const startY = touchStartRef.current.y;
+
+    const deltaX = touch.clientX - startX;
+    const deltaY = touch.clientY - startY;
+    const elapsedTime = Date.now() - touchStartRef.current.time;
+
+    const horizontalDistance = Math.abs(deltaX);
+    const verticalDistance = Math.abs(deltaY);
+
+    const isHorizontalSwipe =
+      horizontalDistance > 45 &&
+      horizontalDistance > verticalDistance * 1.35 &&
+      elapsedTime < 700;
+
+    if (!isHorizontalSwipe) return;
+
+    if (deltaX < 0) {
+      nextPhoto();
+      return;
+    }
+
+    prevPhoto();
   }
 
   function handleChatWithSeller() {
@@ -433,9 +483,19 @@ export default function ListingDetail() {
     <main className="page listing-detail-page listing-detail-vinted-page">
       <div className="container detail-layout product-vinted-layout">
         <section className="photo-panel product-gallery-panel">
-          <div className="main-photo product-main-photo">
+          <div
+            className="main-photo product-main-photo swipeable-photo"
+            onTouchStart={handlePhotoTouchStart}
+            onTouchEnd={handlePhotoTouchEnd}
+          >
             {photos.length > 0 ? (
-              <img src={photos[photoIndex]} alt={listing.title} />
+              <img
+                key={photos[photoIndex]}
+                src={photos[photoIndex]}
+                alt={listing.title}
+                className="swipeable-photo-image"
+                draggable="false"
+              />
             ) : (
               <div className="image-placeholder">No photo</div>
             )}
