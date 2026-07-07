@@ -3,6 +3,10 @@ import { Link } from "react-router-dom";
 import ListingCard from "./ListingCard";
 import { supabase } from "../lib/supabase";
 
+function hideHolidayModeListings(items) {
+  return (items || []).filter((item) => !item.profiles?.holiday_mode);
+}
+
 async function fetchMemberListings(listing) {
   if (!listing) return [];
 
@@ -27,7 +31,8 @@ async function fetchMemberListings(listing) {
           username,
           avatar_url,
           rating,
-          is_verified
+          is_verified,
+          holiday_mode
         )
       `)
       .eq(column, ownerId)
@@ -37,7 +42,29 @@ async function fetchMemberListings(listing) {
       .limit(8);
 
     if (!error) {
-      return data || [];
+      return hideHolidayModeListings(data);
+    }
+
+    const fallback = await supabase
+      .from("listings")
+      .select(`
+        *,
+        profiles (
+          id,
+          username,
+          avatar_url,
+          rating,
+          is_verified
+        )
+      `)
+      .eq(column, ownerId)
+      .neq("id", listing.id)
+      .eq("status", "active")
+      .order("created_at", { ascending: false })
+      .limit(8);
+
+    if (!fallback.error) {
+      return fallback.data || [];
     }
   }
 
@@ -56,7 +83,8 @@ async function fetchSimilarListings(listing) {
         username,
         avatar_url,
         rating,
-        is_verified
+        is_verified,
+        holiday_mode
       )
     `)
     .neq("id", listing.id)
@@ -75,7 +103,7 @@ async function fetchSimilarListings(listing) {
   const { data, error } = await query;
 
   if (!error && data?.length) {
-    return data;
+    return hideHolidayModeListings(data);
   }
 
   if (listing.category) {

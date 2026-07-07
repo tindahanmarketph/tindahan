@@ -185,14 +185,25 @@ async function fetchListingsViaRest({
   try {
     const encodedIds = sellerIds.map((id) => `"${id}"`).join(",");
 
-    const profilesUrl =
+    let profilesUrl =
       `${supabaseConfig.url}/rest/v1/profiles` +
-      `?select=id,username,avatar_url,rating,is_verified,total_sales` +
+      `?select=id,username,avatar_url,rating,is_verified,total_sales,holiday_mode` +
       `&id=in.(${encodedIds})`;
 
-    const profilesResponse = await fetchWithTimeout(profilesUrl, {
+    let profilesResponse = await fetchWithTimeout(profilesUrl, {
       headers: getSupabaseHeaders()
     });
+
+    if (!profilesResponse.ok) {
+      profilesUrl =
+        `${supabaseConfig.url}/rest/v1/profiles` +
+        `?select=id,username,avatar_url,rating,is_verified,total_sales` +
+        `&id=in.(${encodedIds})`;
+
+      profilesResponse = await fetchWithTimeout(profilesUrl, {
+        headers: getSupabaseHeaders()
+      });
+    }
 
     if (!profilesResponse.ok) {
       throw new Error(`Profiles request failed: ${profilesResponse.status}`);
@@ -205,10 +216,12 @@ async function fetchListingsViaRest({
       return acc;
     }, {});
 
-    const listingsWithProfiles = listings.map((listing) => ({
-      ...listing,
-      profiles: profilesById[listing.seller_id] || null
-    }));
+    const listingsWithProfiles = listings
+      .map((listing) => ({
+        ...listing,
+        profiles: profilesById[listing.seller_id] || null
+      }))
+      .filter((listing) => !listing.profiles?.holiday_mode);
 
     return {
       listings: listingsWithProfiles,

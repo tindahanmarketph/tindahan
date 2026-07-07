@@ -21,7 +21,6 @@ import {
   ShieldCheck,
   Shirt,
   SlidersHorizontal,
-  Star,
   Truck,
   Wallet,
   WalletCards
@@ -64,11 +63,38 @@ function getProfileLocation(profile) {
   return profile.country || profile.location || "Philippines";
 }
 
-async function fetchUserListings(profileId) {
+async function fetchUserListings(profileId, isOwnProfile = false) {
   const columnsToTry = ["seller_id", "user_id", "profile_id"];
 
   for (const column of columnsToTry) {
     const { data, error } = await supabase
+      .from("listings")
+      .select(`
+        *,
+        profiles (
+          id,
+          username,
+          avatar_url,
+          rating,
+          is_verified,
+          holiday_mode
+        )
+      `)
+      .eq(column, profileId)
+      .eq("status", "active")
+      .order("created_at", { ascending: false });
+
+    if (!error) {
+      const listings = data || [];
+
+      if (isOwnProfile) {
+        return listings;
+      }
+
+      return listings.filter((listing) => !listing.profiles?.holiday_mode);
+    }
+
+    const fallback = await supabase
       .from("listings")
       .select(`
         *,
@@ -84,8 +110,8 @@ async function fetchUserListings(profileId) {
       .eq("status", "active")
       .order("created_at", { ascending: false });
 
-    if (!error) {
-      return data || [];
+    if (!fallback.error) {
+      return fallback.data || [];
     }
   }
 
@@ -118,11 +144,7 @@ function MobileProfileMenuItem({
   );
 
   if (disabled) {
-    return (
-      <div className="mobile-profile-menu-item disabled">
-        {content}
-      </div>
-    );
+    return <div className="mobile-profile-menu-item disabled">{content}</div>;
   }
 
   if (onClick) {
@@ -151,6 +173,7 @@ function MobileProfileMenuItem({
 function MobileProfileDashboard({
   displayedUsername,
   displayedAvatar,
+  holidayModeEnabled,
   onLogout
 }) {
   return (
@@ -247,6 +270,7 @@ function MobileProfileDashboard({
         <MobileProfileMenuItem
           icon={<Plane size={28} />}
           title="Holiday mode"
+          value={holidayModeEnabled ? "On" : "Off"}
           to="/holiday-mode"
         />
       </div>
@@ -369,9 +393,11 @@ export default function Profile() {
         return;
       }
 
+      const ownProfile = Boolean(user?.id && user.id === profileData.id);
+
       setProfile(profileData);
 
-      const userListings = await fetchUserListings(profileData.id);
+      const userListings = await fetchUserListings(profileData.id, ownProfile);
       setListings(userListings);
 
       setLoading(false);
@@ -421,6 +447,7 @@ export default function Profile() {
   const displayedBio = profile.bio || "";
   const displayedAvatar = profile.avatar_url || "";
   const displayedLocation = getProfileLocation(profile);
+  const holidayModeEnabled = Boolean(profile?.holiday_mode);
 
   return (
     <main className={isOwnProfile ? "profile-page own-profile-page" : "profile-page"}>
@@ -428,6 +455,7 @@ export default function Profile() {
         <MobileProfileDashboard
           displayedUsername={displayedUsername}
           displayedAvatar={displayedAvatar}
+          holidayModeEnabled={holidayModeEnabled}
           onLogout={handleLogout}
         />
       )}
@@ -453,6 +481,12 @@ export default function Profile() {
               <div>
                 <h1>{displayedUsername}</h1>
                 <p>No reviews yet</p>
+
+                {holidayModeEnabled && isOwnProfile && (
+                  <p className="profile-holiday-status">
+                    Holiday mode is active. Your listings are hidden from buyers.
+                  </p>
+                )}
 
                 {displayedBio && <p className="profile-bio">{displayedBio}</p>}
               </div>
@@ -574,12 +608,27 @@ export default function Profile() {
               <Shirt size={44} />
             </div>
 
-            <h2>Add items to start selling</h2>
-            <p>Declutter your closet and sell what you no longer use.</p>
+            <h2>
+              {holidayModeEnabled && isOwnProfile
+                ? "Your items are currently hidden"
+                : "Add items to start selling"}
+            </h2>
 
-            <Link to="/sell" className="profile-empty-button">
-              Add an item
-            </Link>
+            <p>
+              {holidayModeEnabled && isOwnProfile
+                ? "Turn Holiday Mode off to make your active listings visible again."
+                : "Declutter your closet and sell what you no longer use."}
+            </p>
+
+            {holidayModeEnabled && isOwnProfile ? (
+              <Link to="/holiday-mode" className="profile-empty-button">
+                Manage Holiday Mode
+              </Link>
+            ) : (
+              <Link to="/sell" className="profile-empty-button">
+                Add an item
+              </Link>
+            )}
           </section>
         )}
       </div>
