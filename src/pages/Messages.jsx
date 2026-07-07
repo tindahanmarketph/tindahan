@@ -10,7 +10,7 @@ import {
   X
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useSearchParams } from "react-router-dom";
+import { Link, useNavigate, useSearchParams } from "react-router-dom";
 
 const STORAGE_KEY = "tindahan_demo_conversations";
 
@@ -126,6 +126,7 @@ function getLastMessage(conversation) {
 }
 
 export default function Messages() {
+  const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const photoInputRef = useRef(null);
 
@@ -230,6 +231,28 @@ export default function Messages() {
 
     setConversations(nextConversations);
     saveConversations(nextConversations);
+  }
+
+  function handleBuyClick() {
+    const listingId = activeConversation?.listing?.id || activeConversation?.listingId;
+
+    if (!listingId) {
+      alert("Unable to open checkout for this item.");
+      return;
+    }
+
+    navigate(`/checkout/${listingId}`);
+  }
+
+  function handleMakeOfferClick() {
+    const listingId = activeConversation?.listing?.id || activeConversation?.listingId;
+
+    if (!listingId) {
+      alert("Unable to make an offer for this item.");
+      return;
+    }
+
+    navigate(`/offer/${listingId}`);
   }
 
   async function handlePhotoChange(event) {
@@ -405,11 +428,19 @@ export default function Messages() {
           </div>
 
           <div className="messages-listing-actions">
-            <button type="button" className="messages-outline-button">
+            <button
+              type="button"
+              className="messages-outline-button"
+              onClick={handleMakeOfferClick}
+            >
               Make an offer
             </button>
 
-            <button type="button" className="messages-buy-button">
+            <button
+              type="button"
+              className="messages-buy-button"
+              onClick={handleBuyClick}
+            >
               Buy
             </button>
           </div>
