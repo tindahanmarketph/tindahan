@@ -14,6 +14,14 @@ function withTimeout(promise, ms, fallbackValue) {
   ]);
 }
 
+function getWelcomeRedirectUrl() {
+  if (typeof window === "undefined") {
+    return undefined;
+  }
+
+  return `${window.location.origin}/welcome`;
+}
+
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
   const [profile, setProfile] = useState(null);
@@ -145,15 +153,35 @@ export function AuthProvider({ children }) {
     return data;
   }
 
-  async function register(email, password, username) {
+  async function signUp({ email, password, username }) {
+    const cleanUsername = String(username || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9_]/g, "");
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
+        emailRedirectTo: getWelcomeRedirectUrl(),
         data: {
-          username
+          username: cleanUsername
         }
       }
+    });
+
+    if (error) {
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  }
+
+  async function register(email, password, username) {
+    const { data, error } = await signUp({
+      email,
+      password,
+      username
     });
 
     if (error) {
@@ -179,6 +207,7 @@ export function AuthProvider({ children }) {
     profile,
     loadingAuth,
     login,
+    signUp,
     register,
     logout,
     loadProfile

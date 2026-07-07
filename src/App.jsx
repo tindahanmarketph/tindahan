@@ -10,6 +10,7 @@ import Home from "./pages/Home";
 import SearchPage from "./pages/Search";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Welcome from "./pages/Welcome";
 import ListingDetail from "./pages/ListingDetail";
 import Profile from "./pages/Profile";
 import Favorites from "./pages/Favorites";
@@ -65,7 +66,8 @@ export default function App() {
     location.pathname.startsWith("/listings/") ||
     location.pathname.startsWith("/checkout/") ||
     location.pathname.startsWith("/safe-meetup/") ||
-    location.pathname.startsWith("/offer/");
+    location.pathname.startsWith("/offer/") ||
+    location.pathname.startsWith("/welcome");
 
   return (
     <>
@@ -79,6 +81,15 @@ export default function App() {
 
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+
+        <Route
+          path="/welcome"
+          element={
+            <ProtectedRoute>
+              <Welcome />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/checkout/:id"
