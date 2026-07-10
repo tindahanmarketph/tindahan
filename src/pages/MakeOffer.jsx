@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 
@@ -24,11 +24,44 @@ function getOfferStorageKey(listingId) {
   return `tindahan_offers_${listingId}`;
 }
 
+function createMessageId() {
+  if (window.crypto?.randomUUID) {
+    return `message-${window.crypto.randomUUID()}`;
+  }
+
+  return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getSavedConversations() {
+  try {
+    return JSON.parse(localStorage.getItem("tindahan_demo_conversations") || "[]");
+  } catch {
+    return [];
+  }
+}
+
+function saveConversations(conversations) {
+  localStorage.setItem("tindahan_demo_conversations", JSON.stringify(conversations));
+}
+
+function findBuyerIdFromConversation(conversation) {
+  const offerMessage = [...(conversation?.messages || [])]
+    .reverse()
+    .find((message) => message.type === "offer" && message.offer?.buyerId);
+
+  return offerMessage?.offer?.buyerId || null;
+}
+
 export default function MakeOffer() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const customInputRef = useRef(null);
+
+  const mode = searchParams.get("mode") || "buyer";
+  const conversationIdFromParams = searchParams.get("conversationId") || "";
+  const isCounterMode = mode === "counter";
 
   const [listing, setListing] = useState(null);
   const [seller, setSeller] = useState(null);
@@ -74,9 +107,12 @@ export default function MakeOffer() {
       }
 
       if (data?.price) {
-        const defaultOffer = Number(data.price) * 0.85;
-        setSelectedType("15");
-        setOfferValue(defaultOffer.toFixed(2));
+        const defaultOffer = isCounterMode
+          ? Number(data.price)
+          : Number(data.price) * 0.85;
+
+        setSelectedType(isCounterMode ? "custom" : "15");
+        setOfferValue(isCounterMode ? "0" : defaultOffer.toFixed(2));
       }
 
       setLoading(false);
@@ -87,7 +123,7 @@ export default function MakeOffer() {
     return () => {
       isMounted = false;
     };
-  }, [id]);
+  }, [id, isCounterMode]);
 
   useEffect(() => {
     if (selectedType === "custom") {
@@ -111,6 +147,10 @@ export default function MakeOffer() {
   const protectedTotal = cleanOfferValue + buyerProtection;
 
   const isCustomOffer = selectedType === "custom";
+
+  const isCurrentUserSeller = Boolean(
+    user?.id && listing?.seller_id && String(user.id) === String(listing.seller_id)
+  );
 
   const canSubmit =
     cleanOfferValue > 0 &&
@@ -139,6 +179,7 @@ export default function MakeOffer() {
     nextValue = nextValue.replace(/[^\d.]/g, "");
 
     const dotCount = (nextValue.match(/\./g) || []).length;
+
     if (dotCount > 1) {
       const firstDotIndex = nextValue.indexOf(".");
       nextValue =
@@ -188,6 +229,19 @@ export default function MakeOffer() {
 
     setIsSubmitting(true);
 
+    const existingConversations = getSavedConversations();
+    const conversationId = conversationIdFromParams || `listing-${listing.id}`;
+
+    const existingConversation = existingConversations.find(
+      (conversation) => conversation.id === conversationId
+    );
+
+    const isSellerOffer = isCounterMode || isCurrentUserSeller;
+
+    const buyerId = isSellerOffer
+      ? findBuyerIdFromConversation(existingConversation)
+      : user?.id || null;
+
     const offer = {
       id: `offer-${Date.now()}`,
       listingId: listing.id,
@@ -197,10 +251,11 @@ export default function MakeOffer() {
       offerPrice: cleanOfferValue,
       buyerProtection,
       protectedTotal,
-      buyerId: user?.id || null,
+      buyerId,
       sellerId: listing.seller_id || null,
       sellerUsername: seller?.username || "",
-      status: "sent",
+      senderRole: isSellerOffer ? "seller_counter_offer" : "buyer_offer",
+      status: "pending",
       createdAt: new Date().toISOString()
     };
 
@@ -214,27 +269,17 @@ export default function MakeOffer() {
         JSON.stringify([offer, ...existingOffers])
       );
 
-      const existingConversations = JSON.parse(
-        localStorage.getItem("tindahan_demo_conversations") || "[]"
-      );
-
-      const conversationId = `listing-${listing.id}`;
-
       const newMessage = {
-        id: `message-${Date.now()}`,
+        id: createMessageId(),
         sender: "me",
-        text: `I would like to make an offer of ₱${formatPrice(
-          cleanOfferValue
-        )} for this item.`,
+        text: isSellerOffer
+          ? `I can offer this item for ₱${formatPrice(cleanOfferValue)}.`
+          : `I would like to make an offer of ₱${formatPrice(cleanOfferValue)} for this item.`,
         photos: [],
         type: "offer",
         offer,
         createdAt: new Date().toISOString()
       };
-
-      const existingConversation = existingConversations.find(
-        (conversation) => conversation.id === conversationId
-      );
 
       let nextConversations;
 
@@ -243,6 +288,15 @@ export default function MakeOffer() {
           conversation.id === conversationId
             ? {
                 ...conversation,
+                sellerId: conversation.sellerId || listing.seller_id || "",
+                listing: {
+                  ...(conversation.listing || {}),
+                  id: listing.id,
+                  title: listing.title,
+                  price: listing.price,
+                  photo: firstPhoto || conversation.listing?.photo || "",
+                  sellerId: listing.seller_id || conversation.listing?.sellerId || ""
+                },
                 messages: [...(conversation.messages || []), newMessage],
                 updatedAt: new Date().toISOString()
               }
@@ -253,6 +307,7 @@ export default function MakeOffer() {
           {
             id: conversationId,
             listingId: listing.id,
+            sellerId: listing.seller_id || "",
             sellerName: seller?.username || "Seller",
             sellerLocation: "Philippines",
             lastSeen: "Recently active",
@@ -260,7 +315,8 @@ export default function MakeOffer() {
               id: listing.id,
               title: listing.title,
               price: listing.price,
-              photo: firstPhoto || ""
+              photo: firstPhoto || "",
+              sellerId: listing.seller_id || ""
             },
             messages: [newMessage],
             updatedAt: new Date().toISOString()
@@ -269,10 +325,7 @@ export default function MakeOffer() {
         ];
       }
 
-      localStorage.setItem(
-        "tindahan_demo_conversations",
-        JSON.stringify(nextConversations)
-      );
+      saveConversations(nextConversations);
     } catch (error) {
       console.warn("Offer local save skipped:", error);
     }
@@ -291,6 +344,8 @@ export default function MakeOffer() {
 
       if (seller?.id) {
         params.set("sellerId", seller.id);
+      } else if (listing.seller_id) {
+        params.set("sellerId", listing.seller_id);
       }
 
       if (seller?.username) {
@@ -337,7 +392,7 @@ export default function MakeOffer() {
           Close
         </button>
 
-        <h1>Make an offer</h1>
+        <h1>{isCounterMode ? "Make a counter-offer" : "Make an offer"}</h1>
 
         <span />
       </header>
@@ -357,36 +412,38 @@ export default function MakeOffer() {
         </div>
       </section>
 
-      <section className="make-offer-suggestions">
-        <button
-          type="button"
-          className={selectedType === "15" ? "active" : ""}
-          onClick={() => selectSuggestion("15", offer15)}
-        >
-          <strong>₱{formatPrice(offer15)}</strong>
-          <span>15% discount</span>
-        </button>
+      {!isCounterMode && (
+        <section className="make-offer-suggestions">
+          <button
+            type="button"
+            className={selectedType === "15" ? "active" : ""}
+            onClick={() => selectSuggestion("15", offer15)}
+          >
+            <strong>₱{formatPrice(offer15)}</strong>
+            <span>15% discount</span>
+          </button>
 
-        <button
-          type="button"
-          className={selectedType === "30" ? "active" : ""}
-          onClick={() => selectSuggestion("30", offer30)}
-        >
-          <strong>₱{formatPrice(offer30)}</strong>
-          <span>30% discount</span>
-        </button>
+          <button
+            type="button"
+            className={selectedType === "30" ? "active" : ""}
+            onClick={() => selectSuggestion("30", offer30)}
+          >
+            <strong>₱{formatPrice(offer30)}</strong>
+            <span>30% discount</span>
+          </button>
 
-        <button
-          type="button"
-          className={selectedType === "custom" ? "active" : ""}
-          onClick={selectCustomOffer}
-        >
-          <strong>Other</strong>
-          <span>Suggest a price</span>
-        </button>
-      </section>
+          <button
+            type="button"
+            className={selectedType === "custom" ? "active" : ""}
+            onClick={selectCustomOffer}
+          >
+            <strong>Other</strong>
+            <span>Suggest a price</span>
+          </button>
+        </section>
+      )}
 
-      {isCustomOffer && (
+      {(isCustomOffer || isCounterMode) && (
         <section className="make-offer-input-section visible">
           <div className="make-offer-input-wrap">
             <span>₱</span>
@@ -422,15 +479,19 @@ export default function MakeOffer() {
         <button type="button" disabled={!canSubmit} onClick={submitOffer}>
           {isSubmitting
             ? "Sending..."
+            : isCounterMode
+            ? `Send counter-offer ₱${formatPrice(cleanOfferValue)}`
             : `Send offer ₱${formatPrice(cleanOfferValue)}`}
         </button>
 
-        <p>
-          25 offers remaining today{" "}
-          <button type="button" onClick={() => setShowLimitModal(true)}>
-            Why?
-          </button>
-        </p>
+        {!isCounterMode && (
+          <p>
+            25 offers remaining today{" "}
+            <button type="button" onClick={() => setShowLimitModal(true)}>
+              Why?
+            </button>
+          </p>
+        )}
       </section>
 
       {showLimitModal && (

@@ -109,6 +109,17 @@ function getMeetupStorageKey(listingId) {
   return `tindahan_safe_meetup_${listingId}`;
 }
 
+function parseOfferPrice(searchParams) {
+  const rawOfferPrice = searchParams.get("offerPrice");
+  const offerPrice = Number(rawOfferPrice);
+
+  if (!Number.isFinite(offerPrice) || offerPrice <= 0) {
+    return null;
+  }
+
+  return offerPrice;
+}
+
 export default function Checkout() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -190,7 +201,11 @@ export default function Checkout() {
     };
   }, [id, searchParams]);
 
-  const itemPrice = Number(listing?.price || 0);
+  const originalItemPrice = Number(listing?.price || 0);
+  const acceptedOfferPrice = parseOfferPrice(searchParams);
+  const itemPrice = acceptedOfferPrice || originalItemPrice;
+  const hasAcceptedOfferPrice = Boolean(acceptedOfferPrice);
+
   const buyerProtection = itemPrice * 0.08;
 
   const delivery = useMemo(() => {
@@ -268,6 +283,8 @@ export default function Checkout() {
       buyerId: user?.id || null,
       sellerId: listing.seller_id || null,
       sellerUsername: seller?.username || "",
+      originalItemPrice,
+      acceptedOfferPrice: hasAcceptedOfferPrice ? acceptedOfferPrice : null,
       itemPrice,
       buyerProtection,
       shippingFee: delivery.price,
@@ -358,7 +375,19 @@ export default function Checkout() {
             <span>{listing.condition.replaceAll("_", " ")}</span>
           )}
 
-          <strong>₱{formatPrice(itemPrice)}</strong>
+          {hasAcceptedOfferPrice ? (
+            <>
+              <strong>₱{formatPrice(itemPrice)}</strong>
+              <small className="checkout-offer-price-label">
+                Accepted offer price
+              </small>
+              <small className="checkout-original-price">
+                Original price: ₱{formatPrice(originalItemPrice)}
+              </small>
+            </>
+          ) : (
+            <strong>₱{formatPrice(itemPrice)}</strong>
+          )}
         </div>
       </section>
 
@@ -494,10 +523,26 @@ export default function Checkout() {
       <section className="checkout-section checkout-price-section">
         <h2>Price</h2>
 
+        {hasAcceptedOfferPrice && (
+          <div className="checkout-offer-notice">
+            <ShieldCheck size={17} />
+            <span>
+              You are checking out with an accepted offer price.
+            </span>
+          </div>
+        )}
+
         <div className="checkout-price-row">
-          <span>Order</span>
+          <span>{hasAcceptedOfferPrice ? "Accepted offer" : "Order"}</span>
           <strong>₱{formatPrice(itemPrice)}</strong>
         </div>
+
+        {hasAcceptedOfferPrice && (
+          <div className="checkout-price-row muted">
+            <span>Original item price</span>
+            <strong>₱{formatPrice(originalItemPrice)}</strong>
+          </div>
+        )}
 
         <div className="checkout-price-row">
           <span>

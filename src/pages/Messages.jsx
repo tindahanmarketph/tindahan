@@ -1,6 +1,7 @@
 import {
   Bell,
   Camera,
+  Check,
   ChevronLeft,
   Info,
   MapPin,
@@ -11,6 +12,7 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const STORAGE_KEY = "tindahan_demo_conversations";
 
@@ -19,7 +21,10 @@ function formatPrice(value) {
 
   if (!price) return "Price not available";
 
-  return `₱${price.toLocaleString("en-PH")}`;
+  return `₱${price.toLocaleString("en-PH", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  })}`;
 }
 
 function formatConversationDate(dateValue) {
@@ -86,6 +91,7 @@ function buildConversationFromParams(searchParams) {
   if (!listingId) return null;
 
   const sellerName = searchParams.get("seller") || "Seller";
+  const sellerId = searchParams.get("sellerId") || "";
   const title = searchParams.get("title") || "Item";
   const price = searchParams.get("price") || "0";
   const photo = searchParams.get("photo") || "";
@@ -93,6 +99,7 @@ function buildConversationFromParams(searchParams) {
   return {
     id: `listing-${listingId}`,
     listingId,
+    sellerId,
     sellerName,
     sellerLocation: "Philippines",
     lastSeen: "Recently active",
@@ -100,7 +107,8 @@ function buildConversationFromParams(searchParams) {
       id: listingId,
       title,
       price,
-      photo
+      photo,
+      sellerId
     },
     messages: [
       {
@@ -120,13 +128,54 @@ function getLastMessage(conversation) {
   const lastMessage = messages[messages.length - 1];
 
   if (!lastMessage) return conversation?.listing?.title || "Conversation";
+
+  if (lastMessage.type === "offer") {
+    const offer = lastMessage.offer;
+    if (offer?.status === "accepted") return `Offer accepted · ${formatPrice(offer.offerPrice)}`;
+    if (offer?.status === "declined") return `Offer declined · ${formatPrice(offer.offerPrice)}`;
+    if (offer?.senderRole === "seller_counter_offer") {
+      return `Seller counter-offer · ${formatPrice(offer.offerPrice)}`;
+    }
+    return `Offer sent · ${formatPrice(offer.offerPrice)}`;
+  }
+
   if (lastMessage.text) return lastMessage.text;
   if (lastMessage.photos?.length > 0) return "Photo";
   return conversation?.listing?.title || "Conversation";
 }
 
+function getAcceptedOffer(conversation) {
+  const messages = conversation?.messages || [];
+
+  const acceptedOfferMessage = [...messages]
+    .reverse()
+    .find((message) => message.type === "offer" && message.offer?.status === "accepted");
+
+  return acceptedOfferMessage?.offer || null;
+}
+
+function getLatestPendingCounterOffer(conversation) {
+  const messages = conversation?.messages || [];
+
+  const counterOfferMessage = [...messages]
+    .reverse()
+    .find(
+      (message) =>
+        message.type === "offer" &&
+        message.offer?.senderRole === "seller_counter_offer" &&
+        message.offer?.status === "pending"
+    );
+
+  return counterOfferMessage?.offer || null;
+}
+
+function getBestCheckoutOffer(conversation) {
+  return getAcceptedOffer(conversation) || getLatestPendingCounterOffer(conversation);
+}
+
 export default function Messages() {
   const navigate = useNavigate();
+  const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const photoInputRef = useRef(null);
 
@@ -170,7 +219,15 @@ export default function Messages() {
           conversation.id === incomingConversation.id
             ? {
                 ...conversation,
-                ...incomingConversation,
+                sellerId: conversation.sellerId || incomingConversation.sellerId,
+                listing: {
+                  ...(conversation.listing || {}),
+                  ...(incomingConversation.listing || {}),
+                  sellerId:
+                    conversation.listing?.sellerId ||
+                    incomingConversation.listing?.sellerId ||
+                    incomingConversation.sellerId
+                },
                 messages:
                   conversation.messages?.length > 0
                     ? conversation.messages
@@ -204,6 +261,25 @@ export default function Messages() {
 
   const messagesCount = conversations.length;
 
+  const isCurrentUserSeller = useMemo(() => {
+    const sellerId =
+      activeConversation?.sellerId ||
+      activeConversation?.listing?.sellerId ||
+      activeConversation?.seller_id;
+
+    return Boolean(user?.id && sellerId && String(user.id) === String(sellerId));
+  }, [activeConversation, user?.id]);
+
+  const acceptedOffer = useMemo(
+    () => getAcceptedOffer(activeConversation),
+    [activeConversation]
+  );
+
+  const checkoutOffer = useMemo(
+    () => getBestCheckoutOffer(activeConversation),
+    [activeConversation]
+  );
+
   function openConversation(conversationId) {
     setActiveConversationId(conversationId);
     setMobilePanel("chat");
@@ -214,6 +290,11 @@ export default function Messages() {
     setMobilePanel("inbox");
     setShowBundleBox(false);
     setSelectedPhotos([]);
+  }
+
+  function updateConversations(nextConversations) {
+    setConversations(nextConversations);
+    saveConversations(nextConversations);
   }
 
   function updateActiveConversation(newMessage) {
@@ -229,15 +310,65 @@ export default function Messages() {
       };
     });
 
-    setConversations(nextConversations);
-    saveConversations(nextConversations);
+    updateConversations(nextConversations);
   }
 
-  function handleBuyClick() {
+  function updateOfferStatus(messageId, nextStatus) {
+    if (!activeConversation) return;
+
+    const nextConversations = conversations.map((conversation) => {
+      if (conversation.id !== activeConversation.id) return conversation;
+
+      const nextMessages = (conversation.messages || []).map((item) => {
+        if (item.id !== messageId || item.type !== "offer") return item;
+
+        return {
+          ...item,
+          offer: {
+            ...item.offer,
+            status: nextStatus,
+            respondedAt: new Date().toISOString()
+          }
+        };
+      });
+
+      const offerMessage = nextMessages.find((item) => item.id === messageId);
+      const offerPrice = offerMessage?.offer?.offerPrice;
+
+      const statusMessage = {
+        id: createId("message"),
+        sender: isCurrentUserSeller ? "seller" : "me",
+        text:
+          nextStatus === "accepted"
+            ? `Offer accepted at ${formatPrice(offerPrice)}.`
+            : `Offer declined at ${formatPrice(offerPrice)}.`,
+        photos: [],
+        type: "offer_status",
+        createdAt: new Date().toISOString()
+      };
+
+      return {
+        ...conversation,
+        messages: [...nextMessages, statusMessage],
+        updatedAt: new Date().toISOString()
+      };
+    });
+
+    updateConversations(nextConversations);
+  }
+
+  function handleBuyClick(offer = null) {
     const listingId = activeConversation?.listing?.id || activeConversation?.listingId;
 
     if (!listingId) {
       alert("Unable to open checkout for this item.");
+      return;
+    }
+
+    const selectedOffer = offer || checkoutOffer;
+
+    if (selectedOffer?.offerPrice) {
+      navigate(`/checkout/${listingId}?offerPrice=${selectedOffer.offerPrice}`);
       return;
     }
 
@@ -253,6 +384,21 @@ export default function Messages() {
     }
 
     navigate(`/offer/${listingId}`);
+  }
+
+  function handleCounterOfferClick() {
+    const listingId = activeConversation?.listing?.id || activeConversation?.listingId;
+
+    if (!listingId) {
+      alert("Unable to make a counter-offer for this item.");
+      return;
+    }
+
+    const params = new URLSearchParams();
+    params.set("mode", "counter");
+    params.set("conversationId", activeConversation.id);
+
+    navigate(`/offer/${listingId}?${params.toString()}`);
   }
 
   async function handlePhotoChange(event) {
@@ -380,6 +526,125 @@ export default function Messages() {
     );
   }
 
+  function renderOfferCard(item) {
+    const offer = item.offer;
+    if (!offer) return null;
+
+    const isPending = offer.status === "pending" || offer.status === "sent";
+    const isAccepted = offer.status === "accepted";
+    const isDeclined = offer.status === "declined";
+
+    const isBuyerOffer = offer.senderRole === "buyer_offer";
+    const isSellerCounterOffer = offer.senderRole === "seller_counter_offer";
+
+    const shouldSellerAct =
+      isCurrentUserSeller && isBuyerOffer && isPending;
+
+    const shouldBuyerAct =
+      !isCurrentUserSeller && (isAccepted || isSellerCounterOffer);
+
+    return (
+      <div
+        className={
+          item.sender === "me"
+            ? "offer-message-card own-offer"
+            : "offer-message-card"
+        }
+      >
+        <div className="offer-message-heading">
+          <span>
+            {isBuyerOffer
+              ? isCurrentUserSeller
+                ? "Buyer made an offer"
+                : "You made an offer"
+              : isCurrentUserSeller
+              ? "You sent a counter-offer"
+              : "Seller made a counter-offer"}
+          </span>
+
+          {isAccepted && <strong className="accepted">Accepted</strong>}
+          {isDeclined && <strong className="declined">Declined</strong>}
+          {isPending && <strong className="pending">Pending</strong>}
+        </div>
+
+        <div className="offer-message-price-row">
+          <strong>{formatPrice(offer.offerPrice)}</strong>
+
+          {offer.itemPrice && Number(offer.itemPrice) !== Number(offer.offerPrice) && (
+            <span>{formatPrice(offer.itemPrice)}</span>
+          )}
+        </div>
+
+        {offer.protectedTotal && (
+          <p className="offer-message-protected">
+            {formatPrice(offer.protectedTotal)} incl. Buyer Protection
+          </p>
+        )}
+
+        {shouldSellerAct && (
+          <div className="offer-message-actions">
+            <button
+              type="button"
+              className="offer-accept-button"
+              onClick={() => updateOfferStatus(item.id, "accepted")}
+            >
+              <Check size={16} />
+              Accept
+            </button>
+
+            <button
+              type="button"
+              className="offer-decline-button"
+              onClick={() => updateOfferStatus(item.id, "declined")}
+            >
+              Decline
+            </button>
+
+            <button
+              type="button"
+              className="offer-counter-button"
+              onClick={handleCounterOfferClick}
+            >
+              Make counter-offer
+            </button>
+          </div>
+        )}
+
+        {shouldBuyerAct && (
+          <div className="offer-message-actions buyer-actions">
+            <button
+              type="button"
+              className="offer-counter-button"
+              onClick={handleMakeOfferClick}
+            >
+              Make another offer
+            </button>
+
+            <button
+              type="button"
+              className="offer-accept-button"
+              onClick={() => handleBuyClick(offer)}
+            >
+              Buy at {formatPrice(offer.offerPrice)}
+            </button>
+          </div>
+        )}
+
+        {!isCurrentUserSeller && isBuyerOffer && isPending && (
+          <div className="offer-message-actions buyer-actions">
+            <button
+              type="button"
+              className="offer-counter-button"
+              onClick={handleMakeOfferClick}
+            >
+              Change my offer
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
   function renderChatPanel({ mobile = false } = {}) {
     if (!activeConversation) {
       return (
@@ -424,25 +689,44 @@ export default function Messages() {
           <div className="messages-listing-info">
             <strong>{activeConversation.listing?.title}</strong>
             <span>{formatPrice(activeConversation.listing?.price)}</span>
-            <small>Includes Buyer Protection</small>
+
+            {acceptedOffer ? (
+              <small>Accepted offer: {formatPrice(acceptedOffer.offerPrice)}</small>
+            ) : (
+              <small>Includes Buyer Protection</small>
+            )}
           </div>
 
           <div className="messages-listing-actions">
-            <button
-              type="button"
-              className="messages-outline-button"
-              onClick={handleMakeOfferClick}
-            >
-              Make an offer
-            </button>
+            {!isCurrentUserSeller && (
+              <button
+                type="button"
+                className="messages-outline-button"
+                onClick={handleMakeOfferClick}
+              >
+                Make an offer
+              </button>
+            )}
 
-            <button
-              type="button"
-              className="messages-buy-button"
-              onClick={handleBuyClick}
-            >
-              Buy
-            </button>
+            {!isCurrentUserSeller && (
+              <button
+                type="button"
+                className="messages-buy-button"
+                onClick={() => handleBuyClick()}
+              >
+                Buy
+              </button>
+            )}
+
+            {isCurrentUserSeller && (
+              <button
+                type="button"
+                className="messages-outline-button seller-counter-main"
+                onClick={handleCounterOfferClick}
+              >
+                Make counter-offer
+              </button>
+            )}
           </div>
         </div>
 
@@ -471,21 +755,25 @@ export default function Messages() {
                 item.sender === "me" ? "me" : ""
               }`}
             >
-              <div className="message-bubble">
-                {item.text && <p>{item.text}</p>}
+              {item.type === "offer" ? (
+                renderOfferCard(item)
+              ) : (
+                <div className="message-bubble">
+                  {item.text && <p>{item.text}</p>}
 
-                {item.photos?.length > 0 && (
-                  <div className="message-photo-grid">
-                    {item.photos.map((photo) => (
-                      <img
-                        key={photo.id}
-                        src={photo.dataUrl}
-                        alt={photo.name || "Message attachment"}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+                  {item.photos?.length > 0 && (
+                    <div className="message-photo-grid">
+                      {item.photos.map((photo) => (
+                        <img
+                          key={photo.id}
+                          src={photo.dataUrl}
+                          alt={photo.name || "Message attachment"}
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -684,7 +972,7 @@ export default function Messages() {
 
                   <div>
                     <strong>{conversation.sellerName}</strong>
-                    <p>{conversation.listing?.title || "Conversation"}</p>
+                    <p>{getLastMessage(conversation)}</p>
                   </div>
                 </button>
               ))}

@@ -14978,3 +14978,217 @@ textarea:focus {
     height: 32px;
   }
 }
+/* ========================= */
+/* OFFERS IN MESSAGES - TINDAHAN */
+/* ========================= */
+
+.offer-message-card {
+  width: min(330px, 86vw);
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #ffffff;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+}
+
+.message-bubble-row.me .offer-message-card,
+.offer-message-card.own-offer {
+  border-color: var(--orange-border);
+  background: #fffaf7;
+}
+
+.offer-message-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.offer-message-heading span {
+  color: #111111;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.offer-message-heading strong {
+  flex: none;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.offer-message-heading strong.pending {
+  color: var(--orange);
+  background: var(--orange-soft);
+}
+
+.offer-message-heading strong.accepted {
+  color: #0f8a5f;
+  background: #e9f8f1;
+}
+
+.offer-message-heading strong.declined {
+  color: #d93025;
+  background: #fff0ee;
+}
+
+.offer-message-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.offer-message-price-row strong {
+  color: #111111;
+  font-size: 22px;
+  line-height: 1;
+  font-weight: 950;
+}
+
+.offer-message-price-row span {
+  color: #7a858a;
+  font-size: 15px;
+  font-weight: 700;
+  text-decoration: line-through;
+}
+
+.offer-message-protected {
+  margin: -2px 0 0;
+  color: var(--orange);
+  font-size: 13px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+
+.offer-message-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.offer-message-actions.buyer-actions {
+  grid-template-columns: 1fr;
+}
+
+.offer-accept-button,
+.offer-decline-button,
+.offer-counter-button {
+  min-height: 38px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 950;
+  transition: all 0.16s ease;
+}
+
+.offer-accept-button {
+  border: 1.5px solid var(--orange);
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.offer-accept-button:hover {
+  background: var(--orange-dark);
+  border-color: var(--orange-dark);
+}
+
+.offer-decline-button {
+  border: 1px solid #d93025;
+  background: #ffffff;
+  color: #d93025;
+}
+
+.offer-decline-button:hover {
+  background: #fff0ee;
+}
+
+.offer-counter-button {
+  border: 1.5px solid var(--orange);
+  background: #ffffff;
+  color: var(--orange);
+}
+
+.offer-counter-button:hover {
+  background: var(--orange-soft);
+}
+
+.seller-counter-main {
+  width: 100%;
+}
+
+/* ========================= */
+/* CHECKOUT OFFER PRICE */
+/* ========================= */
+
+.checkout-offer-price-label {
+  display: inline-flex !important;
+  width: fit-content;
+  margin-top: 6px !important;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: var(--orange-soft);
+  color: var(--orange) !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+.checkout-original-price {
+  display: block !important;
+  margin-top: 4px !important;
+  color: #7a858a !important;
+  font-size: 12px !important;
+  text-decoration: line-through;
+}
+
+.checkout-offer-notice {
+  min-height: 42px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 9px;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--orange-border);
+  border-radius: 10px;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.checkout-offer-notice span {
+  color: #1f2d33;
+  font-size: 13px;
+  line-height: 1.3;
+  font-weight: 750;
+}
+
+.checkout-price-row.muted span,
+.checkout-price-row.muted strong {
+  color: #7a858a !important;
+  font-weight: 600 !important;
+  text-decoration: line-through;
+}
+
+@media (max-width: 640px) {
+  .offer-message-card {
+    width: min(300px, 84vw);
+    padding: 11px;
+  }
+
+  .offer-message-price-row strong {
+    font-size: 20px;
+  }
+
+  .offer-accept-button,
+  .offer-decline-button,
+  .offer-counter-button {
+    min-height: 36px;
+    font-size: 12.5px;
+  }
+}
