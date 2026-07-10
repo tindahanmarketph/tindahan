@@ -26,10 +26,30 @@ export default function Orders() {
   const [activeMainTab, setActiveMainTab] = useState("purchases");
   const [activeFilter, setActiveFilter] = useState("in_progress");
   const [orders, setOrders] = useState([]);
+  const [loadingOrders, setLoadingOrders] = useState(true);
+  const [errorMessage, setErrorMessage] = useState("");
+
+  async function loadOrders() {
+    if (!user?.id) return;
+
+    setLoadingOrders(true);
+    setErrorMessage("");
+
+    try {
+      const nextOrders = await getStoredOrders(user.id);
+      setOrders(nextOrders);
+    } catch (error) {
+      console.error("Orders loading error:", error);
+      setErrorMessage(error.message || "Unable to load orders.");
+      setOrders([]);
+    } finally {
+      setLoadingOrders(false);
+    }
+  }
 
   useEffect(() => {
-    setOrders(getStoredOrders());
-  }, []);
+    loadOrders();
+  }, [user?.id]);
 
   const visibleOrders = useMemo(() => {
     return orders.filter((order) => {
@@ -157,7 +177,25 @@ export default function Orders() {
         </button>
       </section>
 
-      {filteredOrders.length === 0 ? (
+      {loadingOrders ? (
+        <section className="mobile-empty-center orders-empty">
+          <div className="mobile-empty-illustration purple">
+            <ReceiptText size={56} />
+          </div>
+
+          <h2>Loading orders...</h2>
+          <p>Please wait a moment.</p>
+        </section>
+      ) : errorMessage ? (
+        <section className="mobile-empty-center orders-empty">
+          <div className="mobile-empty-illustration purple">
+            <ReceiptText size={56} />
+          </div>
+
+          <h2>Unable to load orders</h2>
+          <p>{errorMessage}</p>
+        </section>
+      ) : filteredOrders.length === 0 ? (
         <section className="mobile-empty-center orders-empty">
           <div className="mobile-empty-illustration purple">
             <ReceiptText size={56} />

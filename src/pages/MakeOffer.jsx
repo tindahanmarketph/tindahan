@@ -2,6 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import {
+  createOfferMessage,
+  fetchConversationsForUser,
+  getOrCreateConversation,
+  getOrCreateConversationFromListingId
+} from "../lib/tindahanRealtime";
 
 function formatPrice(value) {
   return Number(value || 0).toLocaleString("en-PH", {
@@ -20,38 +26,6 @@ function parseOfferValue(value) {
   return Number.isFinite(parsedValue) ? parsedValue : 0;
 }
 
-function getOfferStorageKey(listingId) {
-  return `tindahan_offers_${listingId}`;
-}
-
-function createMessageId() {
-  if (window.crypto?.randomUUID) {
-    return `message-${window.crypto.randomUUID()}`;
-  }
-
-  return `message-${Date.now()}-${Math.random().toString(16).slice(2)}`;
-}
-
-function getSavedConversations() {
-  try {
-    return JSON.parse(localStorage.getItem("tindahan_demo_conversations") || "[]");
-  } catch {
-    return [];
-  }
-}
-
-function saveConversations(conversations) {
-  localStorage.setItem("tindahan_demo_conversations", JSON.stringify(conversations));
-}
-
-function findBuyerIdFromConversation(conversation) {
-  const offerMessage = [...(conversation?.messages || [])]
-    .reverse()
-    .find((message) => message.type === "offer" && message.offer?.buyerId);
-
-  return offerMessage?.offer?.buyerId || null;
-}
-
 export default function MakeOffer() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -65,6 +39,7 @@ export default function MakeOffer() {
 
   const [listing, setListing] = useState(null);
   const [seller, setSeller] = useState(null);
+  const [conversation, setConversation] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedType, setSelectedType] = useState("15");
   const [offerValue, setOfferValue] = useState("");
@@ -94,15 +69,19 @@ export default function MakeOffer() {
 
       setListing(data || null);
 
+      let sellerData = null;
+
       if (data?.seller_id) {
-        const { data: sellerData } = await supabase
+        const { data: profileData } = await supabase
           .from("profiles")
           .select("id, username, avatar_url")
           .eq("id", data.seller_id)
           .maybeSingle();
 
+        sellerData = profileData || null;
+
         if (isMounted) {
-          setSeller(sellerData || null);
+          setSeller(sellerData);
         }
       }
 
@@ -115,6 +94,29 @@ export default function MakeOffer() {
         setOfferValue(isCounterMode ? "0" : defaultOffer.toFixed(2));
       }
 
+      try {
+        if (conversationIdFromParams) {
+          const existingConversations = await fetchConversationsForUser(user?.id);
+
+          const foundConversation = existingConversations.find(
+            (item) => item.id === conversationIdFromParams
+          );
+
+          setConversation(foundConversation || null);
+        } else if (data?.id && user?.id) {
+          const createdConversation = await getOrCreateConversation({
+            listing: data,
+            seller: sellerData,
+            buyer: user,
+            firstPhoto: data.photos?.[0] || ""
+          });
+
+          setConversation(createdConversation);
+        }
+      } catch (conversationError) {
+        console.warn("Conversation loading skipped:", conversationError.message);
+      }
+
       setLoading(false);
     }
 
@@ -123,7 +125,7 @@ export default function MakeOffer() {
     return () => {
       isMounted = false;
     };
-  }, [id, isCounterMode]);
+  }, [id, isCounterMode, conversationIdFromParams, user?.id]);
 
   useEffect(() => {
     if (selectedType === "custom") {
@@ -156,7 +158,8 @@ export default function MakeOffer() {
     cleanOfferValue > 0 &&
     cleanOfferValue <= itemPrice &&
     !isSubmitting &&
-    Boolean(listing?.id);
+    Boolean(listing?.id) &&
+    Boolean(user?.id);
 
   function selectSuggestion(type, value) {
     setSelectedType(type);
@@ -224,136 +227,51 @@ export default function MakeOffer() {
     setOfferValue(String(parseOfferValue(offerValue)));
   }
 
-  function submitOffer() {
+  async function submitOffer() {
     if (!canSubmit) return;
 
     setIsSubmitting(true);
 
-    const existingConversations = getSavedConversations();
-    const conversationId = conversationIdFromParams || `listing-${listing.id}`;
-
-    const existingConversation = existingConversations.find(
-      (conversation) => conversation.id === conversationId
-    );
-
-    const isSellerOffer = isCounterMode || isCurrentUserSeller;
-
-    const buyerId = isSellerOffer
-      ? findBuyerIdFromConversation(existingConversation)
-      : user?.id || null;
-
-    const offer = {
-      id: `offer-${Date.now()}`,
-      listingId: listing.id,
-      listingTitle: listing.title,
-      listingPhoto: firstPhoto || "",
-      itemPrice,
-      offerPrice: cleanOfferValue,
-      buyerProtection,
-      protectedTotal,
-      buyerId,
-      sellerId: listing.seller_id || null,
-      sellerUsername: seller?.username || "",
-      senderRole: isSellerOffer ? "seller_counter_offer" : "buyer_offer",
-      status: "pending",
-      createdAt: new Date().toISOString()
-    };
-
     try {
-      const existingOffers = JSON.parse(
-        localStorage.getItem(getOfferStorageKey(listing.id)) || "[]"
-      );
+      let activeConversation = conversation;
 
-      localStorage.setItem(
-        getOfferStorageKey(listing.id),
-        JSON.stringify([offer, ...existingOffers])
-      );
-
-      const newMessage = {
-        id: createMessageId(),
-        sender: "me",
-        text: isSellerOffer
-          ? `I can offer this item for ₱${formatPrice(cleanOfferValue)}.`
-          : `I would like to make an offer of ₱${formatPrice(cleanOfferValue)} for this item.`,
-        photos: [],
-        type: "offer",
-        offer,
-        createdAt: new Date().toISOString()
-      };
-
-      let nextConversations;
-
-      if (existingConversation) {
-        nextConversations = existingConversations.map((conversation) =>
-          conversation.id === conversationId
+      if (!activeConversation) {
+        activeConversation = await getOrCreateConversationFromListingId({
+          listingId: listing.id,
+          buyer: isCurrentUserSeller
             ? {
-                ...conversation,
-                sellerId: conversation.sellerId || listing.seller_id || "",
-                listing: {
-                  ...(conversation.listing || {}),
-                  id: listing.id,
-                  title: listing.title,
-                  price: listing.price,
-                  photo: firstPhoto || conversation.listing?.photo || "",
-                  sellerId: listing.seller_id || conversation.listing?.sellerId || ""
-                },
-                messages: [...(conversation.messages || []), newMessage],
-                updatedAt: new Date().toISOString()
+                id: conversation?.buyerId
               }
-            : conversation
-        );
-      } else {
-        nextConversations = [
-          {
-            id: conversationId,
-            listingId: listing.id,
-            sellerId: listing.seller_id || "",
-            sellerName: seller?.username || "Seller",
-            sellerLocation: "Philippines",
-            lastSeen: "Recently active",
-            listing: {
-              id: listing.id,
-              title: listing.title,
-              price: listing.price,
-              photo: firstPhoto || "",
-              sellerId: listing.seller_id || ""
-            },
-            messages: [newMessage],
-            updatedAt: new Date().toISOString()
-          },
-          ...existingConversations
-        ];
+            : user
+        });
       }
 
-      saveConversations(nextConversations);
-    } catch (error) {
-      console.warn("Offer local save skipped:", error);
-    }
+      const buyerId = activeConversation.buyerId;
+      const sellerId = activeConversation.sellerId || listing.seller_id;
 
-    setTimeout(() => {
-      setIsSubmitting(false);
+      const isSellerOffer = isCounterMode || isCurrentUserSeller;
+
+      await createOfferMessage({
+        conversation: activeConversation,
+        listing,
+        buyerId,
+        sellerId,
+        senderId: user.id,
+        senderRole: isSellerOffer ? "seller_counter_offer" : "buyer_offer",
+        itemPrice,
+        offerPrice: cleanOfferValue
+      });
 
       const params = new URLSearchParams();
       params.set("listingId", listing.id);
-      params.set("title", listing.title || "Item");
-      params.set("price", String(listing.price || 0));
-
-      if (firstPhoto) {
-        params.set("photo", firstPhoto);
-      }
-
-      if (seller?.id) {
-        params.set("sellerId", seller.id);
-      } else if (listing.seller_id) {
-        params.set("sellerId", listing.seller_id);
-      }
-
-      if (seller?.username) {
-        params.set("seller", seller.username);
-      }
 
       navigate(`/messages?${params.toString()}`);
-    }, 500);
+    } catch (error) {
+      console.error("Offer submit error:", error);
+      alert(error.message || "Unable to send this offer.");
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   if (loading) {

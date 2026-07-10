@@ -270,7 +270,7 @@ export default function Checkout() {
     alert("Same-city courier details will be available in the next prototype step.");
   }
 
-  function handlePay() {
+  async function handlePay() {
     if (!listing || isPaying) return;
 
     if (selectedDelivery === "meetup" && !meetupPlan) {
@@ -280,25 +280,23 @@ export default function Checkout() {
 
     setIsPaying(true);
 
-    const order = createOrderFromCheckout({
-      listing,
-      seller,
-      buyer: user,
-      firstPhoto,
-      originalItemPrice,
-      acceptedOfferPrice: hasAcceptedOfferPrice ? acceptedOfferPrice : null,
-      itemPrice,
-      buyerProtection,
-      shippingFee: delivery.price,
-      total,
-      deliveryMethod: selectedDelivery,
-      paymentMethod: selectedPayment,
-      address,
-      meetup: selectedDelivery === "meetup" ? meetupPlan : null
-    });
-
-    setTimeout(() => {
-      setIsPaying(false);
+    try {
+      const order = await createOrderFromCheckout({
+        listing,
+        seller,
+        buyer: user,
+        firstPhoto,
+        originalItemPrice,
+        acceptedOfferPrice: hasAcceptedOfferPrice ? acceptedOfferPrice : null,
+        itemPrice,
+        buyerProtection,
+        shippingFee: delivery.price,
+        total,
+        deliveryMethod: selectedDelivery,
+        paymentMethod: selectedPayment,
+        address,
+        meetup: selectedDelivery === "meetup" ? meetupPlan : null
+      });
 
       if (selectedDelivery === "meetup") {
         navigate("/orders");
@@ -306,7 +304,12 @@ export default function Checkout() {
       }
 
       navigate(`/tracking/${order.id}`);
-    }, 650);
+    } catch (error) {
+      console.error("Checkout payment error:", error);
+      alert(error.message || "Unable to create this order.");
+    } finally {
+      setIsPaying(false);
+    }
   }
 
   if (loading) {

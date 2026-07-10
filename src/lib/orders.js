@@ -1,191 +1,189 @@
-const ORDERS_KEY = "tindahan_orders";
-const CONVERSATIONS_KEY = "tindahan_demo_conversations";
+import { supabase } from "./supabase";
+import {
+  addDays,
+  createTrackingNumber,
+  formatRealtimeDate,
+  formatRealtimeDateTime,
+  formatRealtimePrice,
+  getOrCreateConversationFromListingId,
+  mapOrderRow,
+  sendSystemMessage
+} from "./tindahanRealtime";
 
 export function formatTindaHanPrice(value) {
-  return Number(value || 0).toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-}
-
-export function createTrackingNumber() {
-  const timestamp = String(Date.now()).slice(-9);
-  const random = Math.floor(100000 + Math.random() * 900000);
-
-  return `TH-JT-${timestamp}${random}`;
-}
-
-export function addDays(dateValue, days) {
-  const date = new Date(dateValue);
-  date.setDate(date.getDate() + days);
-  return date.toISOString();
+  return formatRealtimePrice(value);
 }
 
 export function formatOrderDate(dateValue) {
-  if (!dateValue) return "";
-
-  return new Date(dateValue).toLocaleDateString("en-PH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric"
-  });
+  return formatRealtimeDate(dateValue);
 }
 
 export function formatOrderDateTime(dateValue) {
-  if (!dateValue) return "";
-
-  return new Date(dateValue).toLocaleString("en-PH", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+  return formatRealtimeDateTime(dateValue);
 }
 
-export function getStoredOrders() {
-  try {
-    return JSON.parse(localStorage.getItem(ORDERS_KEY) || "[]");
-  } catch {
-    return [];
+async function addOrderTrackingEvent(orderId, event) {
+  const { data, error } = await supabase
+    .from("order_tracking_events")
+    .insert({
+      order_id: orderId,
+      title: event.title,
+      description: event.description || "",
+      completed: event.completed ?? true
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
   }
+
+  return data;
 }
 
-export function saveOrders(orders) {
-  localStorage.setItem(ORDERS_KEY, JSON.stringify(orders));
-}
+export async function getStoredOrders(userId) {
+  if (!userId) return [];
 
-export function getOrderById(orderId) {
-  return getStoredOrders().find((order) => order.id === orderId) || null;
-}
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+    .order("created_at", { ascending: false });
 
-export function getOrderByListingId(listingId) {
-  return (
-    getStoredOrders().find(
-      (order) => String(order.listingId) === String(listingId)
-    ) || null
-  );
-}
+  if (error) {
+    throw error;
+  }
 
-export function updateOrder(orderId, updater) {
-  const orders = getStoredOrders();
+  const orderIds = (data || []).map((order) => order.id);
 
-  const nextOrders = orders.map((order) => {
-    if (order.id !== orderId) return order;
+  let trackingEvents = [];
 
-    const updatedOrder =
-      typeof updater === "function" ? updater(order) : { ...order, ...updater };
+  if (orderIds.length > 0) {
+    const { data: eventsData, error: eventsError } = await supabase
+      .from("order_tracking_events")
+      .select("*")
+      .in("order_id", orderIds)
+      .order("created_at", { ascending: false });
 
-    return {
-      ...updatedOrder,
-      updatedAt: new Date().toISOString()
-    };
+    if (eventsError) {
+      throw eventsError;
+    }
+
+    trackingEvents = eventsData || [];
+  }
+
+  return (data || []).map((orderRow) => {
+    const events = trackingEvents
+      .filter((event) => event.order_id === orderRow.id)
+      .map((event) => ({
+        id: event.id,
+        title: event.title,
+        description: event.description,
+        completed: event.completed,
+        date: event.created_at
+      }));
+
+    return mapOrderRow(orderRow, events);
   });
-
-  saveOrders(nextOrders);
-
-  return nextOrders.find((order) => order.id === orderId) || null;
 }
 
-export function addTrackingEvent(orderId, event) {
-  return updateOrder(orderId, (order) => ({
-    ...order,
-    trackingEvents: [
-      {
-        id: `tracking-${Date.now()}`,
-        date: new Date().toISOString(),
-        completed: true,
-        ...event
-      },
-      ...(order.trackingEvents || [])
-    ]
+export async function getOrderById(orderId) {
+  if (!orderId) return null;
+
+  const { data: orderRow, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!orderRow) return null;
+
+  const { data: eventsData, error: eventsError } = await supabase
+    .from("order_tracking_events")
+    .select("*")
+    .eq("order_id", orderId)
+    .order("created_at", { ascending: false });
+
+  if (eventsError) {
+    throw eventsError;
+  }
+
+  const events = (eventsData || []).map((event) => ({
+    id: event.id,
+    title: event.title,
+    description: event.description,
+    completed: event.completed,
+    date: event.created_at
   }));
+
+  return mapOrderRow(orderRow, events);
 }
 
-function getConversations() {
-  try {
-    return JSON.parse(localStorage.getItem(CONVERSATIONS_KEY) || "[]");
-  } catch {
-    return [];
+export async function getOrderByListingId(listingId, userId) {
+  if (!listingId || !userId) return null;
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*")
+    .eq("listing_id", listingId)
+    .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
   }
+
+  if (!data) return null;
+
+  return getOrderById(data.id);
 }
 
-function saveConversations(conversations) {
-  localStorage.setItem(CONVERSATIONS_KEY, JSON.stringify(conversations));
+async function updateOrder(orderId, updates) {
+  const { data, error } = await supabase
+    .from("orders")
+    .update({
+      ...updates,
+      updated_at: new Date().toISOString()
+    })
+    .eq("id", orderId)
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  return getOrderById(data.id);
 }
 
-function createConversationMessage(type, text, extra = {}) {
-  return {
-    id: `message-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    sender: "system",
+async function sendOrderConversationUpdate(order, type, text) {
+  if (!order?.listingId || !order?.buyerId) return null;
+
+  const conversation = await getOrCreateConversationFromListingId({
+    listingId: order.listingId,
+    buyer: {
+      id: order.buyerId
+    }
+  });
+
+  return sendSystemMessage({
+    conversationId: conversation.id,
+    senderId: order.sellerId || order.buyerId,
     type,
     text,
-    photos: [],
-    createdAt: new Date().toISOString(),
-    ...extra
-  };
+    payload: {
+      orderId: order.id
+    }
+  });
 }
 
-export function addOrderMessageToConversation(order, message) {
-  if (!order?.listingId) return;
-
-  const conversationId = `listing-${order.listingId}`;
-  const conversations = getConversations();
-
-  const existingConversation = conversations.find(
-    (conversation) => conversation.id === conversationId
-  );
-
-  let nextConversations;
-
-  if (existingConversation) {
-    nextConversations = conversations.map((conversation) =>
-      conversation.id === conversationId
-        ? {
-            ...conversation,
-            sellerId: conversation.sellerId || order.sellerId || "",
-            sellerName:
-              conversation.sellerName || order.sellerUsername || "Seller",
-            listing: {
-              ...(conversation.listing || {}),
-              id: order.listingId,
-              title: order.listingTitle,
-              price: order.itemPrice,
-              photo: order.listingPhoto,
-              sellerId: order.sellerId
-            },
-            messages: [...(conversation.messages || []), message],
-            updatedAt: new Date().toISOString()
-          }
-        : conversation
-    );
-  } else {
-    nextConversations = [
-      {
-        id: conversationId,
-        listingId: order.listingId,
-        sellerId: order.sellerId || "",
-        sellerName: order.sellerUsername || "Seller",
-        sellerLocation: "Philippines",
-        lastSeen: "Recently active",
-        listing: {
-          id: order.listingId,
-          title: order.listingTitle,
-          price: order.itemPrice,
-          photo: order.listingPhoto,
-          sellerId: order.sellerId
-        },
-        messages: [message],
-        updatedAt: new Date().toISOString()
-      },
-      ...conversations
-    ];
-  }
-
-  saveConversations(nextConversations);
-}
-
-export function createOrderFromCheckout({
+export async function createOrderFromCheckout({
   listing,
   seller,
   buyer,
@@ -201,274 +199,252 @@ export function createOrderFromCheckout({
   address,
   meetup
 }) {
+  if (!listing?.id) {
+    throw new Error("Missing listing.");
+  }
+
+  if (!buyer?.id) {
+    throw new Error("You must be logged in.");
+  }
+
+  const sellerId = listing.seller_id || seller?.id;
+
+  if (!sellerId) {
+    throw new Error("Missing seller.");
+  }
+
   const now = new Date().toISOString();
   const maxShippingDate = addDays(now, 7);
   const trackingNumber = createTrackingNumber();
 
-  const order = {
-    id: `order-${Date.now()}`,
-    listingId: listing.id,
-    listingTitle: listing.title,
-    listingPhoto: firstPhoto || "",
-    buyerId: buyer?.id || null,
-    buyerEmail: buyer?.email || "",
-    sellerId: listing.seller_id || null,
-    sellerUsername: seller?.username || "Seller",
-    originalItemPrice,
-    acceptedOfferPrice: acceptedOfferPrice || null,
-    itemPrice,
-    buyerProtection,
-    shippingFee,
-    total,
-    deliveryMethod,
-    paymentMethod,
-    address,
-    meetup: deliveryMethod === "meetup" ? meetup : null,
-    carrier: deliveryMethod === "meetup" ? "Safe Meet-Up" : "J&T Express",
-    trackingNumber,
-    shippingLabelDownloaded: false,
-    sellerShippingChoice: "",
-    pickupScheduledAt: null,
-    maxShippingDate,
-    estimatedDeliveryStart: addDays(now, 9),
-    estimatedDeliveryEnd: addDays(now, 14),
-    createdAt: now,
-    updatedAt: now,
-    status:
-      deliveryMethod === "meetup" ? "meetup_request_sent" : "paid_waiting_seller",
-    trackingEvents:
-      deliveryMethod === "meetup"
-        ? [
-            {
-              id: `tracking-${Date.now()}`,
-              title: "Safe Meet-Up request sent",
-              description: "Waiting for the seller to confirm the meeting.",
-              date: now,
-              completed: true
-            }
-          ]
-        : [
-            {
-              id: `tracking-${Date.now()}`,
-              title: "Order paid",
-              description:
-                "The seller has been notified and must ship the parcel within 7 days.",
-              date: now,
-              completed: true
-            }
-          ]
-  };
+  const status =
+    deliveryMethod === "meetup" ? "meetup_request_sent" : "paid_waiting_seller";
 
-  const existingOrders = getStoredOrders();
-  saveOrders([order, ...existingOrders]);
+  const carrier = deliveryMethod === "meetup" ? "Safe Meet-Up" : "J&T Express";
+
+  const { data: orderRow, error } = await supabase
+    .from("orders")
+    .insert({
+      listing_id: listing.id,
+      buyer_id: buyer.id,
+      seller_id: sellerId,
+      listing_title: listing.title || "Item",
+      listing_photo: firstPhoto || "",
+      seller_username: seller?.username || "Seller",
+      original_item_price: originalItemPrice,
+      accepted_offer_price: acceptedOfferPrice || null,
+      item_price: itemPrice,
+      buyer_protection: buyerProtection,
+      shipping_fee: shippingFee,
+      total,
+      delivery_method: deliveryMethod,
+      payment_method: paymentMethod,
+      address,
+      meetup: deliveryMethod === "meetup" ? meetup : null,
+      carrier,
+      tracking_number: trackingNumber,
+      shipping_label_downloaded: false,
+      seller_shipping_choice: "",
+      max_shipping_date: maxShippingDate,
+      estimated_delivery_start: addDays(now, 9),
+      estimated_delivery_end: addDays(now, 14),
+      status
+    })
+    .select("*")
+    .single();
+
+  if (error) {
+    throw error;
+  }
+
+  await addOrderTrackingEvent(orderRow.id, {
+    title:
+      deliveryMethod === "meetup"
+        ? "Safe Meet-Up request sent"
+        : "Order paid",
+    description:
+      deliveryMethod === "meetup"
+        ? "Waiting for the seller to confirm the meeting."
+        : "The seller has been notified and must ship the parcel within 7 days.",
+    completed: true
+  });
+
+  const order = await getOrderById(orderRow.id);
 
   if (deliveryMethod !== "meetup") {
-    addOrderMessageToConversation(
+    await sendOrderConversationUpdate(
       order,
-      createConversationMessage(
-        "order_sold",
-        `Order confirmed. The seller has until ${formatOrderDate(
-          maxShippingDate
-        )} to ship the parcel.`,
-        { orderId: order.id }
-      )
+      "order_sold",
+      `Order confirmed. The seller has until ${formatOrderDate(
+        maxShippingDate
+      )} to ship the parcel.`
     );
   } else {
-    addOrderMessageToConversation(
+    await sendOrderConversationUpdate(
       order,
-      createConversationMessage(
-        "meetup_order",
-        `Safe Meet-Up request confirmed for ${order.meetup?.spot?.name || "the selected location"}.`,
-        { orderId: order.id }
-      )
+      "meetup_order",
+      `Safe Meet-Up request confirmed for ${
+        order.meetup?.spot?.name || "the selected location"
+      }.`
     );
   }
 
   return order;
 }
 
-export function markShippingLabelDownloaded(orderId) {
-  const order = updateOrder(orderId, {
-    shippingLabelDownloaded: true,
+export async function markShippingLabelDownloaded(orderId) {
+  const updatedOrder = await updateOrder(orderId, {
+    shipping_label_downloaded: true,
     status: "label_downloaded"
   });
 
-  if (order) {
-    addTrackingEvent(order.id, {
-      title: "Shipping label downloaded",
-      description: "The seller downloaded the shipping label.",
-      completed: true
-    });
+  await addOrderTrackingEvent(orderId, {
+    title: "Shipping label downloaded",
+    description: "The seller downloaded the shipping label.",
+    completed: true
+  });
 
-    addOrderMessageToConversation(
-      order,
-      createConversationMessage(
-        "shipping_label_downloaded",
-        "The seller downloaded the shipping label.",
-        { orderId: order.id }
-      )
-    );
-  }
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "shipping_label_downloaded",
+    "The seller downloaded the shipping label."
+  );
 
-  return order;
+  return getOrderById(orderId);
 }
 
-export function scheduleCourierPickup(orderId) {
+export async function scheduleCourierPickup(orderId) {
   const pickupDate = addDays(new Date().toISOString(), 1);
 
-  const order = updateOrder(orderId, {
-    sellerShippingChoice: "courier_pickup",
-    pickupScheduledAt: pickupDate,
+  const updatedOrder = await updateOrder(orderId, {
+    seller_shipping_choice: "courier_pickup",
+    pickup_scheduled_at: pickupDate,
     status: "courier_pickup_scheduled"
   });
 
-  if (order) {
-    addTrackingEvent(order.id, {
-      title: "Courier pick-up scheduled",
-      description:
-        "A J&T Express courier will pick up the parcel from the seller.",
-      completed: true
-    });
+  await addOrderTrackingEvent(orderId, {
+    title: "Courier pick-up scheduled",
+    description:
+      "A J&T Express courier will pick up the parcel from the seller.",
+    completed: true
+  });
 
-    addOrderMessageToConversation(
-      order,
-      createConversationMessage(
-        "courier_pickup_scheduled",
-        `The seller scheduled a courier pick-up. The parcel should be collected on ${formatOrderDate(
-          pickupDate
-        )}.`,
-        { orderId: order.id }
-      )
-    );
-  }
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "courier_pickup_scheduled",
+    `The seller scheduled a courier pick-up. The parcel should be collected on ${formatOrderDate(
+      pickupDate
+    )}.`
+  );
 
-  return order;
+  return getOrderById(orderId);
 }
 
-export function markParcelDroppedOff(orderId, carrier = "J&T Express") {
-  const order = updateOrder(orderId, {
-    sellerShippingChoice: "dropoff",
+export async function markParcelDroppedOff(orderId, carrier = "J&T Express") {
+  const updatedOrder = await updateOrder(orderId, {
+    seller_shipping_choice: "dropoff",
     carrier,
     status: "dropped_off"
   });
 
-  if (order) {
-    addTrackingEvent(order.id, {
-      title: `Parcel dropped off at ${carrier}`,
-      description: "The parcel has been handed over to the delivery partner.",
-      completed: true
-    });
+  await addOrderTrackingEvent(orderId, {
+    title: `Parcel dropped off at ${carrier}`,
+    description: "The parcel has been handed over to the delivery partner.",
+    completed: true
+  });
 
-    addOrderMessageToConversation(
-      order,
-      createConversationMessage(
-        "parcel_dropped_off",
-        `The seller dropped off your parcel at ${carrier}. Tracking is now available.`,
-        { orderId: order.id }
-      )
-    );
-  }
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "parcel_dropped_off",
+    `The seller dropped off your parcel at ${carrier}. Tracking is now available.`
+  );
 
-  return order;
+  return getOrderById(orderId);
 }
 
-export function markParcelInTransit(orderId) {
-  const order = updateOrder(orderId, {
+export async function markParcelInTransit(orderId) {
+  const updatedOrder = await updateOrder(orderId, {
     status: "in_transit"
   });
 
-  if (order) {
-    addTrackingEvent(order.id, {
-      title: "Parcel in transit",
-      description: "Your parcel is currently moving through the delivery network.",
-      completed: true
-    });
+  await addOrderTrackingEvent(orderId, {
+    title: "Parcel in transit",
+    description: "Your parcel is currently moving through the delivery network.",
+    completed: true
+  });
 
-    addOrderMessageToConversation(
-      order,
-      createConversationMessage(
-        "parcel_in_transit",
-        "Your parcel is now in transit.",
-        { orderId: order.id }
-      )
-    );
-  }
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "parcel_in_transit",
+    "Your parcel is now in transit."
+  );
 
-  return order;
+  return getOrderById(orderId);
 }
 
-export function markParcelReadyForPickup(orderId) {
-  const order = updateOrder(orderId, {
+export async function markParcelReadyForPickup(orderId) {
+  const updatedOrder = await updateOrder(orderId, {
     status: "ready_for_pickup"
   });
 
-  if (order) {
-    addTrackingEvent(order.id, {
-      title: "Parcel ready for pick-up",
-      description: "Your parcel is available at the selected pick-up point.",
-      completed: true
-    });
+  await addOrderTrackingEvent(orderId, {
+    title: "Parcel ready for pick-up",
+    description: "Your parcel is available at the selected pick-up point.",
+    completed: true
+  });
 
-    addOrderMessageToConversation(
-      order,
-      createConversationMessage(
-        "parcel_ready_for_pickup",
-        "Your parcel is ready for pick-up at J&T Express.",
-        { orderId: order.id }
-      )
-    );
-  }
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "parcel_ready_for_pickup",
+    "Your parcel is ready for pick-up at J&T Express."
+  );
 
-  return order;
+  return getOrderById(orderId);
 }
 
-export function notifyHomeDeliveryTomorrow(orderId) {
-  const order = updateOrder(orderId, {
+export async function notifyHomeDeliveryTomorrow(orderId) {
+  const updatedOrder = await updateOrder(orderId, {
     status: "delivery_scheduled"
   });
 
-  if (order) {
-    addTrackingEvent(order.id, {
-      title: "Delivery scheduled",
-      description: "The courier will deliver the parcel tomorrow.",
-      completed: true
-    });
-
-    addOrderMessageToConversation(
-      order,
-      createConversationMessage(
-        "delivery_tomorrow",
-        "Your parcel will arrive tomorrow between 10:00 AM and 2:00 PM. You can add delivery instructions or reschedule the delivery.",
-        { orderId: order.id }
-      )
-    );
-  }
-
-  return order;
-}
-
-export function completeOrder(orderId) {
-  const order = updateOrder(orderId, {
-    status: "completed",
-    completedAt: new Date().toISOString()
+  await addOrderTrackingEvent(orderId, {
+    title: "Delivery scheduled",
+    description: "The courier will deliver the parcel tomorrow.",
+    completed: true
   });
 
-  if (order) {
-    addTrackingEvent(order.id, {
-      title: "Item received",
-      description: "The buyer confirmed that the item was received.",
-      completed: true
-    });
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "delivery_tomorrow",
+    "Your parcel will arrive tomorrow between 10:00 AM and 2:00 PM. You can add delivery instructions or reschedule the delivery."
+  );
 
-    addOrderMessageToConversation(
-      order,
-      createConversationMessage(
-        "order_completed",
-        "The buyer confirmed the item was received. The transaction is now completed.",
-        { orderId: order.id }
-      )
-    );
-  }
+  return getOrderById(orderId);
+}
 
-  return order;
+export async function updateDeliveryInstructions(orderId, instructions) {
+  return updateOrder(orderId, {
+    delivery_instructions: instructions || ""
+  });
+}
+
+export async function completeOrder(orderId) {
+  const updatedOrder = await updateOrder(orderId, {
+    status: "completed",
+    completed_at: new Date().toISOString()
+  });
+
+  await addOrderTrackingEvent(orderId, {
+    title: "Item received",
+    description: "The buyer confirmed that the item was received.",
+    completed: true
+  });
+
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "order_completed",
+    "The buyer confirmed the item was received. The transaction is now completed."
+  );
+
+  return getOrderById(orderId);
 }

@@ -17,12 +17,22 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import {
+  fetchConversationsForUser,
+  fetchMessagesForConversation,
+  formatRealtimeDate,
+  formatRealtimePrice,
+  getOrCreateConversationFromListingId,
+  removeRealtimeChannel,
+  sendTextMessage,
+  subscribeToConversationMessages,
+  subscribeToUserConversations,
+  updateOfferStatus
+} from "../lib/tindahanRealtime";
+import {
   formatOrderDate,
   formatTindaHanPrice,
   getOrderById
 } from "../lib/orders";
-
-const STORAGE_KEY = "tindahan_demo_conversations";
 
 function formatPrice(value) {
   const price = Number(value || 0);
@@ -49,19 +59,6 @@ function formatConversationDate(dateValue) {
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffWeeks === 1) return "1 week ago";
   return `${diffWeeks} weeks ago`;
-}
-
-function getInitialConversations() {
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? JSON.parse(saved) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveConversations(conversations) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(conversations));
 }
 
 function createId(prefix = "id") {
@@ -93,44 +90,6 @@ function fileToDataUrl(file) {
   });
 }
 
-function buildConversationFromParams(searchParams) {
-  const listingId = searchParams.get("listingId");
-
-  if (!listingId) return null;
-
-  const sellerName = searchParams.get("seller") || "Seller";
-  const sellerId = searchParams.get("sellerId") || "";
-  const title = searchParams.get("title") || "Item";
-  const price = searchParams.get("price") || "0";
-  const photo = searchParams.get("photo") || "";
-
-  return {
-    id: `listing-${listingId}`,
-    listingId,
-    sellerId,
-    sellerName,
-    sellerLocation: "Philippines",
-    lastSeen: "Recently active",
-    listing: {
-      id: listingId,
-      title,
-      price,
-      photo,
-      sellerId
-    },
-    messages: [
-      {
-        id: createId("intro"),
-        sender: "seller",
-        text: `Hello, I am ${sellerName}.`,
-        photos: [],
-        createdAt: new Date().toISOString()
-      }
-    ],
-    updatedAt: new Date().toISOString()
-  };
-}
-
 function getLastMessage(conversation) {
   const messages = conversation?.messages || [];
   const lastMessage = messages[messages.length - 1];
@@ -139,20 +98,29 @@ function getLastMessage(conversation) {
 
   if (lastMessage.type === "offer") {
     const offer = lastMessage.offer;
-    if (offer?.status === "accepted") return `Offer accepted · ${formatPrice(offer.offerPrice)}`;
-    if (offer?.status === "declined") return `Offer declined · ${formatPrice(offer.offerPrice)}`;
+
+    if (offer?.status === "accepted") {
+      return `Offer accepted · ${formatPrice(offer.offerPrice)}`;
+    }
+
+    if (offer?.status === "declined") {
+      return `Offer declined · ${formatPrice(offer.offerPrice)}`;
+    }
+
     if (offer?.senderRole === "seller_counter_offer") {
       return `Seller counter-offer · ${formatPrice(offer.offerPrice)}`;
     }
+
     return `Offer sent · ${formatPrice(offer.offerPrice)}`;
   }
 
-  if (lastMessage.orderId) {
+  if (lastMessage.orderId || lastMessage.payload?.orderId) {
     return "Order update";
   }
 
   if (lastMessage.text) return lastMessage.text;
   if (lastMessage.photos?.length > 0) return "Photo";
+
   return conversation?.listing?.title || "Conversation";
 }
 
@@ -161,7 +129,10 @@ function getAcceptedOffer(conversation) {
 
   const acceptedOfferMessage = [...messages]
     .reverse()
-    .find((message) => message.type === "offer" && message.offer?.status === "accepted");
+    .find(
+      (message) =>
+        message.type === "offer" && message.offer?.status === "accepted"
+    );
 
   return acceptedOfferMessage?.offer || null;
 }
@@ -191,87 +162,135 @@ export default function Messages() {
   const [searchParams] = useSearchParams();
   const photoInputRef = useRef(null);
 
-  const incomingConversation = useMemo(
-    () => buildConversationFromParams(searchParams),
-    [searchParams]
-  );
-
-  const [conversations, setConversations] = useState(() =>
-    getInitialConversations()
-  );
+  const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState("");
+  const [loadingConversations, setLoadingConversations] = useState(true);
+  const [loadingMessages, setLoadingMessages] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [showBundleBox, setShowBundleBox] = useState(false);
   const [showSafety, setShowSafety] = useState(true);
   const [activeTab, setActiveTab] = useState("messages");
   const [mobilePanel, setMobilePanel] = useState("inbox");
+  const [errorMessage, setErrorMessage] = useState("");
 
-  useEffect(() => {
-    const syncConversations = () => {
-      setConversations(getInitialConversations());
-    };
+  async function loadConversations({ keepActive = true } = {}) {
+    if (!user?.id) return;
 
-    window.addEventListener("storage", syncConversations);
+    setLoadingConversations(true);
+    setErrorMessage("");
 
-    return () => {
-      window.removeEventListener("storage", syncConversations);
-    };
-  }, []);
+    try {
+      const nextConversations = await fetchConversationsForUser(user.id);
 
-  useEffect(() => {
-    if (!incomingConversation) {
-      const existing = getInitialConversations();
+      setConversations((current) => {
+        const currentById = current.reduce((acc, conversation) => {
+          acc[conversation.id] = conversation;
+          return acc;
+        }, {});
 
-      if (existing.length > 0) {
-        setConversations(existing);
-        setActiveConversationId((currentId) => currentId || existing[0].id);
+        return nextConversations.map((conversation) => ({
+          ...conversation,
+          messages: currentById[conversation.id]?.messages || []
+        }));
+      });
+
+      if (!keepActive || !activeConversationId) {
+        setActiveConversationId(nextConversations[0]?.id || "");
       }
-
-      return;
+    } catch (error) {
+      console.error("Conversations loading error:", error);
+      setErrorMessage(error.message || "Unable to load conversations.");
+    } finally {
+      setLoadingConversations(false);
     }
+  }
 
-    setConversations((current) => {
-      const alreadyExists = current.some(
-        (conversation) => conversation.id === incomingConversation.id
+  async function loadMessages(conversationId) {
+    if (!conversationId || !user?.id) return;
+
+    setLoadingMessages(true);
+
+    try {
+      const nextMessages = await fetchMessagesForConversation(
+        conversationId,
+        user.id
       );
 
-      let nextConversations;
-
-      if (alreadyExists) {
-        nextConversations = current.map((conversation) =>
-          conversation.id === incomingConversation.id
+      setConversations((current) =>
+        current.map((conversation) =>
+          conversation.id === conversationId
             ? {
                 ...conversation,
-                sellerId: conversation.sellerId || incomingConversation.sellerId,
-                listing: {
-                  ...(conversation.listing || {}),
-                  ...(incomingConversation.listing || {}),
-                  sellerId:
-                    conversation.listing?.sellerId ||
-                    incomingConversation.listing?.sellerId ||
-                    incomingConversation.sellerId
-                },
-                messages:
-                  conversation.messages?.length > 0
-                    ? conversation.messages
-                    : incomingConversation.messages,
-                updatedAt: new Date().toISOString()
+                messages: nextMessages
               }
             : conversation
-        );
-      } else {
-        nextConversations = [incomingConversation, ...current];
-      }
+        )
+      );
+    } catch (error) {
+      console.error("Messages loading error:", error);
+      setErrorMessage(error.message || "Unable to load messages.");
+    } finally {
+      setLoadingMessages(false);
+    }
+  }
 
-      saveConversations(nextConversations);
-      return nextConversations;
+  useEffect(() => {
+    if (!user?.id) return;
+
+    loadConversations({ keepActive: false });
+
+    const channel = subscribeToUserConversations({
+      userId: user.id,
+      onChange: () => loadConversations({ keepActive: true })
     });
 
-    setActiveConversationId(incomingConversation.id);
-    setActiveTab("messages");
-    setMobilePanel("chat");
-  }, [incomingConversation]);
+    return () => {
+      removeRealtimeChannel(channel);
+    };
+  }, [user?.id]);
+
+  useEffect(() => {
+    const listingId = searchParams.get("listingId");
+
+    if (!listingId || !user?.id) return;
+
+    async function openConversationFromUrl() {
+      try {
+        const conversation = await getOrCreateConversationFromListingId({
+          listingId,
+          buyer: user
+        });
+
+        await loadConversations({ keepActive: true });
+
+        setActiveConversationId(conversation.id);
+        setActiveTab("messages");
+        setMobilePanel("chat");
+      } catch (error) {
+        console.error("Open conversation error:", error);
+        alert(error.message || "Unable to open conversation.");
+      }
+    }
+
+    openConversationFromUrl();
+  }, [searchParams, user?.id]);
+
+  useEffect(() => {
+    if (!activeConversationId || !user?.id) return;
+
+    loadMessages(activeConversationId);
+
+    const channel = subscribeToConversationMessages({
+      conversationId: activeConversationId,
+      onInsert: () => loadMessages(activeConversationId),
+      onUpdate: () => loadMessages(activeConversationId)
+    });
+
+    return () => {
+      removeRealtimeChannel(channel);
+    };
+  }, [activeConversationId, user?.id]);
 
   const activeConversation = useMemo(() => {
     return (
@@ -316,69 +335,24 @@ export default function Messages() {
     setSelectedPhotos([]);
   }
 
-  function updateConversations(nextConversations) {
-    setConversations(nextConversations);
-    saveConversations(nextConversations);
-  }
+  async function handleOfferStatus(messageId, offer, nextStatus) {
+    if (!activeConversation?.id || !user?.id) return;
 
-  function updateActiveConversation(newMessage) {
-    if (!activeConversation) return;
-
-    const nextConversations = conversations.map((conversation) => {
-      if (conversation.id !== activeConversation.id) return conversation;
-
-      return {
-        ...conversation,
-        messages: [...(conversation.messages || []), newMessage],
-        updatedAt: new Date().toISOString()
-      };
-    });
-
-    updateConversations(nextConversations);
-  }
-
-  function updateOfferStatus(messageId, nextStatus) {
-    if (!activeConversation) return;
-
-    const nextConversations = conversations.map((conversation) => {
-      if (conversation.id !== activeConversation.id) return conversation;
-
-      const nextMessages = (conversation.messages || []).map((item) => {
-        if (item.id !== messageId || item.type !== "offer") return item;
-
-        return {
-          ...item,
-          offer: {
-            ...item.offer,
-            status: nextStatus,
-            respondedAt: new Date().toISOString()
-          }
-        };
+    try {
+      await updateOfferStatus({
+        conversationId: activeConversation.id,
+        messageId,
+        offer,
+        nextStatus,
+        currentUserId: user.id
       });
 
-      const offerMessage = nextMessages.find((item) => item.id === messageId);
-      const offerPrice = offerMessage?.offer?.offerPrice;
-
-      const statusMessage = {
-        id: createId("message"),
-        sender: isCurrentUserSeller ? "seller" : "me",
-        text:
-          nextStatus === "accepted"
-            ? `Offer accepted at ${formatPrice(offerPrice)}.`
-            : `Offer declined at ${formatPrice(offerPrice)}.`,
-        photos: [],
-        type: "offer_status",
-        createdAt: new Date().toISOString()
-      };
-
-      return {
-        ...conversation,
-        messages: [...nextMessages, statusMessage],
-        updatedAt: new Date().toISOString()
-      };
-    });
-
-    updateConversations(nextConversations);
+      await loadMessages(activeConversation.id);
+      await loadConversations({ keepActive: true });
+    } catch (error) {
+      console.error("Offer status update error:", error);
+      alert(error.message || "Unable to update this offer.");
+    }
   }
 
   function handleBuyClick(offer = null) {
@@ -413,7 +387,7 @@ export default function Messages() {
   function handleCounterOfferClick() {
     const listingId = activeConversation?.listing?.id || activeConversation?.listingId;
 
-    if (!listingId) {
+    if (!listingId || !activeConversation?.id) {
       alert("Unable to make a counter-offer for this item.");
       return;
     }
@@ -455,46 +429,64 @@ export default function Messages() {
     setShowBundleBox(true);
   }
 
-  function handleStartBundle() {
-    if (!activeConversation) return;
+  async function handleStartBundle() {
+    if (!activeConversation?.id || !user?.id) return;
 
-    const newMessage = {
-      id: createId("message"),
-      sender: "me",
-      text: "I would like to create a bundle with several items from your closet.",
-      photos: [],
-      type: "bundle",
-      createdAt: new Date().toISOString()
-    };
+    try {
+      await sendTextMessage({
+        conversationId: activeConversation.id,
+        senderId: user.id,
+        text: "I would like to create a bundle with several items from your closet.",
+        photos: []
+      });
 
-    updateActiveConversation(newMessage);
-    setShowBundleBox(false);
+      setShowBundleBox(false);
+      await loadMessages(activeConversation.id);
+      await loadConversations({ keepActive: true });
+    } catch (error) {
+      console.error("Bundle message error:", error);
+      alert(error.message || "Unable to send bundle request.");
+    }
   }
 
   function handlePhotoButtonClick() {
     photoInputRef.current?.click();
   }
 
-  function handleSendMessage() {
+  async function handleSendMessage() {
     const cleanMessage = message.trim();
 
-    if (!activeConversation) return;
+    if (!activeConversation?.id || !user?.id) return;
     if (!cleanMessage && selectedPhotos.length === 0) return;
 
-    const newMessage = {
-      id: createId("message"),
-      sender: "me",
-      text: cleanMessage,
-      photos: selectedPhotos,
-      createdAt: new Date().toISOString()
-    };
+    try {
+      await sendTextMessage({
+        conversationId: activeConversation.id,
+        senderId: user.id,
+        text: cleanMessage,
+        photos: selectedPhotos
+      });
 
-    updateActiveConversation(newMessage);
-    setMessage("");
-    setSelectedPhotos([]);
+      setMessage("");
+      setSelectedPhotos([]);
+      await loadMessages(activeConversation.id);
+      await loadConversations({ keepActive: true });
+    } catch (error) {
+      console.error("Send message error:", error);
+      alert(error.message || "Unable to send message.");
+    }
   }
 
   function renderConversationList() {
+    if (loadingConversations) {
+      return (
+        <div className="messages-mobile-empty-small">
+          <p>Loading messages...</p>
+          <span>Please wait a moment.</span>
+        </div>
+      );
+    }
+
     if (conversations.length === 0) {
       return (
         <div className="messages-mobile-empty-small">
@@ -514,7 +506,7 @@ export default function Messages() {
             onClick={() => openConversation(conversation.id)}
           >
             <div className="messages-mobile-avatar">
-              {conversation.sellerName?.slice(0, 1)?.toUpperCase()}
+              {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
             </div>
 
             <div className="messages-mobile-main">
@@ -592,16 +584,16 @@ export default function Messages() {
         </div>
 
         <div className="offer-message-price-row">
-          <strong>{formatPrice(offer.offerPrice)}</strong>
+          <strong>₱{formatRealtimePrice(offer.offerPrice)}</strong>
 
           {offer.itemPrice && Number(offer.itemPrice) !== Number(offer.offerPrice) && (
-            <span>{formatPrice(offer.itemPrice)}</span>
+            <span>₱{formatRealtimePrice(offer.itemPrice)}</span>
           )}
         </div>
 
         {offer.protectedTotal && (
           <p className="offer-message-protected">
-            {formatPrice(offer.protectedTotal)} incl. Buyer Protection
+            ₱{formatRealtimePrice(offer.protectedTotal)} incl. Buyer Protection
           </p>
         )}
 
@@ -610,7 +602,7 @@ export default function Messages() {
             <button
               type="button"
               className="offer-accept-button"
-              onClick={() => updateOfferStatus(item.id, "accepted")}
+              onClick={() => handleOfferStatus(item.id, offer, "accepted")}
             >
               <Check size={16} />
               Accept
@@ -619,7 +611,7 @@ export default function Messages() {
             <button
               type="button"
               className="offer-decline-button"
-              onClick={() => updateOfferStatus(item.id, "declined")}
+              onClick={() => handleOfferStatus(item.id, offer, "declined")}
             >
               Decline
             </button>
@@ -649,7 +641,7 @@ export default function Messages() {
               className="offer-accept-button"
               onClick={() => handleBuyClick(offer)}
             >
-              Buy at {formatPrice(offer.offerPrice)}
+              Buy at ₱{formatRealtimePrice(offer.offerPrice)}
             </button>
           </div>
         )}
@@ -670,7 +662,29 @@ export default function Messages() {
   }
 
   function renderOrderCard(item) {
-    const order = getOrderById(item.orderId);
+    const [order, setOrder] = useState(null);
+
+    useEffect(() => {
+      let mounted = true;
+
+      async function loadOrder() {
+        try {
+          const loadedOrder = await getOrderById(item.orderId || item.payload?.orderId);
+
+          if (mounted) {
+            setOrder(loadedOrder);
+          }
+        } catch (error) {
+          console.warn("Order message loading skipped:", error.message);
+        }
+      }
+
+      loadOrder();
+
+      return () => {
+        mounted = false;
+      };
+    }, [item.orderId, item.payload?.orderId]);
 
     if (!order) {
       return (
@@ -738,6 +752,10 @@ export default function Messages() {
         </div>
       </div>
     );
+  }
+
+  function MessageOrderCard({ item }) {
+    return renderOrderCard(item);
   }
 
   function renderChatPanel({ mobile = false } = {}) {
@@ -828,7 +846,7 @@ export default function Messages() {
         <div className="messages-thread">
           <div className="messages-seller-card">
             <div className="messages-avatar">
-              {activeConversation.sellerName?.slice(0, 1)?.toUpperCase()}
+              {activeConversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
             </div>
 
             <div className="messages-seller-bubble">
@@ -843,17 +861,23 @@ export default function Messages() {
             </div>
           </div>
 
+          {loadingMessages && (
+            <div className="messages-mobile-empty-small">
+              <p>Loading conversation...</p>
+            </div>
+          )}
+
           {(activeConversation.messages || []).map((item) => (
             <div
               key={item.id}
               className={`message-bubble-row ${
                 item.sender === "me" ? "me" : ""
-              } ${item.sender === "system" ? "system" : ""}`}
+              } ${item.type !== "text" && item.type !== "offer" ? "system" : ""}`}
             >
               {item.type === "offer" ? (
                 renderOfferCard(item)
-              ) : item.orderId ? (
-                renderOrderCard(item)
+              ) : item.orderId || item.payload?.orderId ? (
+                <MessageOrderCard item={item} />
               ) : (
                 <div className="message-bubble">
                   {item.text && <p>{item.text}</p>}
@@ -1032,6 +1056,12 @@ export default function Messages() {
               </button>
             </div>
 
+            {errorMessage && (
+              <div className="messages-mobile-empty-small">
+                <p>{errorMessage}</p>
+              </div>
+            )}
+
             {activeTab === "messages"
               ? renderConversationList()
               : renderNotificationsEmpty()}
@@ -1064,7 +1094,7 @@ export default function Messages() {
                   onClick={() => setActiveConversationId(conversation.id)}
                 >
                   <div className="messages-avatar">
-                    {conversation.sellerName?.slice(0, 1)?.toUpperCase()}
+                    {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
                   </div>
 
                   <div>
