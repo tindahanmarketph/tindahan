@@ -169,8 +169,8 @@ export default function ListingCard({ listing }) {
             onClick={openPriceDetails}
             aria-label="Show price details"
           >
-            ₱{formatPrice(protectedPrice)} incl. Buyer Protection
-            <ShieldCheck size={13} />
+            ₱{formatPrice(protectedPrice)} incl.
+            <ShieldCheck size={12} />
           </button>
 
           <p className="listing-condition">

@@ -14595,3 +14595,305 @@ textarea:focus {
   border-top: 1px solid #ffe0dc;
   border-bottom: 1px solid #ffe0dc;
 }
+/* ========================= */
+/* HOLIDAY MODE - TINDAHAN */
+/* ========================= */
+
+.holiday-mode-page {
+  min-height: calc(100vh - 74px);
+  background: #eef3f3;
+  padding-bottom: 96px;
+}
+
+.holiday-mode-header {
+  background: #ffffff;
+}
+
+.holiday-mode-card {
+  min-height: 88px;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 22px;
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.holiday-mode-icon {
+  width: 48px;
+  height: 48px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--orange);
+  border: 1px solid var(--orange-border);
+}
+
+.holiday-mode-card h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 17px;
+  line-height: 1.2;
+  font-weight: 950;
+}
+
+.holiday-mode-card p {
+  margin: 5px 0 0;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.holiday-mode-bubble {
+  position: relative;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 14px;
+  margin: 18px 18px 0;
+  padding: 18px 18px;
+  border: 1px solid var(--orange-border);
+  border-radius: 18px;
+  background: #ffffff;
+  box-shadow:
+    0 16px 42px rgba(255, 107, 44, 0.18),
+    0 10px 26px rgba(0, 0, 0, 0.08);
+}
+
+.holiday-mode-bubble::before {
+  content: "";
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  top: -5px;
+  height: 5px;
+  border-radius: 999px;
+  background: var(--orange);
+}
+
+.holiday-mode-bubble-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.holiday-mode-bubble strong {
+  display: block;
+  padding-right: 32px;
+  color: #111111;
+  font-size: 16px;
+  line-height: 1.2;
+  font-weight: 950;
+}
+
+.holiday-mode-bubble p {
+  margin: 6px 0 0;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.holiday-mode-bubble-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #5f6f75;
+}
+
+.holiday-mode-bubble-close:hover {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.holiday-mode-info,
+.holiday-mode-error {
+  margin: 18px;
+  padding: 18px;
+  border-radius: 16px;
+  background: #ffffff;
+  border: 1px solid var(--border);
+}
+
+.holiday-mode-info h3,
+.holiday-mode-error strong {
+  display: block;
+  margin: 0 0 10px;
+  color: #111111;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.holiday-mode-info ul {
+  margin: 0;
+  padding-left: 19px;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.holiday-mode-error {
+  border-color: #ffc9c2;
+  background: #fff1ef;
+}
+
+.holiday-mode-error p {
+  margin: 0;
+  color: #b42318;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.tindahan-switch {
+  width: 48px;
+  height: 30px;
+  position: relative;
+  flex: none;
+  border: none;
+  border-radius: 999px;
+  background: #b9c5c7;
+  padding: 3px;
+  transition: background 0.18s ease;
+}
+
+.tindahan-switch span {
+  width: 24px;
+  height: 24px;
+  display: block;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.18);
+  transition: transform 0.18s ease;
+}
+
+.tindahan-switch.active {
+  background: var(--orange);
+}
+
+.tindahan-switch.active span {
+  transform: translateX(18px);
+}
+
+.tindahan-switch:disabled {
+  opacity: 0.62;
+  cursor: not-allowed;
+}
+
+.mobile-profile-menu-value {
+  color: var(--orange);
+  font-size: 14px;
+  font-weight: 950;
+}
+/* ========================= */
+/* FEED PRODUCT CARD LIGHTER TYPOGRAPHY */
+/* ========================= */
+
+.listing-card .listing-info h3 {
+  font-weight: 500 !important;
+}
+
+.listing-card .listing-price {
+  font-weight: 700 !important;
+}
+
+.listing-card .listing-condition {
+  font-weight: 400 !important;
+}
+
+.listing-protected-price {
+  width: fit-content;
+  max-width: 100%;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  margin: 3px 0 0;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: var(--orange);
+  font-size: 13px;
+  line-height: 1.15;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+}
+
+.listing-protected-price svg {
+  flex: none;
+  color: var(--orange);
+  stroke-width: 2.2;
+}
+
+.listing-protected-price:hover {
+  color: var(--orange-dark);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.listing-protected-price:hover svg {
+  color: var(--orange-dark);
+}
+
+@media (max-width: 760px) {
+  .listing-card .listing-info h3 {
+    color: #4f5b62 !important;
+    font-size: 14px !important;
+    line-height: 1.18 !important;
+    font-weight: 450 !important;
+    letter-spacing: -0.05px !important;
+  }
+
+  .listing-card .listing-price {
+    margin-top: 2px !important;
+    color: #111111 !important;
+    font-size: 15px !important;
+    line-height: 1.1 !important;
+    font-weight: 700 !important;
+  }
+
+  .listing-protected-price {
+    margin-top: 3px !important;
+    color: var(--orange) !important;
+    font-size: 12.5px !important;
+    line-height: 1.12 !important;
+    font-weight: 650 !important;
+  }
+
+  .listing-protected-price svg {
+    width: 11px !important;
+    height: 11px !important;
+  }
+
+  .listing-card .listing-condition {
+    margin-top: 4px !important;
+    color: #5f6f75 !important;
+    font-size: 13px !important;
+    line-height: 1.15 !important;
+    font-weight: 400 !important;
+  }
+}
+
+@media (max-width: 420px) {
+  .listing-card .listing-info h3 {
+    font-size: 13.5px !important;
+  }
+
+  .listing-card .listing-price {
+    font-size: 14.5px !important;
+  }
+
+  .listing-protected-price {
+    font-size: 12px !important;
+  }
+}
