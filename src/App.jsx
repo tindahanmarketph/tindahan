@@ -96,12 +96,12 @@ export default function App() {
 
     const leaveTimer = setTimeout(() => {
       setLoaderLeaving(true);
-    }, 950);
+    }, 2200);
 
     const hideTimer = setTimeout(() => {
       sessionStorage.setItem("tindahan_mobile_launch_loader_seen", "true");
       setShowLaunchLoader(false);
-    }, 1250);
+    }, 2550);
 
     return () => {
       clearTimeout(leaveTimer);
