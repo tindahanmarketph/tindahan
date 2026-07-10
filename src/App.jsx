@@ -23,6 +23,8 @@ import Messages from "./pages/Messages";
 import Checkout from "./pages/Checkout";
 import SafeMeetUp from "./pages/SafeMeetUp";
 import MakeOffer from "./pages/MakeOffer";
+import ParcelTracking from "./pages/ParcelTracking";
+import ShippingLabel from "./pages/ShippingLabel";
 
 import Personalisation from "./pages/Personalisation";
 import PreferredSizes from "./pages/PreferredSizes";
@@ -116,6 +118,8 @@ export default function App() {
     location.pathname.startsWith("/checkout/") ||
     location.pathname.startsWith("/safe-meetup/") ||
     location.pathname.startsWith("/offer/") ||
+    location.pathname.startsWith("/tracking/") ||
+    location.pathname.startsWith("/shipping-label/") ||
     location.pathname.startsWith("/welcome");
 
   return (
@@ -165,6 +169,24 @@ export default function App() {
           element={
             <ProtectedRoute>
               <SafeMeetUp />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/tracking/:orderId"
+          element={
+            <ProtectedRoute>
+              <ParcelTracking />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/shipping-label/:orderId"
+          element={
+            <ProtectedRoute>
+              <ShippingLabel />
             </ProtectedRoute>
           }
         />

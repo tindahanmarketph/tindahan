@@ -17,6 +17,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
+import { createOrderFromCheckout } from "../lib/orders";
 
 const deliveryOptions = [
   {
@@ -30,7 +31,7 @@ const deliveryOptions = [
   {
     id: "pickup",
     title: "Pick-up point",
-    subtitle: "Recommended for safe and flexible delivery",
+    subtitle: "Collect your parcel at a J&T Express partner point",
     price: 80,
     icon: MapPin
   },
@@ -205,7 +206,6 @@ export default function Checkout() {
   const acceptedOfferPrice = parseOfferPrice(searchParams);
   const itemPrice = acceptedOfferPrice || originalItemPrice;
   const hasAcceptedOfferPrice = Boolean(acceptedOfferPrice);
-
   const buyerProtection = itemPrice * 0.08;
 
   const delivery = useMemo(() => {
@@ -258,11 +258,16 @@ export default function Checkout() {
     }
 
     if (selectedDelivery === "pickup") {
-      alert("Pick-up point selection will be available in the next prototype step.");
+      alert("J&T Express pick-up point selection will be available in the next prototype step.");
       return;
     }
 
-    alert("Delivery details will be available in the next prototype step.");
+    if (selectedDelivery === "door") {
+      openAddressEditor();
+      return;
+    }
+
+    alert("Same-city courier details will be available in the next prototype step.");
   }
 
   function handlePay() {
@@ -275,14 +280,11 @@ export default function Checkout() {
 
     setIsPaying(true);
 
-    const order = {
-      id: `order-${Date.now()}`,
-      listingId: listing.id,
-      listingTitle: listing.title,
-      listingPhoto: firstPhoto || "",
-      buyerId: user?.id || null,
-      sellerId: listing.seller_id || null,
-      sellerUsername: seller?.username || "",
+    const order = createOrderFromCheckout({
+      listing,
+      seller,
+      buyer: user,
+      firstPhoto,
       originalItemPrice,
       acceptedOfferPrice: hasAcceptedOfferPrice ? acceptedOfferPrice : null,
       itemPrice,
@@ -292,27 +294,18 @@ export default function Checkout() {
       deliveryMethod: selectedDelivery,
       paymentMethod: selectedPayment,
       address,
-      meetup: selectedDelivery === "meetup" ? meetupPlan : null,
-      createdAt: new Date().toISOString(),
-      status: selectedDelivery === "meetup" ? "meetup_request_sent" : "pending"
-    };
-
-    try {
-      const existingOrders = JSON.parse(
-        localStorage.getItem("tindahan_orders") || "[]"
-      );
-
-      localStorage.setItem(
-        "tindahan_orders",
-        JSON.stringify([order, ...existingOrders])
-      );
-    } catch (error) {
-      console.warn("Order local fallback skipped:", error);
-    }
+      meetup: selectedDelivery === "meetup" ? meetupPlan : null
+    });
 
     setTimeout(() => {
       setIsPaying(false);
-      navigate("/orders");
+
+      if (selectedDelivery === "meetup") {
+        navigate("/orders");
+        return;
+      }
+
+      navigate(`/tracking/${order.id}`);
     }, 650);
   }
 
@@ -474,8 +467,10 @@ export default function Checkout() {
                 ? `${meetupPlan.spot.name} · ${meetupPlan.time}`
                 : "Choose a safe meeting point"
               : selectedDelivery === "pickup"
-              ? "Choose a pick-up point"
-              : "Add delivery instructions"}
+              ? "Choose a J&T Express pick-up point"
+              : selectedDelivery === "door"
+              ? "Add delivery instructions"
+              : "Confirm courier delivery"}
           </span>
 
           <strong>{selectedDelivery === "meetup" && meetupPlan ? "›" : "+"}</strong>

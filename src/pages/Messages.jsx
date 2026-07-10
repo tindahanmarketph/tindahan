@@ -3,16 +3,24 @@ import {
   Camera,
   Check,
   ChevronLeft,
+  Download,
   Info,
   MapPin,
+  PackageCheck,
   Plus,
   Send,
   ShieldCheck,
+  Truck,
   X
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import {
+  formatOrderDate,
+  formatTindaHanPrice,
+  getOrderById
+} from "../lib/orders";
 
 const STORAGE_KEY = "tindahan_demo_conversations";
 
@@ -139,6 +147,10 @@ function getLastMessage(conversation) {
     return `Offer sent · ${formatPrice(offer.offerPrice)}`;
   }
 
+  if (lastMessage.orderId) {
+    return "Order update";
+  }
+
   if (lastMessage.text) return lastMessage.text;
   if (lastMessage.photos?.length > 0) return "Photo";
   return conversation?.listing?.title || "Conversation";
@@ -194,6 +206,18 @@ export default function Messages() {
   const [showSafety, setShowSafety] = useState(true);
   const [activeTab, setActiveTab] = useState("messages");
   const [mobilePanel, setMobilePanel] = useState("inbox");
+
+  useEffect(() => {
+    const syncConversations = () => {
+      setConversations(getInitialConversations());
+    };
+
+    window.addEventListener("storage", syncConversations);
+
+    return () => {
+      window.removeEventListener("storage", syncConversations);
+    };
+  }, []);
 
   useEffect(() => {
     if (!incomingConversation) {
@@ -645,6 +669,77 @@ export default function Messages() {
     );
   }
 
+  function renderOrderCard(item) {
+    const order = getOrderById(item.orderId);
+
+    if (!order) {
+      return (
+        <div className="message-bubble">
+          <p>{item.text}</p>
+        </div>
+      );
+    }
+
+    const isSellerOrder = Boolean(
+      user?.id && order.sellerId && String(user.id) === String(order.sellerId)
+    );
+
+    return (
+      <div className="conversation-order-card">
+        <div className="conversation-order-icon">
+          <PackageCheck size={24} />
+        </div>
+
+        <div className="conversation-order-content">
+          <strong>
+            {isSellerOrder ? "Your item has been sold" : "Order confirmed"}
+          </strong>
+
+          <p>{item.text}</p>
+
+          <div className="conversation-order-product">
+            {order.listingPhoto && (
+              <img src={order.listingPhoto} alt={order.listingTitle} />
+            )}
+
+            <div>
+              <span>{order.listingTitle}</span>
+              <small>₱{formatTindaHanPrice(order.total)}</small>
+            </div>
+          </div>
+
+          {isSellerOrder && order.deliveryMethod !== "meetup" && (
+            <div className="conversation-order-deadline">
+              Ship before {formatOrderDate(order.maxShippingDate)}
+            </div>
+          )}
+
+          <div className="conversation-order-actions">
+            {isSellerOrder && order.deliveryMethod !== "meetup" && (
+              <button
+                type="button"
+                className="parcel-outline-button"
+                onClick={() => navigate(`/shipping-label/${order.id}`)}
+              >
+                <Download size={15} />
+                Shipping label
+              </button>
+            )}
+
+            <button
+              type="button"
+              className="parcel-primary-button"
+              onClick={() => navigate(`/tracking/${order.id}`)}
+            >
+              <Truck size={15} />
+              Track parcel
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   function renderChatPanel({ mobile = false } = {}) {
     if (!activeConversation) {
       return (
@@ -753,10 +848,12 @@ export default function Messages() {
               key={item.id}
               className={`message-bubble-row ${
                 item.sender === "me" ? "me" : ""
-              }`}
+              } ${item.sender === "system" ? "system" : ""}`}
             >
               {item.type === "offer" ? (
                 renderOfferCard(item)
+              ) : item.orderId ? (
+                renderOrderCard(item)
               ) : (
                 <div className="message-bubble">
                   {item.text && <p>{item.text}</p>}

@@ -1,31 +1,28 @@
 import {
   CheckCircle2,
   ChevronLeft,
+  Download,
   MapPin,
   Navigation,
+  PackageCheck,
   ReceiptText,
-  ShieldCheck
+  ShieldCheck,
+  Truck
 } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
-function formatPrice(value) {
-  return Number(value || 0).toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
-  });
-}
-
-function getStoredOrders() {
-  try {
-    return JSON.parse(localStorage.getItem("tindahan_orders") || "[]");
-  } catch {
-    return [];
-  }
-}
+import { useAuth } from "../context/AuthContext";
+import {
+  formatOrderDate,
+  formatOrderDateTime,
+  formatTindaHanPrice,
+  getStoredOrders
+} from "../lib/orders";
 
 export default function Orders() {
   const navigate = useNavigate();
+  const { user } = useAuth();
+
   const [activeMainTab, setActiveMainTab] = useState("purchases");
   const [activeFilter, setActiveFilter] = useState("in_progress");
   const [orders, setOrders] = useState([]);
@@ -34,7 +31,17 @@ export default function Orders() {
     setOrders(getStoredOrders());
   }, []);
 
-  const filteredOrders = orders.filter((order) => {
+  const visibleOrders = useMemo(() => {
+    return orders.filter((order) => {
+      if (activeMainTab === "sales") {
+        return String(order.sellerId || "") === String(user?.id || "");
+      }
+
+      return String(order.buyerId || "") === String(user?.id || "");
+    });
+  }, [orders, activeMainTab, user?.id]);
+
+  const filteredOrders = visibleOrders.filter((order) => {
     if (activeFilter === "all") return true;
     if (activeFilter === "completed") return order.status === "completed";
     if (activeFilter === "cancelled") return order.status === "cancelled";
@@ -46,11 +53,44 @@ export default function Orders() {
 
     window.open(
       `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
-        order.meetup.spot.name + " " + order.meetup.spot.address
+        `${order.meetup.spot.name} ${order.meetup.spot.address || ""}`
       )}`,
       "_blank",
       "noopener,noreferrer"
     );
+  }
+
+  function getOrderStatusLabel(order) {
+    const labels = {
+      paid_waiting_seller: "Paid · waiting for seller",
+      label_downloaded: "Shipping label downloaded",
+      courier_pickup_scheduled: "Courier pick-up scheduled",
+      dropped_off: "Dropped off",
+      in_transit: "In transit",
+      ready_for_pickup: "Ready for pick-up",
+      delivery_scheduled: "Delivery scheduled",
+      meetup_request_sent: "Meet-Up request sent",
+      completed: "Completed",
+      cancelled: "Cancelled"
+    };
+
+    return labels[order.status] || "In progress";
+  }
+
+  function getOrderSubtitle(order) {
+    if (order.deliveryMethod === "meetup") {
+      return "Safe Meet-Up";
+    }
+
+    if (order.status === "paid_waiting_seller") {
+      return `Ship before ${formatOrderDate(order.maxShippingDate)}`;
+    }
+
+    if (order.status === "courier_pickup_scheduled") {
+      return `Pick-up scheduled ${formatOrderDate(order.pickupScheduledAt)}`;
+    }
+
+    return order.carrier || "J&T Express";
   }
 
   return (
@@ -133,7 +173,7 @@ export default function Orders() {
       ) : (
         <section className="orders-list">
           {filteredOrders.map((order) => (
-            <article className="order-card" key={order.id}>
+            <article className="order-card parcel-order-card" key={order.id}>
               <div className="order-card-top">
                 <div className="order-card-image">
                   {order.listingPhoto ? (
@@ -145,14 +185,47 @@ export default function Orders() {
 
                 <div>
                   <strong>{order.listingTitle}</strong>
-                  <span>₱{formatPrice(order.total)}</span>
-                  <p>
-                    {order.deliveryMethod === "meetup"
-                      ? "Safe Meet-Up"
-                      : "Delivery order"}
-                  </p>
+                  <span>₱{formatTindaHanPrice(order.total)}</span>
+                  <p>{getOrderStatusLabel(order)}</p>
                 </div>
               </div>
+
+              <div className="parcel-order-meta">
+                <div>
+                  <PackageCheck size={17} />
+                  <span>{getOrderSubtitle(order)}</span>
+                </div>
+
+                {order.trackingNumber && (
+                  <div>
+                    <Truck size={17} />
+                    <span>{order.trackingNumber}</span>
+                  </div>
+                )}
+
+                {order.createdAt && (
+                  <div>
+                    <ReceiptText size={17} />
+                    <span>Ordered {formatOrderDateTime(order.createdAt)}</span>
+                  </div>
+                )}
+              </div>
+
+              {activeMainTab === "sales" &&
+                order.deliveryMethod !== "meetup" &&
+                order.status === "paid_waiting_seller" && (
+                  <div className="seller-shipping-alert">
+                    <ShieldCheck size={19} />
+
+                    <div>
+                      <strong>Your item has been sold</strong>
+                      <p>
+                        You have until {formatOrderDate(order.maxShippingDate)} to
+                        ship this parcel.
+                      </p>
+                    </div>
+                  </div>
+                )}
 
               {order.deliveryMethod === "meetup" && order.meetup && (
                 <div className="order-meetup-box">
@@ -178,6 +251,29 @@ export default function Orders() {
                   </button>
                 </div>
               )}
+
+              <div className="parcel-order-actions">
+                {activeMainTab === "sales" &&
+                  order.deliveryMethod !== "meetup" && (
+                    <button
+                      type="button"
+                      className="parcel-outline-button"
+                      onClick={() => navigate(`/shipping-label/${order.id}`)}
+                    >
+                      <Download size={16} />
+                      Download shipping label
+                    </button>
+                  )}
+
+                <button
+                  type="button"
+                  className="parcel-primary-button"
+                  onClick={() => navigate(`/tracking/${order.id}`)}
+                >
+                  <Truck size={16} />
+                  Track parcel
+                </button>
+              </div>
 
               {order.status === "completed" && (
                 <div className="order-completed">
