@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
@@ -37,6 +38,22 @@ import HolidayMode from "./pages/HolidayMode";
 import BundleDiscounts from "./pages/BundleDiscounts";
 import Badges from "./pages/Badges";
 
+function AppLaunchLoader({ isLeaving }) {
+  return (
+    <div className={isLeaving ? "app-launch-loader leaving" : "app-launch-loader"}>
+      <div className="app-launch-loader-inner">
+        <div className="app-launch-logo">
+          TindaHan
+        </div>
+
+        <div className="app-launch-spinner" aria-label="Loading TindaHan" />
+
+        <p>Second-hand treasures across the Philippines</p>
+      </div>
+    </div>
+  );
+}
+
 function ProtectedRoute({ children }) {
   const { user, loadingAuth } = useAuth();
 
@@ -60,6 +77,30 @@ function ProtectedRoute({ children }) {
 export default function App() {
   const location = useLocation();
 
+  const [showLaunchLoader, setShowLaunchLoader] = useState(() => {
+    return sessionStorage.getItem("tindahan_launch_loader_seen") !== "true";
+  });
+
+  const [loaderLeaving, setLoaderLeaving] = useState(false);
+
+  useEffect(() => {
+    if (!showLaunchLoader) return;
+
+    const leaveTimer = setTimeout(() => {
+      setLoaderLeaving(true);
+    }, 950);
+
+    const hideTimer = setTimeout(() => {
+      sessionStorage.setItem("tindahan_launch_loader_seen", "true");
+      setShowLaunchLoader(false);
+    }, 1250);
+
+    return () => {
+      clearTimeout(leaveTimer);
+      clearTimeout(hideTimer);
+    };
+  }, [showLaunchLoader]);
+
   const isProductPage =
     location.pathname.startsWith("/item/") ||
     location.pathname.startsWith("/listing/") ||
@@ -71,6 +112,8 @@ export default function App() {
 
   return (
     <>
+      {showLaunchLoader && <AppLaunchLoader isLeaving={loaderLeaving} />}
+
       <Navbar />
       <CategoryBar />
 
