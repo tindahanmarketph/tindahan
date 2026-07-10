@@ -14898,18 +14898,16 @@ textarea:focus {
   }
 }
 /* ========================= */
-/* TINDAHAN APP LAUNCH LOADER */
+/* TINDAHAN MOBILE APP LAUNCH LOADER */
 /* ========================= */
 
 .app-launch-loader {
   position: fixed;
   inset: 0;
   z-index: 999999;
-  display: grid;
+  display: none;
   place-items: center;
-  background:
-    radial-gradient(circle at top, rgba(255, 107, 44, 0.11), transparent 34%),
-    #ffffff;
+  background: #ffffff;
   opacity: 1;
   visibility: visible;
   transition:
@@ -14926,20 +14924,16 @@ textarea:focus {
   display: grid;
   justify-items: center;
   align-content: center;
-  gap: 18px;
+  gap: 22px;
   padding: 28px;
   text-align: center;
   animation: appLaunchPop 0.34s ease forwards;
 }
 
-.app-launch-logo {
-  color: var(--orange);
-  font-size: 44px;
-  line-height: 1;
-  font-weight: 950;
-  font-style: italic;
-  letter-spacing: -1.7px;
-  text-shadow: 0 12px 34px rgba(255, 107, 44, 0.16);
+.app-launch-logo-image {
+  width: min(285px, 76vw);
+  height: auto;
+  object-fit: contain;
 }
 
 .app-launch-spinner {
@@ -14950,15 +14944,6 @@ textarea:focus {
   border-right-color: var(--orange);
   border-radius: 999px;
   animation: tindahanSpin 0.72s linear infinite;
-}
-
-.app-launch-loader-inner p {
-  max-width: 260px;
-  margin: 0;
-  color: #5f6f75;
-  font-size: 14px;
-  line-height: 1.35;
-  font-weight: 600;
 }
 
 @keyframes tindahanSpin {
@@ -14980,16 +14965,16 @@ textarea:focus {
 }
 
 @media (max-width: 760px) {
-  .app-launch-logo {
-    font-size: 42px;
+  .app-launch-loader {
+    display: grid;
+  }
+
+  .app-launch-logo-image {
+    width: min(275px, 78vw);
   }
 
   .app-launch-spinner {
     width: 32px;
     height: 32px;
-  }
-
-  .app-launch-loader-inner p {
-    font-size: 13px;
   }
 }

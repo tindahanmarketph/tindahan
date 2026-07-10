@@ -38,17 +38,23 @@ import HolidayMode from "./pages/HolidayMode";
 import BundleDiscounts from "./pages/BundleDiscounts";
 import Badges from "./pages/Badges";
 
+function isMobileDevice() {
+  if (typeof window === "undefined") return false;
+
+  return window.matchMedia("(max-width: 760px)").matches;
+}
+
 function AppLaunchLoader({ isLeaving }) {
   return (
     <div className={isLeaving ? "app-launch-loader leaving" : "app-launch-loader"}>
       <div className="app-launch-loader-inner">
-        <div className="app-launch-logo">
-          TindaHan
-        </div>
+        <img
+          src="/logo-tindahan.png"
+          alt="TindaHan"
+          className="app-launch-logo-image"
+        />
 
         <div className="app-launch-spinner" aria-label="Loading TindaHan" />
-
-        <p>Second-hand treasures across the Philippines</p>
       </div>
     </div>
   );
@@ -78,7 +84,9 @@ export default function App() {
   const location = useLocation();
 
   const [showLaunchLoader, setShowLaunchLoader] = useState(() => {
-    return sessionStorage.getItem("tindahan_launch_loader_seen") !== "true";
+    if (!isMobileDevice()) return false;
+
+    return sessionStorage.getItem("tindahan_mobile_launch_loader_seen") !== "true";
   });
 
   const [loaderLeaving, setLoaderLeaving] = useState(false);
@@ -91,7 +99,7 @@ export default function App() {
     }, 950);
 
     const hideTimer = setTimeout(() => {
-      sessionStorage.setItem("tindahan_launch_loader_seen", "true");
+      sessionStorage.setItem("tindahan_mobile_launch_loader_seen", "true");
       setShowLaunchLoader(false);
     }, 1250);
 
