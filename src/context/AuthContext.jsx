@@ -61,6 +61,66 @@ export function AuthProvider({ children }) {
     }
   }
 
+  async function updateProfile(payload) {
+    if (!user?.id) {
+      return {
+        data: null,
+        error: new Error("No authenticated user.")
+      };
+    }
+
+    try {
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("id")
+        .eq("id", user.id)
+        .maybeSingle();
+
+      if (existingProfile) {
+        const { data, error } = await supabase
+          .from("profiles")
+          .update({
+            ...payload,
+            updated_at: new Date().toISOString()
+          })
+          .eq("id", user.id)
+          .select("*")
+          .maybeSingle();
+
+        if (error) {
+          return { data: null, error };
+        }
+
+        setProfile(data || null);
+        return { data, error: null };
+      }
+
+      const { data, error } = await supabase
+        .from("profiles")
+        .insert({
+          id: user.id,
+          email: user.email || "",
+          username:
+            user.user_metadata?.username ||
+            user.email?.split("@")[0] ||
+            "user",
+          ...payload,
+          updated_at: new Date().toISOString()
+        })
+        .select("*")
+        .maybeSingle();
+
+      if (error) {
+        return { data: null, error };
+      }
+
+      setProfile(data || null);
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    }
+  }
+
   useEffect(() => {
     let mounted = true;
 
@@ -210,7 +270,8 @@ export function AuthProvider({ children }) {
     signUp,
     register,
     logout,
-    loadProfile
+    loadProfile,
+    updateProfile
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

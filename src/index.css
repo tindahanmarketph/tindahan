@@ -16188,3 +16188,250 @@ textarea:focus {
     z-index: 160;
   }
 }
+/* ========================================================= */
+/* PHONE VERIFICATION SETTINGS - TINDAHAN */
+/* ========================================================= */
+
+.settings-phone-field {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 12px;
+}
+
+.settings-phone-verify-button {
+  min-height: 38px;
+  padding: 0 16px;
+  border: 1.5px solid var(--orange);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--orange);
+  font-size: 13px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.settings-phone-verify-button:hover {
+  background: var(--orange-soft);
+}
+
+.settings-phone-verify-button.verified {
+  border-color: #0f8a5f;
+  background: #e9f8f1;
+  color: #0f8a5f;
+}
+
+.settings-phone-verified {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 8px;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #e9f8f1;
+  color: #0f8a5f;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.phone-verification-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(17, 17, 17, 0.48);
+}
+
+.phone-verification-modal {
+  position: relative;
+  width: min(420px, 100%);
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  padding: 30px 24px 24px;
+  border: 1px solid var(--orange-border);
+  border-radius: 24px;
+  background: #ffffff;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.24);
+  animation: phoneVerificationIn 0.2s ease forwards;
+  text-align: center;
+}
+
+.phone-verification-modal.success {
+  padding-top: 36px;
+}
+
+.phone-verification-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: #5f6f75;
+}
+
+.phone-verification-close:hover {
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.phone-verification-icon {
+  width: 64px;
+  height: 64px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--orange);
+  border: 1px solid var(--orange-border);
+}
+
+.phone-verification-modal.success .phone-verification-icon {
+  background: #e9f8f1;
+  color: #0f8a5f;
+  border-color: rgba(15, 138, 95, 0.18);
+}
+
+.phone-verification-modal h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 24px;
+  line-height: 1.12;
+  font-weight: 950;
+  letter-spacing: -0.4px;
+}
+
+.phone-verification-modal p {
+  max-width: 320px;
+  margin: 0;
+  color: #5f6f75;
+  font-size: 15px;
+  line-height: 1.42;
+}
+
+.phone-verification-number {
+  display: inline-flex;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: #fff6f2;
+  color: var(--orange);
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.phone-demo-code {
+  width: 100%;
+  padding: 12px;
+  border: 1px dashed var(--orange-border);
+  border-radius: 14px;
+  background: var(--orange-soft);
+  color: #5f6f75;
+  font-size: 14px;
+}
+
+.phone-demo-code strong {
+  color: var(--orange);
+  letter-spacing: 2px;
+}
+
+.phone-code-field {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 900;
+  text-align: left;
+}
+
+.phone-code-field input {
+  width: 100%;
+  height: 52px;
+  border: 1.5px solid var(--orange-border);
+  border-radius: 14px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 22px;
+  font-weight: 900;
+  text-align: center;
+  letter-spacing: 4px;
+}
+
+.phone-code-field input:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
+}
+
+.phone-verification-error {
+  width: 100%;
+  padding: 11px 12px;
+  border-radius: 14px;
+  background: #fff0ee;
+  color: #d93025;
+  font-size: 14px;
+  font-weight: 800;
+  text-align: center;
+}
+
+.phone-verification-primary {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #ffffff;
+  font-size: 16px;
+  font-weight: 950;
+  box-shadow: 0 10px 24px rgba(255, 107, 44, 0.24);
+}
+
+.phone-verification-primary:hover:not(:disabled) {
+  background: var(--orange-dark);
+}
+
+.phone-verification-primary:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+@keyframes phoneVerificationIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.97);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 720px) {
+  .settings-phone-field {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .settings-phone-verify-button {
+    width: fit-content;
+  }
+
+  .phone-verification-overlay {
+    align-items: end;
+    padding: 0;
+  }
+
+  .phone-verification-modal {
+    width: 100%;
+    border-radius: 24px 24px 0 0;
+    padding: 34px 22px calc(24px + env(safe-area-inset-bottom));
+  }
+}

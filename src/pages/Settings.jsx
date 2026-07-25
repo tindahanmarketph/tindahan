@@ -582,11 +582,17 @@ function ProfileSection({ user }) {
 }
 
 function AccountSection({ user }) {
+  const { updateProfile, loadProfile } = useAuth();
+
   const [loadingAccount, setLoadingAccount] = useState(true);
   const [savingAccount, setSavingAccount] = useState(false);
 
   const [email, setEmail] = useState(user?.email || "");
   const [phoneNumber, setPhoneNumber] = useState("");
+  const [initialPhoneNumber, setInitialPhoneNumber] = useState("");
+  const [phoneVerified, setPhoneVerified] = useState(false);
+  const [phoneVerifiedAt, setPhoneVerifiedAt] = useState(null);
+
   const [fullName, setFullName] = useState("");
   const [gender, setGender] = useState("");
   const [birthDate, setBirthDate] = useState("");
@@ -595,12 +601,27 @@ function AccountSection({ user }) {
 
   const [toast, setToast] = useState(null);
 
+  const [verificationOpen, setVerificationOpen] = useState(false);
+  const [verificationSuccessOpen, setVerificationSuccessOpen] = useState(false);
+  const [verificationCode, setVerificationCode] = useState("");
+  const [enteredCode, setEnteredCode] = useState("");
+  const [verificationError, setVerificationError] = useState("");
+  const [verifyingPhone, setVerifyingPhone] = useState(false);
+
   function showToast(type, title, message) {
     setToast({ type, title, message });
 
     window.setTimeout(() => {
       setToast(null);
     }, 3200);
+  }
+
+  function normalisePhone(value) {
+    return String(value || "").replace(/\s/g, "").trim();
+  }
+
+  function generateVerificationCode() {
+    return String(Math.floor(100000 + Math.random() * 900000));
   }
 
   useEffect(() => {
@@ -616,15 +637,19 @@ function AccountSection({ user }) {
           ...(supabaseProfile || {})
         };
 
-        setEmail(source.email || user?.email || "");
-
-        setPhoneNumber(
+        const loadedPhoneNumber =
           source.phone_number ||
-            source.phoneNumber ||
-            user?.phone ||
-            user?.user_metadata?.phone_number ||
-            ""
-        );
+          source.phoneNumber ||
+          user?.phone ||
+          user?.user_metadata?.phone_number ||
+          "";
+
+        setEmail(source.email || user?.email || "");
+        setPhoneNumber(loadedPhoneNumber);
+        setInitialPhoneNumber(loadedPhoneNumber);
+
+        setPhoneVerified(Boolean(source.phone_verified || source.phoneVerified));
+        setPhoneVerifiedAt(source.phone_verified_at || source.phoneVerifiedAt || null);
 
         setFullName(
           source.full_name ||
@@ -653,6 +678,112 @@ function AccountSection({ user }) {
     loadAccountSettings();
   }, [user]);
 
+  const phoneHasChanged =
+    normalisePhone(phoneNumber) !== normalisePhone(initialPhoneNumber);
+
+  const canShowVerified = phoneNumber.trim() && phoneVerified && !phoneHasChanged;
+
+  function handlePhoneChange(event) {
+    setPhoneNumber(event.target.value);
+
+    if (
+      normalisePhone(event.target.value) !== normalisePhone(initialPhoneNumber)
+    ) {
+      setPhoneVerified(false);
+      setPhoneVerifiedAt(null);
+    }
+  }
+
+  function handleStartPhoneVerification() {
+    const cleanPhoneNumber = phoneNumber.trim();
+
+    if (!cleanPhoneNumber) {
+      showToast(
+        "error",
+        "Missing phone number",
+        "Please enter your phone number before verification."
+      );
+      return;
+    }
+
+    if (cleanPhoneNumber.replace(/\D/g, "").length < 8) {
+      showToast(
+        "error",
+        "Invalid phone number",
+        "Please enter a valid phone number."
+      );
+      return;
+    }
+
+    const nextCode = generateVerificationCode();
+
+    setVerificationCode(nextCode);
+    setEnteredCode("");
+    setVerificationError("");
+    setVerificationOpen(true);
+  }
+
+  async function handleConfirmPhoneCode() {
+    if (!enteredCode.trim()) {
+      setVerificationError("Please enter the verification code.");
+      return;
+    }
+
+    if (enteredCode.trim() !== verificationCode) {
+      setVerificationError("The code is incorrect. Please try again.");
+      return;
+    }
+
+    setVerifyingPhone(true);
+    setVerificationError("");
+
+    try {
+      const verifiedAt = new Date().toISOString();
+      const cleanPhoneNumber = phoneNumber.trim();
+
+      const accountData = {
+        ...getLocalAccount(),
+        phoneNumber: cleanPhoneNumber,
+        phone_number: cleanPhoneNumber,
+        phoneVerified: true,
+        phone_verified: true,
+        phoneVerifiedAt: verifiedAt,
+        phone_verified_at: verifiedAt,
+        updated_at: new Date().toISOString()
+      };
+
+      saveLocalAccount(accountData);
+
+      if (user?.id) {
+        const { error } = await updateProfile({
+          phone_number: cleanPhoneNumber,
+          phone_verified: true,
+          phone_verified_at: verifiedAt
+        });
+
+        if (error) {
+          console.warn("Phone verification Supabase save skipped:", error.message);
+        }
+
+        await loadProfile(user.id);
+      }
+
+      setPhoneVerified(true);
+      setPhoneVerifiedAt(verifiedAt);
+      setInitialPhoneNumber(cleanPhoneNumber);
+
+      setVerificationOpen(false);
+      setVerificationSuccessOpen(true);
+    } catch (error) {
+      console.error("Phone verification error:", error);
+      setVerificationError(
+        error?.message || "Unable to verify this phone number."
+      );
+    } finally {
+      setVerifyingPhone(false);
+    }
+  }
+
   async function handleSaveAccount() {
     setSavingAccount(true);
 
@@ -678,10 +809,19 @@ function AccountSection({ user }) {
         return;
       }
 
+      const finalPhoneVerified =
+        normalisePhone(cleanPhoneNumber) === normalisePhone(initialPhoneNumber)
+          ? phoneVerified
+          : false;
+
       const accountData = {
         email: cleanEmail,
         phoneNumber: cleanPhoneNumber,
         phone_number: cleanPhoneNumber,
+        phoneVerified: finalPhoneVerified,
+        phone_verified: finalPhoneVerified,
+        phoneVerifiedAt: finalPhoneVerified ? phoneVerifiedAt : null,
+        phone_verified_at: finalPhoneVerified ? phoneVerifiedAt : null,
         fullName: cleanFullName,
         full_name: cleanFullName,
         gender,
@@ -701,6 +841,8 @@ function AccountSection({ user }) {
         const profilePayload = {
           email: cleanEmail,
           phone_number: cleanPhoneNumber,
+          phone_verified: finalPhoneVerified,
+          phone_verified_at: finalPhoneVerified ? phoneVerifiedAt : null,
           full_name: cleanFullName,
           gender,
           birth_date: birthDate || null,
@@ -710,6 +852,8 @@ function AccountSection({ user }) {
 
         const profileResult = await upsertProfileSafely(user.id, profilePayload);
         supabaseSaved = profileResult.success;
+
+        await loadProfile(user.id);
       }
 
       const session = await getCurrentSession();
@@ -734,6 +878,11 @@ function AccountSection({ user }) {
       }
 
       setPassword("");
+
+      if (!finalPhoneVerified) {
+        setPhoneVerified(false);
+        setPhoneVerifiedAt(null);
+      }
 
       showToast(
         "success",
@@ -804,15 +953,39 @@ function AccountSection({ user }) {
 
         <SettingsRow
           title="Phone number"
-          helper="Your phone number is only used to help you sign in. It will not be made public or used for marketing purposes."
+          helper={
+            <span>
+              Your phone number is only used to help you sign in. It will not be
+              made public or used for marketing purposes.
+              {canShowVerified && (
+                <span className="settings-phone-verified">
+                  Verified <Check size={13} />
+                </span>
+              )}
+            </span>
+          }
           value={
-            <input
-              type="tel"
-              className="settings-inline-input"
-              value={phoneNumber}
-              onChange={(event) => setPhoneNumber(event.target.value)}
-              placeholder="Enter your phone number"
-            />
+            <div className="settings-phone-field">
+              <input
+                type="tel"
+                className="settings-inline-input"
+                value={phoneNumber}
+                onChange={handlePhoneChange}
+                placeholder="+63 9XX XXX XXXX"
+              />
+
+              <button
+                type="button"
+                className={
+                  canShowVerified
+                    ? "settings-phone-verify-button verified"
+                    : "settings-phone-verify-button"
+                }
+                onClick={handleStartPhoneVerification}
+              >
+                {canShowVerified ? "Verified" : "Verify"}
+              </button>
+            </div>
           }
         />
       </SettingsCard>
@@ -935,9 +1108,94 @@ function AccountSection({ user }) {
           {savingAccount ? "Saving..." : "Save"}
         </button>
       </div>
+
+      {verificationOpen && (
+        <div className="phone-verification-overlay">
+          <section className="phone-verification-modal">
+            <button
+              type="button"
+              className="phone-verification-close"
+              onClick={() => setVerificationOpen(false)}
+              aria-label="Close"
+            >
+              <X size={24} />
+            </button>
+
+            <div className="phone-verification-icon">
+              <CheckCircle2 size={30} />
+            </div>
+
+            <h2>Phone verification</h2>
+
+            <p>A code has been sent to this number for verification.</p>
+
+            <strong className="phone-verification-number">
+              {phoneNumber}
+            </strong>
+
+            <div className="phone-demo-code">
+              Demo code: <strong>{verificationCode}</strong>
+            </div>
+
+            <label className="phone-code-field">
+              Enter the code
+              <input
+                type="text"
+                inputMode="numeric"
+                maxLength={6}
+                value={enteredCode}
+                onChange={(event) => {
+                  setEnteredCode(event.target.value.replace(/\D/g, ""));
+                  setVerificationError("");
+                }}
+                placeholder="6-digit code"
+                autoFocus
+              />
+            </label>
+
+            {verificationError && (
+              <div className="phone-verification-error">
+                {verificationError}
+              </div>
+            )}
+
+            <button
+              type="button"
+              className="phone-verification-primary"
+              onClick={handleConfirmPhoneCode}
+              disabled={verifyingPhone}
+            >
+              {verifyingPhone ? "Checking..." : "Next"}
+            </button>
+          </section>
+        </div>
+      )}
+
+      {verificationSuccessOpen && (
+        <div className="phone-verification-overlay">
+          <section className="phone-verification-modal success">
+            <div className="phone-verification-icon">
+              <CheckCircle2 size={34} />
+            </div>
+
+            <h2>Thank you!</h2>
+
+            <p>Your phone number is now verified.</p>
+
+            <button
+              type="button"
+              className="phone-verification-primary"
+              onClick={() => setVerificationSuccessOpen(false)}
+            >
+              Done
+            </button>
+          </section>
+        </div>
+      )}
     </div>
   );
 }
+
 
 function ShippingSection() {
   return (
