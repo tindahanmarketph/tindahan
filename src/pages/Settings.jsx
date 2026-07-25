@@ -1548,7 +1548,7 @@ export default function Settings() {
   }
 
   return (
-    <main className="settings-page">
+    <main className="settings-page settings-page-fixed">
       <div className="settings-layout">
         <aside className="settings-sidebar">
           <h1>Settings</h1>

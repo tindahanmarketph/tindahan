@@ -122,6 +122,8 @@ export default function App() {
     location.pathname.startsWith("/shipping-label/") ||
     location.pathname.startsWith("/welcome");
 
+  const shouldShowMobileBottomNav = !isProductPage;
+
   return (
     <>
       {showLaunchLoader && <AppLaunchLoader isLeaving={loaderLeaving} />}
@@ -372,7 +374,7 @@ export default function App() {
 
       <Footer />
 
-      {!isProductPage && <MobileBottomNav />}
+      {shouldShowMobileBottomNav && <MobileBottomNav />}
     </>
   );
 }
