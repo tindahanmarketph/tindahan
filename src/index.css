@@ -18496,3 +18496,262 @@ body,
     padding: 0 16px !important;
   }
 }
+/* ========================================================= */
+/* SELLER MEET-UP MAP - VISUAL POLISH                       */
+/* À ajouter à la fin de src/index.css                       */
+/* ========================================================= */
+
+.seller-meetup-map-card {
+  padding: 14px !important;
+  border-radius: 26px !important;
+  background: #ffffff !important;
+  border: 1px solid rgba(255, 107, 44, 0.18) !important;
+  box-shadow: 0 12px 30px rgba(255, 107, 44, 0.08) !important;
+}
+
+.seller-meetup-map {
+  position: relative !important;
+  min-height: 310px !important;
+  border-radius: 24px !important;
+  overflow: hidden !important;
+  border: 1px solid rgba(255, 107, 44, 0.22) !important;
+  background:
+    radial-gradient(circle at 22% 26%, rgba(255, 107, 44, 0.18), transparent 24%),
+    radial-gradient(circle at 78% 30%, rgba(255, 107, 44, 0.12), transparent 22%),
+    radial-gradient(circle at 70% 82%, rgba(15, 138, 95, 0.1), transparent 24%),
+    linear-gradient(135deg, #fff8f3 0%, #fffdfb 52%, #fff5ef 100%) !important;
+}
+
+/* Grille plus douce */
+.seller-meetup-map::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 107, 44, 0.07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 107, 44, 0.07) 1px, transparent 1px);
+  background-size: 30px 30px;
+  z-index: 0;
+}
+
+/* Grandes routes de fond */
+.seller-meetup-map::after {
+  content: "";
+  position: absolute;
+  left: -18%;
+  top: 42%;
+  width: 140%;
+  height: 28px;
+  border-radius: 999px;
+  background: rgba(255, 107, 44, 0.12);
+  transform: rotate(-9deg);
+  z-index: 1;
+  box-shadow:
+    0 -66px 0 rgba(255, 107, 44, 0.07),
+    0 72px 0 rgba(0, 119, 130, 0.06);
+}
+
+/* Route verticale */
+.seller-meetup-map .seller-meetup-map-road,
+.seller-meetup-map-road {
+  position: absolute !important;
+  z-index: 1 !important;
+  pointer-events: none !important;
+}
+
+.seller-meetup-map-road.road-one {
+  left: -12% !important;
+  top: 47% !important;
+  width: 130% !important;
+  height: 24px !important;
+  border-radius: 999px !important;
+  background: rgba(255, 107, 44, 0.1) !important;
+  transform: rotate(-8deg) !important;
+}
+
+.seller-meetup-map-road.road-two {
+  left: 52% !important;
+  top: -18% !important;
+  width: 26px !important;
+  height: 140% !important;
+  border-radius: 999px !important;
+  background: rgba(255, 107, 44, 0.09) !important;
+  transform: rotate(14deg) !important;
+}
+
+.seller-meetup-map-road.road-three {
+  left: 6% !important;
+  bottom: 22% !important;
+  width: 100% !important;
+  height: 18px !important;
+  border-radius: 999px !important;
+  background: rgba(0, 119, 130, 0.06) !important;
+  transform: rotate(10deg) !important;
+}
+
+/* Badge ville */
+.seller-meetup-map-city {
+  position: absolute !important;
+  top: 16px !important;
+  left: 16px !important;
+  z-index: 6 !important;
+  min-height: 38px !important;
+  padding: 0 14px !important;
+  border-radius: 999px !important;
+  border: 1px solid rgba(255, 107, 44, 0.22) !important;
+  background: rgba(255, 255, 255, 0.92) !important;
+  color: #ff6b2c !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  box-shadow: 0 10px 26px rgba(255, 107, 44, 0.14) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+/* Pins sur la carte */
+.seller-meetup-map-pin {
+  position: absolute !important;
+  left: var(--pin-x) !important;
+  top: var(--pin-y) !important;
+  z-index: 5 !important;
+  width: 42px !important;
+  height: 42px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: 4px solid #ffffff !important;
+  border-radius: 50% !important;
+  background: #ff6b2c !important;
+  color: #ffffff !important;
+  transform: translate(-50%, -50%) !important;
+  box-shadow:
+    0 10px 22px rgba(255, 107, 44, 0.28),
+    0 0 0 6px rgba(255, 107, 44, 0.1) !important;
+  transition:
+    transform 0.18s ease,
+    width 0.18s ease,
+    height 0.18s ease,
+    background 0.18s ease,
+    box-shadow 0.18s ease !important;
+}
+
+.seller-meetup-map-pin:hover {
+  transform: translate(-50%, -50%) scale(1.08) !important;
+}
+
+.seller-meetup-map-pin.active {
+  width: 50px !important;
+  height: 50px !important;
+  z-index: 7 !important;
+  background: #0f8a5f !important;
+  box-shadow:
+    0 14px 28px rgba(15, 138, 95, 0.28),
+    0 0 0 8px rgba(15, 138, 95, 0.12) !important;
+}
+
+/* Carte sélectionnée : moins massive et mieux intégrée */
+.seller-meetup-selected-card {
+  position: absolute !important;
+  left: 18px !important;
+  right: 18px !important;
+  bottom: 18px !important;
+  z-index: 8 !important;
+  display: grid !important;
+  grid-template-columns: 48px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: center !important;
+  margin: 0 !important;
+  padding: 15px 16px !important;
+  border-radius: 22px !important;
+  border: 1px solid rgba(255, 107, 44, 0.18) !important;
+  background: rgba(255, 255, 255, 0.94) !important;
+  box-shadow: 0 18px 40px rgba(17, 24, 39, 0.08) !important;
+  backdrop-filter: blur(12px) !important;
+}
+
+.seller-meetup-selected-card::before {
+  content: "";
+  width: 48px;
+  height: 48px;
+  grid-row: 1 / span 3;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle, rgba(255, 107, 44, 0.18), rgba(255, 107, 44, 0.08));
+}
+
+.seller-meetup-selected-card strong {
+  margin: 0 !important;
+  color: #111111 !important;
+  font-size: 17px !important;
+  line-height: 1.25 !important;
+  font-weight: 950 !important;
+}
+
+.seller-meetup-selected-card p {
+  margin: 3px 0 0 !important;
+  color: #5f6f75 !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+}
+
+.seller-meetup-selected-card .seller-meetup-safety-badge {
+  margin-top: 8px !important;
+}
+
+/* Badge Safety */
+.seller-meetup-safety-badge {
+  display: inline-flex !important;
+  width: fit-content !important;
+  align-items: center !important;
+  padding: 6px 10px !important;
+  border-radius: 999px !important;
+  background: #e7f8ef !important;
+  color: #0f8a5f !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+/* Mobile : carte plus respirante */
+@media (max-width: 760px) {
+  .seller-meetup-map-card {
+    padding: 12px !important;
+    border-radius: 24px !important;
+  }
+
+  .seller-meetup-map {
+    min-height: 330px !important;
+    border-radius: 24px !important;
+  }
+
+  .seller-meetup-map-city {
+    top: 14px !important;
+    left: 14px !important;
+    max-width: calc(100% - 28px) !important;
+  }
+
+  .seller-meetup-map-pin {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  .seller-meetup-map-pin.active {
+    width: 48px !important;
+    height: 48px !important;
+  }
+
+  .seller-meetup-selected-card {
+    left: 14px !important;
+    right: 14px !important;
+    bottom: 14px !important;
+    padding: 14px !important;
+    grid-template-columns: 44px minmax(0, 1fr) !important;
+    border-radius: 20px !important;
+  }
+
+  .seller-meetup-selected-card::before {
+    width: 44px !important;
+    height: 44px !important;
+  }
+
+  .seller-meetup-selected-card strong {
+    font-size: 16px !important;
+  }
+}
