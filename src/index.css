@@ -18294,3 +18294,446 @@ body,
     width: fit-content;
   }
 }
+/* =========================================================
+   SELLER MEET-UP UI FIX
+   À ajouter à la fin de src/index.css
+========================================================= */
+
+.seller-meetup-section,
+.safe-meetup-section,
+.meetup-point-section {
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100%;
+  margin: 20px 0 24px;
+  padding: 18px;
+  border: 1px solid #ffd2c2;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #fff7f3 0%, #fffdfc 100%);
+  overflow: hidden;
+}
+
+.seller-meetup-section *,
+.safe-meetup-section *,
+.meetup-point-section * {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+.seller-meetup-section h2,
+.safe-meetup-section h2,
+.meetup-point-section h2 {
+  margin: 0 0 10px;
+  padding: 0;
+  font-size: 20px;
+  line-height: 1.2;
+  font-weight: 800;
+  color: #111827;
+}
+
+.seller-meetup-section > p,
+.safe-meetup-section > p,
+.meetup-point-section > p,
+.seller-meetup-description,
+.safe-meetup-description,
+.meetup-point-description {
+  margin: 0 0 18px;
+  padding: 0;
+  font-size: 15px;
+  line-height: 1.55;
+  color: #5f6b7a;
+}
+
+/* Espace entre tous les blocs internes */
+.seller-meetup-section > * + *,
+.safe-meetup-section > * + *,
+.meetup-point-section > * + * {
+  margin-top: 16px;
+}
+
+/* Bloc "I want to offer a Meet-Up option..." */
+.seller-meetup-toggle-card,
+.safe-meetup-toggle-card,
+.meetup-toggle-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  width: 100%;
+  margin: 0;
+  padding: 18px 18px;
+  background: #ffffff;
+  border: 1px solid #f4d8cd;
+  border-radius: 20px;
+}
+
+.seller-meetup-toggle-card input[type="checkbox"],
+.safe-meetup-toggle-card input[type="checkbox"],
+.meetup-toggle-card input[type="checkbox"] {
+  margin-top: 4px;
+  flex: 0 0 auto;
+  transform: scale(1.05);
+}
+
+.seller-meetup-toggle-card label,
+.safe-meetup-toggle-card label,
+.meetup-toggle-card label {
+  margin: 0;
+  padding: 0;
+  font-size: 16px;
+  line-height: 1.35;
+  font-weight: 700;
+  color: #111827;
+}
+
+/* Cartes d'explication / aide */
+.seller-meetup-helper-card,
+.safe-meetup-helper-card,
+.meetup-helper-card,
+.seller-meetup-info-card,
+.safe-meetup-info-card,
+.meetup-info-card {
+  width: 100%;
+  margin: 0;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #f1ddd5;
+  border-radius: 22px;
+}
+
+.seller-meetup-helper-card h3,
+.safe-meetup-helper-card h3,
+.meetup-helper-card h3,
+.seller-meetup-info-card h3,
+.safe-meetup-info-card h3,
+.meetup-info-card h3 {
+  margin: 0 0 8px;
+  font-size: 16px;
+  line-height: 1.3;
+  font-weight: 800;
+  color: #111827;
+}
+
+.seller-meetup-helper-card p,
+.safe-meetup-helper-card p,
+.meetup-helper-card p,
+.seller-meetup-info-card p,
+.safe-meetup-info-card p,
+.meetup-info-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #5f6b7a;
+}
+
+/* Champ de recherche / ville */
+.seller-meetup-search-card,
+.safe-meetup-search-card,
+.meetup-search-card {
+  width: 100%;
+  margin: 0;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #f1ddd5;
+  border-radius: 22px;
+}
+
+.seller-meetup-search-card h3,
+.safe-meetup-search-card h3,
+.meetup-search-card h3 {
+  margin: 0 0 12px;
+  font-size: 16px;
+  font-weight: 800;
+  color: #111827;
+}
+
+.seller-meetup-search-card input,
+.safe-meetup-search-card input,
+.meetup-search-card input,
+.seller-meetup-city-input,
+.safe-meetup-city-input,
+.meetup-city-input {
+  width: 100%;
+  min-height: 48px;
+  margin: 0;
+  padding: 0 16px;
+  border: 1px solid #d7dde5;
+  border-radius: 16px;
+  background: #f8fbfd;
+  font-size: 16px;
+  color: #111827;
+  outline: none;
+}
+
+.seller-meetup-search-card input:focus,
+.safe-meetup-search-card input:focus,
+.meetup-search-card input:focus,
+.seller-meetup-city-input:focus,
+.safe-meetup-city-input:focus,
+.meetup-city-input:focus {
+  border-color: #ff6a2b;
+  box-shadow: 0 0 0 3px rgba(255, 106, 43, 0.12);
+  background: #ffffff;
+}
+
+/* Chips / villes proposées */
+.seller-meetup-city-chips,
+.safe-meetup-city-chips,
+.meetup-city-chips,
+.seller-meetup-chip-row,
+.safe-meetup-chip-row,
+.meetup-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.seller-meetup-city-chip,
+.safe-meetup-city-chip,
+.meetup-city-chip,
+.seller-meetup-chip,
+.safe-meetup-chip,
+.meetup-chip {
+  padding: 10px 14px;
+  border-radius: 999px;
+  border: 1px solid #d7dde5;
+  background: #ffffff;
+  font-size: 14px;
+  font-weight: 700;
+  color: #3b4a59;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.seller-meetup-city-chip.active,
+.safe-meetup-city-chip.active,
+.meetup-city-chip.active,
+.seller-meetup-chip.active,
+.safe-meetup-chip.active,
+.meetup-chip.active {
+  border-color: #ff6a2b;
+  background: #fff1ea;
+  color: #ff6a2b;
+}
+
+/* Carte / map block */
+.seller-meetup-map-card,
+.safe-meetup-map-card,
+.meetup-map-card {
+  width: 100%;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid #f1ddd5;
+  border-radius: 24px;
+  background: #fffaf7;
+}
+
+.seller-meetup-map,
+.safe-meetup-map,
+.meetup-map {
+  position: relative;
+  width: 100%;
+  min-height: 250px;
+  border-radius: 22px;
+  overflow: hidden;
+  border: 1px solid #f3e3dc;
+  background:
+    linear-gradient(rgba(255, 126, 72, 0.09) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 126, 72, 0.09) 1px, transparent 1px),
+    linear-gradient(135deg, #fff7f2 0%, #fffdfa 100%);
+  background-size: 28px 28px, 28px 28px, 100% 100%;
+}
+
+/* Petit badge de ville sur la map */
+.seller-meetup-map-city,
+.safe-meetup-map-city,
+.meetup-map-city {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #ffd7c8;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ff6a2b;
+  z-index: 2;
+}
+
+/* Point sélectionné / carte principale */
+.seller-meetup-selected-card,
+.safe-meetup-selected-card,
+.meetup-selected-card {
+  width: 100%;
+  margin-top: 16px;
+  padding: 16px;
+  background: #ffffff;
+  border: 1px solid #f1ddd5;
+  border-radius: 22px;
+  box-shadow: 0 10px 30px rgba(17, 24, 39, 0.04);
+}
+
+.seller-meetup-selected-card strong,
+.safe-meetup-selected-card strong,
+.meetup-selected-card strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 18px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #111827;
+}
+
+.seller-meetup-selected-card p,
+.safe-meetup-selected-card p,
+.meetup-selected-card p {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #5f6b7a;
+}
+
+/* Liste des propositions */
+.seller-meetup-list,
+.safe-meetup-list,
+.meetup-list {
+  display: grid;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.seller-meetup-place-card,
+.safe-meetup-place-card,
+.meetup-place-card {
+  width: 100%;
+  margin: 0;
+  padding: 18px;
+  background: #ffffff;
+  border: 1px solid #e8e8e8;
+  border-radius: 22px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.seller-meetup-place-card:hover,
+.safe-meetup-place-card:hover,
+.meetup-place-card:hover {
+  transform: translateY(-1px);
+  border-color: #ffd0c0;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.05);
+}
+
+.seller-meetup-place-card strong,
+.safe-meetup-place-card strong,
+.meetup-place-card strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 17px;
+  line-height: 1.35;
+  font-weight: 800;
+  color: #111827;
+}
+
+.seller-meetup-place-card p,
+.safe-meetup-place-card p,
+.meetup-place-card p {
+  margin: 0 0 6px;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #5f6b7a;
+}
+
+/* Badge safety */
+.seller-meetup-safety-badge,
+.safe-meetup-safety-badge,
+.meetup-safety-badge {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: #e7f7ee;
+  color: #0d8f57;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+/* Boutons d’action de la section */
+.seller-meetup-actions,
+.safe-meetup-actions,
+.meetup-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.seller-meetup-actions button,
+.safe-meetup-actions button,
+.meetup-actions button {
+  min-height: 46px;
+  padding: 0 18px;
+  border-radius: 16px;
+  font-weight: 700;
+}
+
+/* Responsive mobile */
+@media (max-width: 760px) {
+  .seller-meetup-section,
+  .safe-meetup-section,
+  .meetup-point-section {
+    margin: 18px 12px 24px;
+    padding: 16px;
+    border-radius: 22px;
+  }
+
+  .seller-meetup-toggle-card,
+  .safe-meetup-toggle-card,
+  .meetup-toggle-card,
+  .seller-meetup-helper-card,
+  .safe-meetup-helper-card,
+  .meetup-helper-card,
+  .seller-meetup-info-card,
+  .safe-meetup-info-card,
+  .meetup-info-card,
+  .seller-meetup-search-card,
+  .safe-meetup-search-card,
+  .meetup-search-card,
+  .seller-meetup-map-card,
+  .safe-meetup-map-card,
+  .meetup-map-card,
+  .seller-meetup-selected-card,
+  .safe-meetup-selected-card,
+  .meetup-selected-card,
+  .seller-meetup-place-card,
+  .safe-meetup-place-card,
+  .meetup-place-card {
+    padding: 16px;
+    border-radius: 20px;
+  }
+
+  .seller-meetup-map,
+  .safe-meetup-map,
+  .meetup-map {
+    min-height: 220px;
+    border-radius: 18px;
+  }
+
+  .seller-meetup-section h2,
+  .safe-meetup-section h2,
+  .meetup-point-section h2 {
+    font-size: 18px;
+  }
+
+  .seller-meetup-selected-card strong,
+  .safe-meetup-selected-card strong,
+  .meetup-selected-card strong,
+  .seller-meetup-place-card strong,
+  .safe-meetup-place-card strong,
+  .meetup-place-card strong {
+    font-size: 16px;
+  }
+}
