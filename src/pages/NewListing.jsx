@@ -36,12 +36,6 @@ const conditionOptions = [
     description: "Brand new, never worn or used, without original tags or packaging."
   },
   {
-    id: "like_new",
-    label: "Like new",
-    description:
-      "Used once or only a few times. No visible flaws and still looks almost new."
-  },
-  {
     id: "very_good",
     label: "Very good",
     description:
@@ -100,59 +94,6 @@ const kidShoeSizes = [
   "US Youth 4",
   "US Youth 5",
   "US Youth 6"
-];
-
-const sellerMeetupSpots = [
-  {
-    id: "starbucks-sm-megamall",
-    name: "Starbucks - SM Megamall",
-    address: "SM Megamall, Mandaluyong, Metro Manila",
-    type: "Coffee Shop",
-    score: 95,
-    time: "3:00 PM",
-    icon: Coffee,
-    sector: "metro_manila"
-  },
-  {
-    id: "jollibee-bgc",
-    name: "Jollibee - BGC High Street",
-    address: "Bonifacio Global City, Taguig, Metro Manila",
-    type: "Fast Food",
-    score: 92,
-    time: "3:00 PM",
-    icon: Utensils,
-    sector: "metro_manila"
-  },
-  {
-    id: "ayala-mall-manila-bay",
-    name: "Ayala Malls Manila Bay",
-    address: "Parañaque, Metro Manila",
-    type: "Mall",
-    score: 94,
-    time: "3:00 PM",
-    icon: ShoppingBag,
-    sector: "metro_manila"
-  },
-  {
-    id: "bdo-makati-avenue",
-    name: "BDO - Makati Avenue",
-    address: "Makati Avenue, Makati City, Metro Manila",
-    type: "Bank",
-    score: 90,
-    time: "3:00 PM",
-    icon: Landmark,
-    sector: "metro_manila"
-  },
-  {
-    id: "seven-eleven-ortigas",
-    name: "7-Eleven - Ortigas Center",
-    address: "Ortigas Center, Pasig, Metro Manila",
-    type: "Convenience Store",
-    score: 87,
-    time: "3:00 PM",
-    icon: Store,
-    sector: "metro_manila"
-  }
 ];
 
 const bagSizes = ["Mini", "Small", "Medium", "Large", "Oversized"];
@@ -255,6 +196,135 @@ const parcelOptions = [
     label: "Large",
     description:
       "Fits a larger box, such as bulky clothing, home items or multiple items."
+  }
+];
+
+const sellerMeetupSpots = [
+  {
+    id: "starbucks-sm-megamall",
+    city: "Metro Manila",
+    district: "Mandaluyong",
+    name: "Starbucks - SM Megamall",
+    address: "SM Megamall, Mandaluyong, Metro Manila",
+    type: "Coffee Shop",
+    score: 95,
+    time: "3:00 PM",
+    icon: Coffee,
+    sector: "metro_manila",
+    mapX: 28,
+    mapY: 42
+  },
+  {
+    id: "jollibee-bgc",
+    city: "Metro Manila",
+    district: "Taguig",
+    name: "Jollibee - BGC High Street",
+    address: "Bonifacio Global City, Taguig, Metro Manila",
+    type: "Fast Food",
+    score: 92,
+    time: "3:00 PM",
+    icon: Utensils,
+    sector: "metro_manila",
+    mapX: 64,
+    mapY: 54
+  },
+  {
+    id: "ayala-mall-manila-bay",
+    city: "Metro Manila",
+    district: "Paranaque",
+    name: "Ayala Malls Manila Bay",
+    address: "Paranaque, Metro Manila",
+    type: "Mall",
+    score: 94,
+    time: "3:00 PM",
+    icon: ShoppingBag,
+    sector: "metro_manila",
+    mapX: 48,
+    mapY: 72
+  },
+  {
+    id: "bdo-makati-avenue",
+    city: "Metro Manila",
+    district: "Makati",
+    name: "BDO - Makati Avenue",
+    address: "Makati Avenue, Makati City, Metro Manila",
+    type: "Bank",
+    score: 90,
+    time: "3:00 PM",
+    icon: Landmark,
+    sector: "metro_manila",
+    mapX: 56,
+    mapY: 38
+  },
+  {
+    id: "seven-eleven-ortigas",
+    city: "Metro Manila",
+    district: "Pasig",
+    name: "7-Eleven - Ortigas Center",
+    address: "Ortigas Center, Pasig, Metro Manila",
+    type: "Convenience Store",
+    score: 87,
+    time: "3:00 PM",
+    icon: Store,
+    sector: "metro_manila",
+    mapX: 76,
+    mapY: 32
+  },
+  {
+    id: "ayala-center-cebu",
+    city: "Cebu City",
+    district: "Cebu Business Park",
+    name: "Ayala Center Cebu",
+    address: "Cebu Business Park, Cebu City",
+    type: "Mall",
+    score: 93,
+    time: "3:00 PM",
+    icon: ShoppingBag,
+    sector: "cebu_city",
+    mapX: 38,
+    mapY: 45
+  },
+  {
+    id: "starbucks-it-park-cebu",
+    city: "Cebu City",
+    district: "IT Park",
+    name: "Starbucks - Cebu IT Park",
+    address: "Cebu IT Park, Lahug, Cebu City",
+    type: "Coffee Shop",
+    score: 91,
+    time: "3:00 PM",
+    icon: Coffee,
+    sector: "cebu_city",
+    mapX: 68,
+    mapY: 35
+  },
+  {
+    id: "sm-city-davao",
+    city: "Davao City",
+    district: "Ecoland",
+    name: "SM City Davao Meet-Up Area",
+    address: "Ecoland, Davao City",
+    type: "Mall",
+    score: 92,
+    time: "3:00 PM",
+    icon: ShoppingBag,
+    sector: "davao_city",
+    mapX: 46,
+    mapY: 52
+  },
+  {
+    id: "abreeza-davao",
+    city: "Davao City",
+    district: "Bajada",
+    name: "Abreeza Mall Davao",
+    address: "J.P. Laurel Avenue, Davao City",
+    type: "Mall",
+    score: 94,
+    time: "3:00 PM",
+    icon: ShoppingBag,
+    sector: "davao_city",
+    mapX: 70,
+    mapY: 42
   }
 ];
 
@@ -504,15 +574,23 @@ function prepareSellerMeetupSpot(spot) {
 
   return {
     id: spot.id,
+    city: spot.city,
+    district: spot.district,
     name: spot.name,
     address: spot.address,
     type: spot.type,
     score: spot.score,
     time: spot.time,
     sector: spot.sector,
+    mapX: spot.mapX,
+    mapY: spot.mapY,
     selectedBy: "seller",
     selectedAt: new Date().toISOString()
   };
+}
+
+function getMeetupCityOptions() {
+  return Array.from(new Set(sellerMeetupSpots.map((spot) => spot.city)));
 }
 
 export default function NewListing() {
@@ -545,7 +623,8 @@ export default function NewListing() {
     parcel_size: "medium",
     is_negotiable: false,
     meetup_enabled: false,
-    seller_meetup_spot: null
+    seller_meetup_spot: null,
+    meetup_city_search: "Metro Manila"
   });
 
   const selectedCategory = getCategoryById(form.category);
@@ -567,6 +646,37 @@ export default function NewListing() {
     const price = Number(form.price || 0);
     return price + buyerProtection;
   }, [form.price, buyerProtection]);
+
+  const meetupCityOptions = useMemo(() => getMeetupCityOptions(), []);
+
+  const visibleSellerMeetupSpots = useMemo(() => {
+    const query = String(form.meetup_city_search || "")
+      .trim()
+      .toLowerCase();
+
+    if (!query) {
+      return sellerMeetupSpots.filter((spot) => spot.city === "Metro Manila");
+    }
+
+    const cityMatches = sellerMeetupSpots.filter((spot) =>
+      spot.city.toLowerCase().includes(query)
+    );
+
+    if (cityMatches.length > 0) {
+      return cityMatches;
+    }
+
+    return sellerMeetupSpots.filter((spot) => {
+      const searchable = `${spot.name} ${spot.address} ${spot.city} ${spot.district} ${spot.type}`.toLowerCase();
+      return searchable.includes(query);
+    });
+  }, [form.meetup_city_search]);
+
+  const selectedMeetupCity =
+    form.seller_meetup_spot?.city ||
+    visibleSellerMeetupSpots[0]?.city ||
+    form.meetup_city_search ||
+    "your area";
 
   function updateField(e) {
     const { name, value, type, checked } = e.target;
@@ -610,11 +720,13 @@ export default function NewListing() {
     }
 
     if (name === "meetup_enabled") {
+      const firstVisibleSpot = visibleSellerMeetupSpots[0] || sellerMeetupSpots[0];
+
       setForm((prev) => ({
         ...prev,
         meetup_enabled: checked,
         seller_meetup_spot: checked
-          ? prev.seller_meetup_spot || prepareSellerMeetupSpot(sellerMeetupSpots[0])
+          ? prev.seller_meetup_spot || prepareSellerMeetupSpot(firstVisibleSpot)
           : null
       }));
 
@@ -624,14 +736,6 @@ export default function NewListing() {
     setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value
-    }));
-  }
-
-  function selectSellerMeetupSpot(spot) {
-    setForm((prev) => ({
-      ...prev,
-      meetup_enabled: true,
-      seller_meetup_spot: prepareSellerMeetupSpot(spot)
     }));
   }
 
@@ -699,6 +803,21 @@ export default function NewListing() {
     setForm((prev) => ({
       ...prev,
       parcel_size: parcelSize
+    }));
+  }
+
+  function selectSellerMeetupSpot(spot) {
+    setForm((prev) => ({
+      ...prev,
+      meetup_enabled: true,
+      seller_meetup_spot: prepareSellerMeetupSpot(spot)
+    }));
+  }
+
+  function updateMeetupCitySearch(value) {
+    setForm((prev) => ({
+      ...prev,
+      meetup_city_search: value
     }));
   }
 
@@ -875,9 +994,9 @@ export default function NewListing() {
               <div>
                 <h2>Safe Meet-Up point</h2>
                 <p>
-                  Optional. Choose a public place where you are willing to meet
-                  the buyer. This point will appear on your product page and in
-                  the buyer checkout.
+                  Optional. TindaHan suggests safe public Meet-Up places based on
+                  your location. You can also search another city if you prefer
+                  to meet the buyer somewhere farther away.
                 </p>
               </div>
 
@@ -896,27 +1015,60 @@ export default function NewListing() {
 
             {form.meetup_enabled && (
               <>
-                <div className="seller-meetup-selected-map">
-                  <div className="seller-meetup-map-grid" />
+                <div className="seller-meetup-location-helper">
+                  <div>
+                    <strong>Meet-Up places near your location</strong>
+                    <p>
+                      These places are suggested from your current selling area.
+                      To choose a farther Meet-Up place, enter another city below.
+                    </p>
+                  </div>
 
-                  <div className="seller-meetup-map-card">
-                    <MapPin size={24} />
+                  <span>{selectedMeetupCity}</span>
+                </div>
 
-                    <div>
-                      <span>Selected Meet-Up point</span>
-                      <strong>
-                        {form.seller_meetup_spot?.name || "Choose a location"}
-                      </strong>
-                      <p>
-                        {form.seller_meetup_spot?.address ||
-                          "Select one of the recommended public places below."}
-                      </p>
-                    </div>
+                <div className="seller-meetup-search-card">
+                  <label>
+                    Search another city
+                    <input
+                      type="text"
+                      value={form.meetup_city_search}
+                      onChange={(event) =>
+                        updateMeetupCitySearch(event.target.value)
+                      }
+                      placeholder="Example: Cebu City, Davao City, Makati..."
+                    />
+                  </label>
+
+                  <div className="seller-meetup-city-chips">
+                    {meetupCityOptions.map((city) => (
+                      <button
+                        key={city}
+                        type="button"
+                        className={
+                          form.meetup_city_search === city ? "active" : ""
+                        }
+                        onClick={() => updateMeetupCitySearch(city)}
+                      >
+                        {city}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                <div className="seller-meetup-spot-grid">
-                  {sellerMeetupSpots.map((spot) => {
+                <div className="seller-meetup-map-panel">
+                  <div className="seller-meetup-map-grid" />
+
+                  <div className="seller-meetup-map-road road-one" />
+                  <div className="seller-meetup-map-road road-two" />
+                  <div className="seller-meetup-map-road road-three" />
+
+                  <div className="seller-meetup-area-label">
+                    <MapPin size={16} />
+                    <span>{selectedMeetupCity}</span>
+                  </div>
+
+                  {visibleSellerMeetupSpots.map((spot) => {
                     const Icon = spot.icon || MapPin;
                     const isActive = form.seller_meetup_spot?.id === spot.id;
 
@@ -926,33 +1078,98 @@ export default function NewListing() {
                         type="button"
                         className={
                           isActive
-                            ? "seller-meetup-spot-card active"
-                            : "seller-meetup-spot-card"
+                            ? "seller-meetup-map-pin active"
+                            : "seller-meetup-map-pin"
                         }
+                        style={{
+                          "--pin-x": `${spot.mapX}%`,
+                          "--pin-y": `${spot.mapY}%`
+                        }}
                         onClick={() => selectSellerMeetupSpot(spot)}
+                        aria-label={spot.name}
                       >
-                        <div className="seller-meetup-spot-icon">
-                          <Icon size={22} />
-                        </div>
-
-                        <div>
-                          <strong>{spot.name}</strong>
-                          <small>{spot.address}</small>
-                          <p>{spot.type}</p>
-
-                          <span className="seller-meetup-spot-badge">
-                            Safety Score {spot.score}/100
-                          </span>
-                        </div>
-
-                        {isActive && (
-                          <div className="seller-meetup-selected-check">
-                            <Check size={16} />
-                          </div>
-                        )}
+                        <Icon size={17} />
                       </button>
                     );
                   })}
+
+                  <div className="seller-meetup-map-card improved">
+                    <MapPin size={24} />
+
+                    <div>
+                      <span>Selected Meet-Up point</span>
+                      <strong>
+                        {form.seller_meetup_spot?.name || "Choose a location"}
+                      </strong>
+                      <p>
+                        {form.seller_meetup_spot?.address ||
+                          "Select one of the suggested public places below."}
+                      </p>
+
+                      {form.seller_meetup_spot?.score && (
+                        <em>
+                          Safety Score {form.seller_meetup_spot.score}/100
+                        </em>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="seller-meetup-spot-grid improved">
+                  {visibleSellerMeetupSpots.length === 0 ? (
+                    <div className="seller-meetup-empty-results">
+                      <strong>No Meet-Up place found</strong>
+                      <p>
+                        Try another city such as Metro Manila, Cebu City or Davao
+                        City.
+                      </p>
+                    </div>
+                  ) : (
+                    visibleSellerMeetupSpots.map((spot) => {
+                      const Icon = spot.icon || MapPin;
+                      const isActive = form.seller_meetup_spot?.id === spot.id;
+
+                      return (
+                        <button
+                          key={spot.id}
+                          type="button"
+                          className={
+                            isActive
+                              ? "seller-meetup-spot-card active"
+                              : "seller-meetup-spot-card"
+                          }
+                          onClick={() => selectSellerMeetupSpot(spot)}
+                        >
+                          <div className="seller-meetup-spot-icon">
+                            <Icon size={22} />
+                          </div>
+
+                          <div>
+                            <div className="seller-meetup-card-topline">
+                              <strong>{spot.name}</strong>
+                              <span>{spot.city}</span>
+                            </div>
+
+                            <small>{spot.address}</small>
+
+                            <p>
+                              {spot.type} · {spot.district}
+                            </p>
+
+                            <span className="seller-meetup-spot-badge">
+                              Safety Score {spot.score}/100
+                            </span>
+                          </div>
+
+                          {isActive && (
+                            <div className="seller-meetup-selected-check">
+                              <Check size={16} />
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })
+                  )}
                 </div>
               </>
             )}

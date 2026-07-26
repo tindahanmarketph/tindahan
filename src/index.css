@@ -17825,3 +17825,472 @@ body,
     padding-bottom: 230px;
   }
 }
+/* ========================================================= */
+/* SELL PAGE - IMPROVED MEET-UP MAP + CITY SEARCH            */
+/* ========================================================= */
+
+.seller-meetup-form-section {
+  position: relative;
+  overflow: hidden;
+  border: 1px solid rgba(255, 107, 44, 0.24);
+  background:
+    radial-gradient(circle at top right, rgba(255, 107, 44, 0.12), transparent 28%),
+    #fff8f5;
+}
+
+.seller-meetup-title-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 34px;
+  gap: 16px;
+  align-items: start;
+}
+
+.seller-meetup-title-row h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: -0.6px;
+}
+
+.seller-meetup-title-row p {
+  margin: 7px 0 0;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.seller-meetup-title-row svg {
+  color: var(--orange);
+}
+
+.seller-meetup-toggle {
+  margin-top: 18px;
+  padding: 14px 16px;
+  border: 1px solid rgba(255, 107, 44, 0.18);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+.seller-meetup-location-helper {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  margin-top: 18px;
+  padding: 14px;
+  border: 1px solid rgba(255, 107, 44, 0.2);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.seller-meetup-location-helper strong {
+  display: block;
+  color: #111111;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.seller-meetup-location-helper p {
+  margin: 4px 0 0;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.seller-meetup-location-helper > span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: var(--orange-soft);
+  color: var(--orange);
+  font-size: 13px;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.seller-meetup-search-card {
+  display: grid;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 14px;
+  border: 1px solid rgba(255, 107, 44, 0.2);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.seller-meetup-search-card label {
+  display: grid;
+  gap: 7px;
+  color: #34444a;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.seller-meetup-search-card input {
+  width: 100%;
+  min-height: 46px;
+  padding: 0 14px;
+  border: 1.5px solid #e3e8e8;
+  border-radius: 14px;
+  outline: none;
+  background: #f8fbfb;
+  color: #111111;
+  font-size: 15px;
+}
+
+.seller-meetup-search-card input:focus {
+  border-color: var(--orange);
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
+}
+
+.seller-meetup-city-chips {
+  display: flex;
+  gap: 8px;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+}
+
+.seller-meetup-city-chips::-webkit-scrollbar {
+  display: none;
+}
+
+.seller-meetup-city-chips button {
+  flex: none;
+  min-height: 34px;
+  padding: 0 13px;
+  border: 1.5px solid #e3e8e8;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #34444a;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.seller-meetup-city-chips button.active {
+  border-color: var(--orange);
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.seller-meetup-map-panel {
+  position: relative;
+  min-height: 260px;
+  margin-top: 16px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 107, 44, 0.24);
+  border-radius: 26px;
+  background:
+    radial-gradient(circle at 28% 30%, rgba(255, 107, 44, 0.2), transparent 22%),
+    radial-gradient(circle at 78% 72%, rgba(0, 119, 130, 0.12), transparent 24%),
+    linear-gradient(135deg, #fffaf7, #f8fbfb);
+}
+
+.seller-meetup-map-panel .seller-meetup-map-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 107, 44, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 107, 44, 0.08) 1px, transparent 1px);
+  background-size: 31px 31px;
+}
+
+.seller-meetup-map-road {
+  position: absolute;
+  border-radius: 999px;
+  background: rgba(255, 107, 44, 0.12);
+}
+
+.seller-meetup-map-road.road-one {
+  left: -8%;
+  top: 36%;
+  width: 116%;
+  height: 18px;
+  transform: rotate(-10deg);
+}
+
+.seller-meetup-map-road.road-two {
+  left: 42%;
+  top: -10%;
+  width: 18px;
+  height: 120%;
+  transform: rotate(16deg);
+}
+
+.seller-meetup-map-road.road-three {
+  left: 6%;
+  bottom: 18%;
+  width: 92%;
+  height: 14px;
+  transform: rotate(9deg);
+  background: rgba(0, 119, 130, 0.08);
+}
+
+.seller-meetup-area-label {
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 107, 44, 0.18);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.9);
+  color: var(--orange);
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow: 0 10px 24px rgba(255, 107, 44, 0.12);
+}
+
+.seller-meetup-map-pin {
+  position: absolute;
+  left: var(--pin-x);
+  top: var(--pin-y);
+  z-index: 4;
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: 3px solid #ffffff;
+  border-radius: 50%;
+  background: var(--orange);
+  color: #ffffff;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 10px 24px rgba(255, 107, 44, 0.28);
+  transition: 0.18s ease;
+}
+
+.seller-meetup-map-pin.active {
+  width: 46px;
+  height: 46px;
+  background: #0f8a5f;
+  box-shadow: 0 14px 28px rgba(15, 138, 95, 0.28);
+}
+
+.seller-meetup-map-card.improved {
+  position: absolute;
+  left: 18px;
+  right: 18px;
+  bottom: 18px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid rgba(255, 107, 44, 0.2);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.94);
+  box-shadow: 0 16px 38px rgba(255, 107, 44, 0.18);
+  backdrop-filter: blur(10px);
+}
+
+.seller-meetup-map-card.improved > svg {
+  width: 46px;
+  height: 46px;
+  padding: 10px;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.seller-meetup-map-card.improved span {
+  display: block;
+  color: #5f6f75;
+  font-size: 11px;
+  font-weight: 950;
+  text-transform: uppercase;
+  letter-spacing: 0.35px;
+}
+
+.seller-meetup-map-card.improved strong {
+  display: block;
+  margin-top: 2px;
+  color: #111111;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.seller-meetup-map-card.improved p {
+  margin: 4px 0 0;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.seller-meetup-map-card.improved em {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e9f8f1;
+  color: #0f8a5f;
+  font-size: 12px;
+  font-style: normal;
+  font-weight: 950;
+}
+
+.seller-meetup-spot-grid.improved {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.seller-meetup-spot-grid.improved .seller-meetup-spot-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  gap: 14px;
+  align-items: flex-start;
+  padding: 15px;
+  border: 1.5px solid #e3e8e8;
+  border-radius: 18px;
+  background: #ffffff;
+  text-align: left;
+  transition: 0.18s ease;
+}
+
+.seller-meetup-spot-grid.improved .seller-meetup-spot-card.active {
+  border-color: var(--orange);
+  background: #fff4ee;
+  box-shadow: 0 12px 28px rgba(255, 107, 44, 0.12);
+}
+
+.seller-meetup-spot-grid.improved .seller-meetup-spot-icon {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.seller-meetup-card-topline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.seller-meetup-card-topline strong {
+  display: block;
+  color: #111111;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.seller-meetup-card-topline span {
+  flex: none;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #f4f7f7;
+  color: #5f6f75;
+  font-size: 11px;
+  font-weight: 950;
+}
+
+.seller-meetup-spot-grid.improved .seller-meetup-spot-card small {
+  display: block;
+  margin-top: 4px;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.seller-meetup-spot-grid.improved .seller-meetup-spot-card p {
+  margin: 7px 0 0;
+  color: #5f6f75;
+  font-size: 13px;
+}
+
+.seller-meetup-spot-badge {
+  display: inline-flex;
+  width: fit-content;
+  margin-top: 9px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e9f8f1;
+  color: #0f8a5f;
+  font-size: 12px;
+  font-weight: 950;
+}
+
+.seller-meetup-selected-check {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.seller-meetup-empty-results {
+  padding: 18px;
+  border: 1px dashed rgba(255, 107, 44, 0.36);
+  border-radius: 18px;
+  background: #ffffff;
+}
+
+.seller-meetup-empty-results strong {
+  display: block;
+  color: #111111;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.seller-meetup-empty-results p {
+  margin: 5px 0 0;
+  color: #5f6f75;
+  font-size: 13px;
+}
+
+@media (min-width: 820px) {
+  .seller-meetup-spot-grid.improved {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .seller-meetup-title-row {
+    grid-template-columns: minmax(0, 1fr) 30px;
+  }
+
+  .seller-meetup-title-row h2 {
+    font-size: 22px;
+  }
+
+  .seller-meetup-location-helper {
+    grid-template-columns: 1fr;
+  }
+
+  .seller-meetup-location-helper > span {
+    width: fit-content;
+  }
+
+  .seller-meetup-map-panel {
+    min-height: 300px;
+  }
+
+  .seller-meetup-card-topline {
+    display: grid;
+    gap: 6px;
+  }
+
+  .seller-meetup-card-topline span {
+    width: fit-content;
+  }
+}
