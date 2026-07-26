@@ -425,6 +425,20 @@ export default function Messages() {
   const [mobilePanel, setMobilePanel] = useState("inbox");
   const [errorMessage, setErrorMessage] = useState("");
 
+  useEffect(() => {
+    const isChatOpen = mobilePanel === "chat";
+
+    if (typeof document !== "undefined") {
+      document.body.classList.toggle("messages-chat-open-body", isChatOpen);
+    }
+
+    return () => {
+      if (typeof document !== "undefined") {
+        document.body.classList.remove("messages-chat-open-body");
+      }
+    };
+  }, [mobilePanel]);
+
   async function loadConversations({ keepActive = true } = {}) {
     if (!user?.id) return;
 
@@ -816,8 +830,7 @@ export default function Messages() {
     const isBuyerOffer = offer.senderRole === "buyer_offer";
     const isSellerCounterOffer = offer.senderRole === "seller_counter_offer";
 
-    const shouldSellerAct =
-      isCurrentUserSeller && isBuyerOffer && isPending;
+    const shouldSellerAct = isCurrentUserSeller && isBuyerOffer && isPending;
 
     const shouldBuyerAct =
       !isCurrentUserSeller && (isAccepted || isSellerCounterOffer);
@@ -1282,9 +1295,7 @@ export default function Messages() {
           )}
         </aside>
 
-        <section className="messages-main">
-          {renderChatPanel()}
-        </section>
+        <section className="messages-main">{renderChatPanel()}</section>
       </div>
     </main>
   );
