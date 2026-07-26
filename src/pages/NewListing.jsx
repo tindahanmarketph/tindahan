@@ -36,12 +36,6 @@ const conditionOptions = [
     description: "Brand new, never worn or used, without original tags or packaging."
   },
   {
-    id: "like_new",
-    label: "Like new",
-    description:
-      "Used once or only a few times. No visible flaws and still looks almost new."
-  },
-  {
     id: "very_good",
     label: "Very good",
     description:
@@ -995,61 +989,58 @@ export default function NewListing() {
             </label>
           </section>
 
-          <section className="form-section tindahan-meetup-v2">
-            <div className="tindahan-meetup-v2-header">
+          <section className="form-section seller-meetup-form-section">
+            <div className="seller-meetup-title-row">
               <div>
                 <h2>Safe Meet-Up point</h2>
                 <p>
-                  Optional. TindaHan suggests safe public Meet-Up places based on your
-                  location. You can also search another city if you prefer to meet the
-                  buyer somewhere farther away.
+                  Optional. TindaHan suggests safe public Meet-Up places based on
+                  your location. You can also search another city if you prefer
+                  to meet the buyer somewhere farther away.
                 </p>
               </div>
 
-              <div className="tindahan-meetup-v2-shield">
-                <ShieldCheck size={24} />
-              </div>
+              <ShieldCheck size={26} />
             </div>
 
-            <label className="tindahan-meetup-v2-toggle" htmlFor="seller-meetup-enabled">
+            <label className="toggle-row seller-meetup-toggle">
               <input
-                id="seller-meetup-enabled"
                 type="checkbox"
                 name="meetup_enabled"
                 checked={form.meetup_enabled}
                 onChange={updateField}
               />
-
-              <span>I want to offer a Meet-Up option for this item</span>
+              I want to offer a Meet-Up option for this item
             </label>
 
             {form.meetup_enabled && (
-              <div className="tindahan-meetup-v2-content">
-                <div className="tindahan-meetup-v2-info">
+              <>
+                <div className="seller-meetup-location-helper">
                   <div>
-                    <h3>Meet-Up places near your location</h3>
-
+                    <strong>Meet-Up places near your location</strong>
                     <p>
-                      These places are suggested from your current selling area. To choose a
-                      farther Meet-Up place, enter another city below.
+                      These places are suggested from your current selling area.
+                      To choose a farther Meet-Up place, enter another city below.
                     </p>
                   </div>
 
                   <span>{selectedMeetupCity}</span>
                 </div>
 
-                <div className="tindahan-meetup-v2-search">
-                  <label htmlFor="seller-meetup-city-search">Search another city</label>
+                <div className="seller-meetup-search-card">
+                  <label>
+                    Search another city
+                    <input
+                      type="text"
+                      value={form.meetup_city_search}
+                      onChange={(event) =>
+                        updateMeetupCitySearch(event.target.value)
+                      }
+                      placeholder="Example: Cebu City, Davao City, Makati..."
+                    />
+                  </label>
 
-                  <input
-                    id="seller-meetup-city-search"
-                    type="text"
-                    value={form.meetup_city_search}
-                    onChange={(event) => updateMeetupCitySearch(event.target.value)}
-                    placeholder="Example: Cebu City, Davao City, Makati..."
-                  />
-
-                  <div className="tindahan-meetup-v2-chips">
+                  <div className="seller-meetup-city-chips">
                     {meetupCityOptions.map((city) => (
                       <button
                         key={city}
@@ -1065,53 +1056,72 @@ export default function NewListing() {
                   </div>
                 </div>
 
-                <div className="tindahan-meetup-v2-map-card">
-                  <div className="tindahan-meetup-v2-map">
-                    <iframe
-                      title="Seller Meet-Up Google Map"
-                      loading="lazy"
-                      allowFullScreen
-                      referrerPolicy="no-referrer-when-downgrade"
-                      src={`https://www.google.com/maps?q=${encodeURIComponent(
-                        form.seller_meetup_spot?.address ||
-                          form.seller_meetup_spot?.name ||
-                          selectedMeetupCity ||
-                          "Metro Manila"
-                      )}&output=embed`}
-                    />
+                <div className="seller-meetup-map-panel">
+                  <div className="seller-meetup-map-grid" />
+
+                  <div className="seller-meetup-map-road road-one" />
+                  <div className="seller-meetup-map-road road-two" />
+                  <div className="seller-meetup-map-road road-three" />
+
+                  <div className="seller-meetup-area-label">
+                    <MapPin size={16} />
+                    <span>{selectedMeetupCity}</span>
                   </div>
 
-                  <div className="tindahan-meetup-v2-selected">
-                    <div className="tindahan-meetup-v2-selected-icon">
-                      <MapPin size={22} />
-                    </div>
+                  {visibleSellerMeetupSpots.map((spot) => {
+                    const Icon = spot.icon || MapPin;
+                    const isActive = form.seller_meetup_spot?.id === spot.id;
+
+                    return (
+                      <button
+                        key={spot.id}
+                        type="button"
+                        className={
+                          isActive
+                            ? "seller-meetup-map-pin active"
+                            : "seller-meetup-map-pin"
+                        }
+                        style={{
+                          "--pin-x": `${spot.mapX}%`,
+                          "--pin-y": `${spot.mapY}%`
+                        }}
+                        onClick={() => selectSellerMeetupSpot(spot)}
+                        aria-label={spot.name}
+                      >
+                        <Icon size={17} />
+                      </button>
+                    );
+                  })}
+
+                  <div className="seller-meetup-map-card improved">
+                    <MapPin size={24} />
 
                     <div>
                       <span>Selected Meet-Up point</span>
-
                       <strong>
-                        {form.seller_meetup_spot?.name || "Choose a Meet-Up point"}
+                        {form.seller_meetup_spot?.name || "Choose a location"}
                       </strong>
-
                       <p>
                         {form.seller_meetup_spot?.address ||
-                          "Select one of the suggested public places in the list below."}
+                          "Select one of the suggested public places below."}
                       </p>
 
                       {form.seller_meetup_spot?.score && (
-                        <em>Safety Score {form.seller_meetup_spot.score}/100</em>
+                        <em>
+                          Safety Score {form.seller_meetup_spot.score}/100
+                        </em>
                       )}
                     </div>
                   </div>
                 </div>
 
-                <div className="tindahan-meetup-v2-list">
+                <div className="seller-meetup-spot-grid improved">
                   {visibleSellerMeetupSpots.length === 0 ? (
-                    <div className="tindahan-meetup-v2-empty">
+                    <div className="seller-meetup-empty-results">
                       <strong>No Meet-Up place found</strong>
-
                       <p>
-                        Try another city such as Metro Manila, Cebu City or Davao City.
+                        Try another city such as Metro Manila, Cebu City or Davao
+                        City.
                       </p>
                     </div>
                   ) : (
@@ -1125,32 +1135,34 @@ export default function NewListing() {
                           type="button"
                           className={
                             isActive
-                              ? "tindahan-meetup-v2-place active"
-                              : "tindahan-meetup-v2-place"
+                              ? "seller-meetup-spot-card active"
+                              : "seller-meetup-spot-card"
                           }
                           onClick={() => selectSellerMeetupSpot(spot)}
                         >
-                          <div className="tindahan-meetup-v2-place-icon">
+                          <div className="seller-meetup-spot-icon">
                             <Icon size={22} />
                           </div>
 
-                          <div className="tindahan-meetup-v2-place-main">
-                            <div className="tindahan-meetup-v2-place-top">
+                          <div>
+                            <div className="seller-meetup-card-topline">
                               <strong>{spot.name}</strong>
                               <span>{spot.city}</span>
                             </div>
 
-                            <p>{spot.address}</p>
+                            <small>{spot.address}</small>
 
-                            <small>
+                            <p>
                               {spot.type} · {spot.district}
-                            </small>
+                            </p>
 
-                            <em>Safety Score {spot.score}/100</em>
+                            <span className="seller-meetup-spot-badge">
+                              Safety Score {spot.score}/100
+                            </span>
                           </div>
 
                           {isActive && (
-                            <div className="tindahan-meetup-v2-check">
+                            <div className="seller-meetup-selected-check">
                               <Check size={16} />
                             </div>
                           )}
@@ -1159,12 +1171,11 @@ export default function NewListing() {
                     })
                   )}
                 </div>
-              </div>
+              </>
             )}
           </section>
 
-
-                    <section className="form-section">
+          <section className="form-section">
             <h2>Category</h2>
 
             <div className="choice-grid">
