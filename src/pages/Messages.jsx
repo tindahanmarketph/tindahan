@@ -35,6 +35,13 @@ import {
   updateMeetupChangeStatus
 } from "../lib/orders";
 
+const MESSAGES_SAFETY_STORAGE_KEY = "tindahan_messages_safety_hidden";
+
+function getInitialSafetyVisibility() {
+  if (typeof window === "undefined") return true;
+  return window.localStorage.getItem(MESSAGES_SAFETY_STORAGE_KEY) !== "true";
+}
+
 function formatPrice(value) {
   const price = Number(value || 0);
 
@@ -413,7 +420,7 @@ export default function Messages() {
   const [message, setMessage] = useState("");
   const [selectedPhotos, setSelectedPhotos] = useState([]);
   const [showBundleBox, setShowBundleBox] = useState(false);
-  const [showSafety, setShowSafety] = useState(true);
+  const [showSafety, setShowSafety] = useState(getInitialSafetyVisibility);
   const [activeTab, setActiveTab] = useState("messages");
   const [mobilePanel, setMobilePanel] = useState("inbox");
   const [errorMessage, setErrorMessage] = useState("");
@@ -577,6 +584,14 @@ export default function Messages() {
     setMobilePanel("inbox");
     setShowBundleBox(false);
     setSelectedPhotos([]);
+  }
+
+  function closeSafetyMessage() {
+    setShowSafety(false);
+
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem(MESSAGES_SAFETY_STORAGE_KEY, "true");
+    }
   }
 
   async function refreshActiveConversation() {
@@ -1067,7 +1082,7 @@ export default function Messages() {
             <button
               type="button"
               aria-label="Close safety message"
-              onClick={() => setShowSafety(false)}
+              onClick={closeSafetyMessage}
             >
               <X size={17} />
             </button>
@@ -1180,7 +1195,11 @@ export default function Messages() {
   }
 
   return (
-    <main className="messages-page messages-tabbed-page">
+    <main
+      className={`messages-page messages-tabbed-page ${
+        showSafety ? "messages-safety-visible" : "messages-safety-hidden"
+      }`}
+    >
       <section
         className={
           mobilePanel === "chat"
