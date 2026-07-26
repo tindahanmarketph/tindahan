@@ -24,7 +24,7 @@ const deliveryOptions = [
     id: "meetup",
     title: "Meet Up In Person",
     subtitle:
-      "Meet safely at a verified public location recommended by TindaHan.",
+      "Meet safely at the seller’s preferred public location or suggest another nearby safe place.",
     price: 0,
     icon: Users
   },
@@ -121,6 +121,14 @@ function parseOfferPrice(searchParams) {
   return offerPrice;
 }
 
+function getTodayLabel() {
+  return new Date().toLocaleDateString("en-PH", {
+    weekday: "long",
+    month: "long",
+    day: "numeric"
+  });
+}
+
 export default function Checkout() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -160,7 +168,7 @@ export default function Checkout() {
         return;
       }
 
-      setListing(data);
+      setListing(data || null);
 
       if (data?.seller_id) {
         const { data: sellerData } = await supabase
@@ -207,6 +215,8 @@ export default function Checkout() {
   const itemPrice = acceptedOfferPrice || originalItemPrice;
   const hasAcceptedOfferPrice = Boolean(acceptedOfferPrice);
   const buyerProtection = itemPrice * 0.08;
+  const sellerMeetupSpot = listing?.seller_meetup_spot || null;
+  const hasSellerMeetup = Boolean(listing?.meetup_enabled && sellerMeetupSpot);
 
   const delivery = useMemo(() => {
     return (
@@ -225,8 +235,22 @@ export default function Checkout() {
   const total = itemPrice + buyerProtection + delivery.price;
   const firstPhoto = listing?.photos?.[0];
 
+  const buyerSuggestedDifferentMeetup =
+    selectedDelivery === "meetup" &&
+    meetupPlan?.buyerSuggestedAlternative &&
+    meetupPlan?.spot?.id !== sellerMeetupSpot?.id;
+
   function handleDeliverySelect(optionId) {
+    if (optionId === "meetup" && !hasSellerMeetup) {
+      alert("The seller has not offered a Meet-Up point for this item.");
+      return;
+    }
+
     setSelectedDelivery(optionId);
+
+    if (optionId === "meetup" && !meetupPlan && sellerMeetupSpot) {
+      acceptSellerMeetupPoint();
+    }
   }
 
   function openAddressEditor() {
@@ -253,7 +277,7 @@ export default function Checkout() {
 
   function handleDeliveryDetailsClick() {
     if (selectedDelivery === "meetup") {
-      navigate(`/safe-meetup/${id}`);
+      navigate(`/safe-meetup/${id}?returnTo=checkout`);
       return;
     }
 
@@ -270,11 +294,35 @@ export default function Checkout() {
     alert("Same-city courier details will be available in the next prototype step.");
   }
 
+  function acceptSellerMeetupPoint() {
+    if (!sellerMeetupSpot) return;
+
+    const plan = {
+      spot: sellerMeetupSpot,
+      sellerSpot: sellerMeetupSpot,
+      time: sellerMeetupSpot.time || "3:00 PM",
+      date: getTodayLabel(),
+      buyerSuggestedAlternative: false,
+      status: "accepted_seller_point",
+      selectedAt: new Date().toISOString(),
+      selectedBy: "buyer"
+    };
+
+    localStorage.setItem(getMeetupStorageKey(id), JSON.stringify(plan));
+    setMeetupPlan(plan);
+    setSelectedDelivery("meetup");
+  }
+
   async function handlePay() {
     if (!listing || isPaying) return;
 
+    if (selectedDelivery === "meetup" && !hasSellerMeetup) {
+      alert("The seller has not offered Meet-Up for this item.");
+      return;
+    }
+
     if (selectedDelivery === "meetup" && !meetupPlan) {
-      navigate(`/safe-meetup/${id}`);
+      navigate(`/safe-meetup/${id}?returnTo=checkout`);
       return;
     }
 
@@ -295,15 +343,15 @@ export default function Checkout() {
         deliveryMethod: selectedDelivery,
         paymentMethod: selectedPayment,
         address,
-        meetup: selectedDelivery === "meetup" ? meetupPlan : null
+        meetup: selectedDelivery === "meetup" ? meetupPlan : null,
+        sellerMeetupSpot,
+        buyerSuggestedMeetupSpot: buyerSuggestedDifferentMeetup
+          ? meetupPlan?.spot
+          : null,
+        meetupChangeStatus: buyerSuggestedDifferentMeetup ? "pending" : "none"
       });
 
-      if (selectedDelivery === "meetup") {
-        navigate("/orders");
-        return;
-      }
-
-      navigate(`/tracking/${order.id}`);
+      navigate(selectedDelivery === "meetup" ? "/orders" : `/tracking/${order.id}`);
     } catch (error) {
       console.error("Checkout payment error:", error);
       alert(error.message || "Unable to create this order.");
@@ -417,6 +465,7 @@ export default function Checkout() {
           {deliveryOptions.map((option) => {
             const Icon = option.icon;
             const isActive = selectedDelivery === option.id;
+            const isMeetupDisabled = option.id === "meetup" && !hasSellerMeetup;
 
             return (
               <button
@@ -428,12 +477,17 @@ export default function Checkout() {
                     : "checkout-delivery-option"
                 }
                 onClick={() => handleDeliverySelect(option.id)}
+                disabled={isMeetupDisabled}
               >
                 <Icon size={24} />
 
                 <div>
                   <strong>{option.title}</strong>
-                  <span>{option.subtitle}</span>
+                  <span>
+                    {isMeetupDisabled
+                      ? "Not available because the seller did not choose a Meet-Up point."
+                      : option.subtitle}
+                  </span>
                   <p>
                     {option.id === "meetup"
                       ? "Free"
@@ -447,6 +501,23 @@ export default function Checkout() {
           })}
         </div>
       </section>
+
+      {selectedDelivery === "meetup" && sellerMeetupSpot && (
+        <section className="checkout-section">
+          <h2>Seller Meet-Up point</h2>
+
+          <div className="checkout-seller-meetup-card">
+            <span>Chosen by seller</span>
+            <strong>{sellerMeetupSpot.name}</strong>
+            <p>{sellerMeetupSpot.address}</p>
+            <p>Safety Score {sellerMeetupSpot.score}/100</p>
+
+            <button type="button" onClick={acceptSellerMeetupPoint}>
+              Accept seller point
+            </button>
+          </div>
+        </section>
+      )}
 
       <section className="checkout-section">
         <h2>
@@ -468,7 +539,9 @@ export default function Checkout() {
             {selectedDelivery === "meetup"
               ? meetupPlan
                 ? `${meetupPlan.spot.name} · ${meetupPlan.time}`
-                : "Choose a safe meeting point"
+                : sellerMeetupSpot
+                ? "Accept or suggest another Meet-Up point"
+                : "Meet-Up is not available for this item"
               : selectedDelivery === "pickup"
               ? "Choose a J&T Express pick-up point"
               : selectedDelivery === "door"
@@ -480,7 +553,13 @@ export default function Checkout() {
         </button>
 
         {selectedDelivery === "meetup" && meetupPlan && (
-          <div className="checkout-meetup-summary">
+          <div
+            className={
+              buyerSuggestedDifferentMeetup
+                ? "checkout-meetup-summary alternative"
+                : "checkout-meetup-summary"
+            }
+          >
             <ShieldCheck size={19} />
 
             <div>
@@ -489,6 +568,13 @@ export default function Checkout() {
                 Safety Score {meetupPlan.spot.score}/100 · {meetupPlan.date} at{" "}
                 {meetupPlan.time}
               </p>
+
+              {buyerSuggestedDifferentMeetup && (
+                <small>
+                  This alternative place will be sent to the seller for review,
+                  but you can continue buying now.
+                </small>
+              )}
             </div>
           </div>
         )}
@@ -524,9 +610,7 @@ export default function Checkout() {
         {hasAcceptedOfferPrice && (
           <div className="checkout-offer-notice">
             <ShieldCheck size={17} />
-            <span>
-              You are checking out with an accepted offer price.
-            </span>
+            <span>You are checking out with an accepted offer price.</span>
           </div>
         )}
 

@@ -5,7 +5,8 @@ import {
   MapPin,
   MoreHorizontal,
   ShieldCheck,
-  Star
+  Star,
+  Users
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
@@ -242,6 +243,9 @@ export default function ListingDetail() {
       ? description
       : `${description.slice(0, 150).trim()}...`;
 
+  const sellerMeetupSpot = listing?.seller_meetup_spot || null;
+  const hasSellerMeetup = Boolean(listing?.meetup_enabled && sellerMeetupSpot);
+
   const characteristics = [
     listing?.brand ? ["Brand", listing.brand] : null,
     listing?.size ? ["Size", listing.size] : null,
@@ -343,6 +347,11 @@ export default function ListingDetail() {
   function handleBuyNow() {
     if (!listing?.id) return;
     navigate(`/checkout/${listing.id}`);
+  }
+
+  function handleMeetupBuy() {
+    if (!listing?.id) return;
+    navigate(`/checkout/${listing.id}?delivery=meetup`);
   }
 
   function handleMakeOffer() {
@@ -697,6 +706,31 @@ export default function ListingDetail() {
               <MapPin size={17} />
               {listing.location}
             </p>
+          )}
+
+          {hasSellerMeetup && (
+            <section className="product-seller-meetup-card">
+              <div className="product-seller-meetup-top">
+                <div className="product-seller-meetup-icon">
+                  <Users size={22} />
+                </div>
+
+                <div>
+                  <span>Seller preferred Meet-Up point</span>
+                  <strong>{sellerMeetupSpot.name}</strong>
+                  <p>{sellerMeetupSpot.address}</p>
+                </div>
+              </div>
+
+              <div className="product-seller-meetup-meta">
+                <span>Safety Score {sellerMeetupSpot.score}/100</span>
+                <span>{sellerMeetupSpot.type}</span>
+              </div>
+
+              <button type="button" onClick={handleMeetupBuy}>
+                View Meet-Up option
+              </button>
+            </section>
           )}
 
           <section className="shield-banner product-shield-banner">

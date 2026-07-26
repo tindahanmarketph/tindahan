@@ -59,6 +59,7 @@ function formatConversationDate(dateValue) {
   if (diffDays === 1) return "Yesterday";
   if (diffDays < 7) return `${diffDays} days ago`;
   if (diffWeeks === 1) return "1 week ago";
+
   return `${diffWeeks} weeks ago`;
 }
 
@@ -282,7 +283,7 @@ function MessageOrderCard({
         <p>{item.text}</p>
 
         <MeetupLocationBox
-          label="Seller preferred point"
+          label="Seller chosen point"
           spot={order.sellerMeetupSpot || order.meetup?.sellerSpot}
           muted={hasMeetupSuggestion}
         />
@@ -335,8 +336,8 @@ function MessageOrderCard({
 
         {hasMeetupSuggestion && meetupStatus === "declined" && (
           <p>
-            The seller declined the alternative location. The seller preferred
-            point remains available.
+            The seller declined the alternative location. The seller chosen point
+            remains available.
           </p>
         )}
       </div>

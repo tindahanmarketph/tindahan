@@ -1,6 +1,19 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Camera, ChevronDown, Ruler, X } from "lucide-react";
+import {
+  Camera,
+  Check,
+  ChevronDown,
+  Coffee,
+  Landmark,
+  MapPin,
+  Ruler,
+  ShieldCheck,
+  ShoppingBag,
+  Store,
+  Utensils,
+  X
+} from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import {
   CATEGORIES,
@@ -21,6 +34,12 @@ const conditionOptions = [
     id: "new_without_tags",
     label: "New without tags",
     description: "Brand new, never worn or used, without original tags or packaging."
+  },
+  {
+    id: "like_new",
+    label: "Like new",
+    description:
+      "Used once or only a few times. No visible flaws and still looks almost new."
   },
   {
     id: "very_good",
@@ -81,6 +100,59 @@ const kidShoeSizes = [
   "US Youth 4",
   "US Youth 5",
   "US Youth 6"
+];
+
+const sellerMeetupSpots = [
+  {
+    id: "starbucks-sm-megamall",
+    name: "Starbucks - SM Megamall",
+    address: "SM Megamall, Mandaluyong, Metro Manila",
+    type: "Coffee Shop",
+    score: 95,
+    time: "3:00 PM",
+    icon: Coffee,
+    sector: "metro_manila"
+  },
+  {
+    id: "jollibee-bgc",
+    name: "Jollibee - BGC High Street",
+    address: "Bonifacio Global City, Taguig, Metro Manila",
+    type: "Fast Food",
+    score: 92,
+    time: "3:00 PM",
+    icon: Utensils,
+    sector: "metro_manila"
+  },
+  {
+    id: "ayala-mall-manila-bay",
+    name: "Ayala Malls Manila Bay",
+    address: "Parañaque, Metro Manila",
+    type: "Mall",
+    score: 94,
+    time: "3:00 PM",
+    icon: ShoppingBag,
+    sector: "metro_manila"
+  },
+  {
+    id: "bdo-makati-avenue",
+    name: "BDO - Makati Avenue",
+    address: "Makati Avenue, Makati City, Metro Manila",
+    type: "Bank",
+    score: 90,
+    time: "3:00 PM",
+    icon: Landmark,
+    sector: "metro_manila"
+  },
+  {
+    id: "seven-eleven-ortigas",
+    name: "7-Eleven - Ortigas Center",
+    address: "Ortigas Center, Pasig, Metro Manila",
+    type: "Convenience Store",
+    score: 87,
+    time: "3:00 PM",
+    icon: Store,
+    sector: "metro_manila"
+  }
 ];
 
 const bagSizes = ["Mini", "Small", "Medium", "Large", "Oversized"];
@@ -427,6 +499,22 @@ function buildDescriptionWithExtras(form) {
 ${extraBlocks.join("\n\n")}`;
 }
 
+function prepareSellerMeetupSpot(spot) {
+  if (!spot) return null;
+
+  return {
+    id: spot.id,
+    name: spot.name,
+    address: spot.address,
+    type: spot.type,
+    score: spot.score,
+    time: spot.time,
+    sector: spot.sector,
+    selectedBy: "seller",
+    selectedAt: new Date().toISOString()
+  };
+}
+
 export default function NewListing() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -455,7 +543,9 @@ export default function NewListing() {
     shoulder_width: "",
     item_length: "",
     parcel_size: "medium",
-    is_negotiable: false
+    is_negotiable: false,
+    meetup_enabled: false,
+    seller_meetup_spot: null
   });
 
   const selectedCategory = getCategoryById(form.category);
@@ -519,9 +609,29 @@ export default function NewListing() {
       return;
     }
 
+    if (name === "meetup_enabled") {
+      setForm((prev) => ({
+        ...prev,
+        meetup_enabled: checked,
+        seller_meetup_spot: checked
+          ? prev.seller_meetup_spot || prepareSellerMeetupSpot(sellerMeetupSpots[0])
+          : null
+      }));
+
+      return;
+    }
+
     setForm((prev) => ({
       ...prev,
       [name]: type === "checkbox" ? checked : value
+    }));
+  }
+
+  function selectSellerMeetupSpot(spot) {
+    setForm((prev) => ({
+      ...prev,
+      meetup_enabled: true,
+      seller_meetup_spot: prepareSellerMeetupSpot(spot)
     }));
   }
 
@@ -660,7 +770,12 @@ export default function NewListing() {
           color: form.color || null,
           location: form.location || null,
           is_negotiable: form.is_negotiable,
-          shipping_options: form.parcel_size ? [form.parcel_size] : []
+          shipping_options: form.parcel_size ? [form.parcel_size] : [],
+          meetup_enabled: Boolean(form.meetup_enabled && form.seller_meetup_spot),
+          seller_meetup_spot:
+            form.meetup_enabled && form.seller_meetup_spot
+              ? form.seller_meetup_spot
+              : null
         })
         .select()
         .single();
@@ -753,6 +868,94 @@ export default function NewListing() {
                 placeholder="ex: Manila, Cebu, Davao"
               />
             </label>
+          </section>
+
+          <section className="form-section seller-meetup-form-section">
+            <div className="seller-meetup-title-row">
+              <div>
+                <h2>Safe Meet-Up point</h2>
+                <p>
+                  Optional. Choose a public place where you are willing to meet
+                  the buyer. This point will appear on your product page and in
+                  the buyer checkout.
+                </p>
+              </div>
+
+              <ShieldCheck size={26} />
+            </div>
+
+            <label className="toggle-row seller-meetup-toggle">
+              <input
+                type="checkbox"
+                name="meetup_enabled"
+                checked={form.meetup_enabled}
+                onChange={updateField}
+              />
+              I want to offer a Meet-Up option for this item
+            </label>
+
+            {form.meetup_enabled && (
+              <>
+                <div className="seller-meetup-selected-map">
+                  <div className="seller-meetup-map-grid" />
+
+                  <div className="seller-meetup-map-card">
+                    <MapPin size={24} />
+
+                    <div>
+                      <span>Selected Meet-Up point</span>
+                      <strong>
+                        {form.seller_meetup_spot?.name || "Choose a location"}
+                      </strong>
+                      <p>
+                        {form.seller_meetup_spot?.address ||
+                          "Select one of the recommended public places below."}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="seller-meetup-spot-grid">
+                  {sellerMeetupSpots.map((spot) => {
+                    const Icon = spot.icon || MapPin;
+                    const isActive = form.seller_meetup_spot?.id === spot.id;
+
+                    return (
+                      <button
+                        key={spot.id}
+                        type="button"
+                        className={
+                          isActive
+                            ? "seller-meetup-spot-card active"
+                            : "seller-meetup-spot-card"
+                        }
+                        onClick={() => selectSellerMeetupSpot(spot)}
+                      >
+                        <div className="seller-meetup-spot-icon">
+                          <Icon size={22} />
+                        </div>
+
+                        <div>
+                          <strong>{spot.name}</strong>
+                          <small>{spot.address}</small>
+                          <p>{spot.type}</p>
+
+                          <span className="seller-meetup-spot-badge">
+                            Safety Score {spot.score}/100
+                          </span>
+                        </div>
+
+                        {isActive && (
+                          <div className="seller-meetup-selected-check">
+                            <Check size={16} />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </>
+            )}
           </section>
 
           <section className="form-section">
