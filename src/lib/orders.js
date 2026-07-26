@@ -22,6 +22,26 @@ export function formatOrderDateTime(dateValue) {
   return formatRealtimeDateTime(dateValue);
 }
 
+function mapOrderWithMeetupFields(orderRow, events = []) {
+  const mappedOrder = mapOrderRow(orderRow, events);
+
+  return {
+    ...mappedOrder,
+    sellerMeetupSpot: orderRow.seller_meetup_spot || null,
+    buyerSuggestedMeetupSpot: orderRow.buyer_suggested_meetup_spot || null,
+    meetupChangeStatus: orderRow.meetup_change_status || "none"
+  };
+}
+
+async function getCurrentUserId() {
+  try {
+    const { data } = await supabase.auth.getUser();
+    return data?.user?.id || null;
+  } catch {
+    return null;
+  }
+}
+
 async function addOrderTrackingEvent(orderId, event) {
   const { data, error } = await supabase
     .from("order_tracking_events")
@@ -83,7 +103,7 @@ export async function getStoredOrders(userId) {
         date: event.created_at
       }));
 
-    return mapOrderRow(orderRow, events);
+    return mapOrderWithMeetupFields(orderRow, events);
   });
 }
 
@@ -120,7 +140,7 @@ export async function getOrderById(orderId) {
     date: event.created_at
   }));
 
-  return mapOrderRow(orderRow, events);
+  return mapOrderWithMeetupFields(orderRow, events);
 }
 
 export async function getOrderByListingId(listingId, userId) {
@@ -172,9 +192,12 @@ async function sendOrderConversationUpdate(order, type, text) {
     }
   });
 
+  const currentUserId = await getCurrentUserId();
+  const senderId = currentUserId || order.buyerId || order.sellerId;
+
   return sendSystemMessage({
     conversationId: conversation.id,
-    senderId: order.sellerId || order.buyerId,
+    senderId,
     type,
     text,
     payload: {
@@ -197,7 +220,10 @@ export async function createOrderFromCheckout({
   deliveryMethod,
   paymentMethod,
   address,
-  meetup
+  meetup,
+  sellerMeetupSpot,
+  buyerSuggestedMeetupSpot,
+  meetupChangeStatus
 }) {
   if (!listing?.id) {
     throw new Error("Missing listing.");
@@ -216,6 +242,10 @@ export async function createOrderFromCheckout({
   const now = new Date().toISOString();
   const maxShippingDate = addDays(now, 7);
   const trackingNumber = createTrackingNumber();
+
+  const hasMeetupSuggestion = Boolean(
+    deliveryMethod === "meetup" && buyerSuggestedMeetupSpot
+  );
 
   const status =
     deliveryMethod === "meetup" ? "meetup_request_sent" : "paid_waiting_seller";
@@ -241,6 +271,9 @@ export async function createOrderFromCheckout({
       payment_method: paymentMethod,
       address,
       meetup: deliveryMethod === "meetup" ? meetup : null,
+      seller_meetup_spot: sellerMeetupSpot || listing.seller_meetup_spot || null,
+      buyer_suggested_meetup_spot: buyerSuggestedMeetupSpot || null,
+      meetup_change_status: meetupChangeStatus || "none",
       carrier,
       tracking_number: trackingNumber,
       shipping_label_downloaded: false,
@@ -260,11 +293,15 @@ export async function createOrderFromCheckout({
   await addOrderTrackingEvent(orderRow.id, {
     title:
       deliveryMethod === "meetup"
-        ? "Safe Meet-Up request sent"
+        ? hasMeetupSuggestion
+          ? "Safe Meet-Up alternative suggested"
+          : "Safe Meet-Up request sent"
         : "Order paid",
     description:
       deliveryMethod === "meetup"
-        ? "Waiting for the seller to confirm the meeting."
+        ? hasMeetupSuggestion
+          ? "The buyer suggested another Safe Meet-Up point. The seller can accept or decline it after purchase."
+          : "The buyer accepted the seller's preferred meeting point."
         : "The seller has been notified and must ship the parcel within 7 days.",
     completed: true
   });
@@ -279,12 +316,22 @@ export async function createOrderFromCheckout({
         maxShippingDate
       )} to ship the parcel.`
     );
+  } else if (hasMeetupSuggestion) {
+    await sendOrderConversationUpdate(
+      order,
+      "meetup_change_request",
+      `Order confirmed. The buyer suggested another Safe Meet-Up point: ${
+        buyerSuggestedMeetupSpot?.name || "selected location"
+      }. The seller can accept or decline this location after purchase.`
+    );
   } else {
     await sendOrderConversationUpdate(
       order,
       "meetup_order",
-      `Safe Meet-Up request confirmed for ${
-        order.meetup?.spot?.name || "the selected location"
+      `Safe Meet-Up confirmed for ${
+        order.meetup?.spot?.name ||
+        order.sellerMeetupSpot?.name ||
+        "the selected location"
       }.`
     );
   }
@@ -444,6 +491,38 @@ export async function completeOrder(orderId) {
     updatedOrder,
     "order_completed",
     "The buyer confirmed the item was received. The transaction is now completed."
+  );
+
+  return getOrderById(orderId);
+}
+
+export async function updateMeetupChangeStatus(orderId, nextStatus) {
+  if (!["accepted", "declined"].includes(nextStatus)) {
+    throw new Error("Invalid Meet-Up status.");
+  }
+
+  const updatedOrder = await updateOrder(orderId, {
+    meetup_change_status: nextStatus
+  });
+
+  await addOrderTrackingEvent(orderId, {
+    title:
+      nextStatus === "accepted"
+        ? "Meet-Up change accepted"
+        : "Meet-Up change declined",
+    description:
+      nextStatus === "accepted"
+        ? "The seller accepted the buyer's suggested meeting point."
+        : "The seller declined the buyer's suggested meeting point. The original seller meeting point remains available.",
+    completed: true
+  });
+
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "meetup_change_status",
+    nextStatus === "accepted"
+      ? "The seller accepted the suggested Safe Meet-Up point."
+      : "The seller declined the suggested Safe Meet-Up point."
   );
 
   return getOrderById(orderId);

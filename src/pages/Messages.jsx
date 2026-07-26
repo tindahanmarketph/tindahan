@@ -11,6 +11,7 @@ import {
   Send,
   ShieldCheck,
   Truck,
+  Users,
   X
 } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -19,7 +20,6 @@ import { useAuth } from "../context/AuthContext";
 import {
   fetchConversationsForUser,
   fetchMessagesForConversation,
-  formatRealtimeDate,
   formatRealtimePrice,
   getOrCreateConversationFromListingId,
   removeRealtimeChannel,
@@ -31,7 +31,8 @@ import {
 import {
   formatOrderDate,
   formatTindaHanPrice,
-  getOrderById
+  getOrderById,
+  updateMeetupChangeStatus
 } from "../lib/orders";
 
 function formatPrice(value) {
@@ -114,6 +115,14 @@ function getLastMessage(conversation) {
     return `Offer sent · ${formatPrice(offer.offerPrice)}`;
   }
 
+  if (lastMessage.type === "meetup_change_request") {
+    return "Meet-Up change requested";
+  }
+
+  if (lastMessage.type === "meetup_change_status") {
+    return "Meet-Up updated";
+  }
+
   if (lastMessage.orderId || lastMessage.payload?.orderId) {
     return "Order update";
   }
@@ -154,6 +163,240 @@ function getLatestPendingCounterOffer(conversation) {
 
 function getBestCheckoutOffer(conversation) {
   return getAcceptedOffer(conversation) || getLatestPendingCounterOffer(conversation);
+}
+
+function MeetupLocationBox({ label, spot, muted = false }) {
+  if (!spot) return null;
+
+  return (
+    <div className={muted ? "meetup-message-location muted" : "meetup-message-location"}>
+      <span>{label}</span>
+      <strong>{spot.name}</strong>
+      <small>{spot.address}</small>
+
+      {spot.score && <em>Safety Score {spot.score}/100</em>}
+    </div>
+  );
+}
+
+function MessageOrderCard({
+  item,
+  userId,
+  navigate,
+  onMeetupStatusUpdated
+}) {
+  const [order, setOrder] = useState(null);
+  const [loadingAction, setLoadingAction] = useState("");
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadOrder() {
+      try {
+        const loadedOrder = await getOrderById(item.orderId || item.payload?.orderId);
+
+        if (mounted) {
+          setOrder(loadedOrder);
+        }
+      } catch (error) {
+        console.warn("Order message loading skipped:", error.message);
+      }
+    }
+
+    loadOrder();
+
+    return () => {
+      mounted = false;
+    };
+  }, [item.orderId, item.payload?.orderId]);
+
+  if (!order) {
+    return (
+      <div className="message-bubble">
+        <p>{item.text}</p>
+      </div>
+    );
+  }
+
+  const isSellerOrder = Boolean(
+    userId && order.sellerId && String(userId) === String(order.sellerId)
+  );
+
+  const isMeetupOrder = order.deliveryMethod === "meetup";
+
+  const hasMeetupSuggestion = Boolean(
+    isMeetupOrder && order.buyerSuggestedMeetupSpot
+  );
+
+  const meetupStatus = order.meetupChangeStatus || "none";
+  const meetupPending = hasMeetupSuggestion && meetupStatus === "pending";
+
+  async function handleMeetupDecision(nextStatus) {
+    if (!order?.id || loadingAction) return;
+
+    setLoadingAction(nextStatus);
+
+    try {
+      const updatedOrder = await updateMeetupChangeStatus(order.id, nextStatus);
+      setOrder(updatedOrder);
+      await onMeetupStatusUpdated?.();
+    } catch (error) {
+      console.error("Meet-Up status update error:", error);
+      alert(error.message || "Unable to update this Meet-Up request.");
+    } finally {
+      setLoadingAction("");
+    }
+  }
+
+  if (isMeetupOrder) {
+    return (
+      <div className="meetup-message-card">
+        <div className="meetup-message-heading">
+          <Users size={22} />
+
+          <div>
+            <strong>
+              {hasMeetupSuggestion
+                ? "Buyer suggested another Meet-Up point"
+                : "Safe Meet-Up confirmed"}
+            </strong>
+
+            {hasMeetupSuggestion && (
+              <span
+                className={
+                  meetupStatus === "accepted"
+                    ? "meetup-status accepted"
+                    : meetupStatus === "declined"
+                    ? "meetup-status declined"
+                    : "meetup-status"
+                }
+              >
+                {meetupStatus === "pending"
+                  ? "Pending seller review"
+                  : meetupStatus}
+              </span>
+            )}
+          </div>
+        </div>
+
+        <p>{item.text}</p>
+
+        <MeetupLocationBox
+          label="Seller preferred point"
+          spot={order.sellerMeetupSpot || order.meetup?.sellerSpot}
+          muted={hasMeetupSuggestion}
+        />
+
+        {hasMeetupSuggestion ? (
+          <MeetupLocationBox
+            label="Buyer suggested point"
+            spot={order.buyerSuggestedMeetupSpot}
+          />
+        ) : (
+          <MeetupLocationBox
+            label="Confirmed point"
+            spot={order.meetup?.spot || order.sellerMeetupSpot}
+          />
+        )}
+
+        {hasMeetupSuggestion && isSellerOrder && meetupPending && (
+          <div className="meetup-message-actions">
+            <button
+              type="button"
+              className="meetup-accept-button"
+              disabled={Boolean(loadingAction)}
+              onClick={() => handleMeetupDecision("accepted")}
+            >
+              <Check size={15} />
+              {loadingAction === "accepted" ? "Accepting..." : "Accept"}
+            </button>
+
+            <button
+              type="button"
+              className="meetup-decline-button"
+              disabled={Boolean(loadingAction)}
+              onClick={() => handleMeetupDecision("declined")}
+            >
+              {loadingAction === "declined" ? "Declining..." : "Decline"}
+            </button>
+          </div>
+        )}
+
+        {hasMeetupSuggestion && !isSellerOrder && meetupPending && (
+          <p>
+            Your alternative location has been sent to the seller. The purchase
+            continues even if the seller has not reviewed it yet.
+          </p>
+        )}
+
+        {hasMeetupSuggestion && meetupStatus === "accepted" && (
+          <p>The suggested Meet-Up point has been accepted by the seller.</p>
+        )}
+
+        {hasMeetupSuggestion && meetupStatus === "declined" && (
+          <p>
+            The seller declined the alternative location. The seller preferred
+            point remains available.
+          </p>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div className="conversation-order-card">
+      <div className="conversation-order-icon">
+        <PackageCheck size={24} />
+      </div>
+
+      <div className="conversation-order-content">
+        <strong>
+          {isSellerOrder ? "Your item has been sold" : "Order confirmed"}
+        </strong>
+
+        <p>{item.text}</p>
+
+        <div className="conversation-order-product">
+          {order.listingPhoto && (
+            <img src={order.listingPhoto} alt={order.listingTitle} />
+          )}
+
+          <div>
+            <span>{order.listingTitle}</span>
+            <small>₱{formatTindaHanPrice(order.total)}</small>
+          </div>
+        </div>
+
+        {isSellerOrder && order.deliveryMethod !== "meetup" && (
+          <div className="conversation-order-deadline">
+            Ship before {formatOrderDate(order.maxShippingDate)}
+          </div>
+        )}
+
+        <div className="conversation-order-actions">
+          {isSellerOrder && order.deliveryMethod !== "meetup" && (
+            <button
+              type="button"
+              className="parcel-outline-button"
+              onClick={() => navigate(`/shipping-label/${order.id}`)}
+            >
+              <Download size={15} />
+              Shipping label
+            </button>
+          )}
+
+          <button
+            type="button"
+            className="parcel-primary-button"
+            onClick={() => navigate(`/tracking/${order.id}`)}
+          >
+            <Truck size={15} />
+            Track parcel
+          </button>
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function Messages() {
@@ -335,6 +578,13 @@ export default function Messages() {
     setSelectedPhotos([]);
   }
 
+  async function refreshActiveConversation() {
+    if (!activeConversation?.id) return;
+
+    await loadMessages(activeConversation.id);
+    await loadConversations({ keepActive: true });
+  }
+
   async function handleOfferStatus(messageId, offer, nextStatus) {
     if (!activeConversation?.id || !user?.id) return;
 
@@ -347,8 +597,7 @@ export default function Messages() {
         currentUserId: user.id
       });
 
-      await loadMessages(activeConversation.id);
-      await loadConversations({ keepActive: true });
+      await refreshActiveConversation();
     } catch (error) {
       console.error("Offer status update error:", error);
       alert(error.message || "Unable to update this offer.");
@@ -441,8 +690,7 @@ export default function Messages() {
       });
 
       setShowBundleBox(false);
-      await loadMessages(activeConversation.id);
-      await loadConversations({ keepActive: true });
+      await refreshActiveConversation();
     } catch (error) {
       console.error("Bundle message error:", error);
       alert(error.message || "Unable to send bundle request.");
@@ -469,8 +717,7 @@ export default function Messages() {
 
       setMessage("");
       setSelectedPhotos([]);
-      await loadMessages(activeConversation.id);
-      await loadConversations({ keepActive: true });
+      await refreshActiveConversation();
     } catch (error) {
       console.error("Send message error:", error);
       alert(error.message || "Unable to send message.");
@@ -661,103 +908,6 @@ export default function Messages() {
     );
   }
 
-  function renderOrderCard(item) {
-    const [order, setOrder] = useState(null);
-
-    useEffect(() => {
-      let mounted = true;
-
-      async function loadOrder() {
-        try {
-          const loadedOrder = await getOrderById(item.orderId || item.payload?.orderId);
-
-          if (mounted) {
-            setOrder(loadedOrder);
-          }
-        } catch (error) {
-          console.warn("Order message loading skipped:", error.message);
-        }
-      }
-
-      loadOrder();
-
-      return () => {
-        mounted = false;
-      };
-    }, [item.orderId, item.payload?.orderId]);
-
-    if (!order) {
-      return (
-        <div className="message-bubble">
-          <p>{item.text}</p>
-        </div>
-      );
-    }
-
-    const isSellerOrder = Boolean(
-      user?.id && order.sellerId && String(user.id) === String(order.sellerId)
-    );
-
-    return (
-      <div className="conversation-order-card">
-        <div className="conversation-order-icon">
-          <PackageCheck size={24} />
-        </div>
-
-        <div className="conversation-order-content">
-          <strong>
-            {isSellerOrder ? "Your item has been sold" : "Order confirmed"}
-          </strong>
-
-          <p>{item.text}</p>
-
-          <div className="conversation-order-product">
-            {order.listingPhoto && (
-              <img src={order.listingPhoto} alt={order.listingTitle} />
-            )}
-
-            <div>
-              <span>{order.listingTitle}</span>
-              <small>₱{formatTindaHanPrice(order.total)}</small>
-            </div>
-          </div>
-
-          {isSellerOrder && order.deliveryMethod !== "meetup" && (
-            <div className="conversation-order-deadline">
-              Ship before {formatOrderDate(order.maxShippingDate)}
-            </div>
-          )}
-
-          <div className="conversation-order-actions">
-            {isSellerOrder && order.deliveryMethod !== "meetup" && (
-              <button
-                type="button"
-                className="parcel-outline-button"
-                onClick={() => navigate(`/shipping-label/${order.id}`)}
-              >
-                <Download size={15} />
-                Shipping label
-              </button>
-            )}
-
-            <button
-              type="button"
-              className="parcel-primary-button"
-              onClick={() => navigate(`/tracking/${order.id}`)}
-            >
-              <Truck size={15} />
-              Track parcel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  function MessageOrderCard({ item }) {
-    return renderOrderCard(item);
-  }
-
   function renderChatPanel({ mobile = false } = {}) {
     if (!activeConversation) {
       return (
@@ -877,7 +1027,12 @@ export default function Messages() {
               {item.type === "offer" ? (
                 renderOfferCard(item)
               ) : item.orderId || item.payload?.orderId ? (
-                <MessageOrderCard item={item} />
+                <MessageOrderCard
+                  item={item}
+                  userId={user?.id}
+                  navigate={navigate}
+                  onMeetupStatusUpdated={refreshActiveConversation}
+                />
               ) : (
                 <div className="message-bubble">
                   {item.text && <p>{item.text}</p>}
