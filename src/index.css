@@ -19570,7 +19570,7 @@ body,
   }
 }
 /* ========================================================= */
-/* NEW LISTING - CONDITION DETAILS OPTIONAL FIELD            */
+/* NEW LISTING - CONDITION DETAILS SPACING FIX               */
 /* À ajouter tout à la fin de src/index.css                  */
 /* ========================================================= */
 
@@ -19578,37 +19578,26 @@ body,
   background: #ffffff;
 }
 
-.condition-extra-detail-row .listing-detail-label {
-  display: grid;
-  gap: 4px;
-}
-
-.condition-extra-detail-row .listing-detail-label span {
-  width: fit-content;
-  display: inline-flex;
-  align-items: center;
-  min-height: 24px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: var(--orange-soft);
-  color: var(--orange);
-  font-size: 12px;
-  font-weight: 900;
+.condition-extra-detail-row .listing-detail-control {
+  padding-top: 16px !important;
+  padding-bottom: 22px !important;
 }
 
 .condition-details-box {
   position: relative;
   display: grid;
-  gap: 8px;
+  gap: 0;
+  width: 100%;
 }
 
 .condition-details-box textarea {
   width: 100%;
-  min-height: 104px;
+  min-height: 118px;
+  margin: 0 0 12px !important;
   border: 1.5px solid #dfe6e6;
   border-radius: 14px;
   background: #ffffff;
-  padding: 14px 15px 34px;
+  padding: 14px 15px 18px !important;
   color: #111111;
   font-size: 15px;
   line-height: 1.45;
@@ -19625,40 +19614,62 @@ body,
   color: #7d8a90;
 }
 
-.condition-details-box p {
-  margin: 0;
-  color: #5f6f75;
-  font-size: 13px;
-  line-height: 1.35;
+.condition-details-counter {
+  display: flex;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 0 0 10px !important;
+  padding: 0 2px;
+  color: #7d8a90;
+  font-size: 12px;
+  font-weight: 850;
+  line-height: 1;
 }
 
 .condition-details-box small {
-  position: absolute;
-  right: 13px;
-  bottom: 47px;
-  color: #8a969b;
+  position: static !important;
+  display: flex !important;
+  justify-content: flex-end;
+  width: 100%;
+  margin: 0 0 10px !important;
+  padding: 0 2px;
+  color: #7d8a90;
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 850;
+  line-height: 1;
   pointer-events: none;
 }
 
+.condition-details-box p {
+  margin: 0 !important;
+  padding: 0 2px;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
 @media (max-width: 760px) {
-  .condition-extra-detail-row .listing-detail-label {
-    padding-bottom: 2px;
+  .condition-extra-detail-row .listing-detail-control {
+    padding-top: 12px !important;
+    padding-bottom: 20px !important;
   }
 
   .condition-details-box textarea {
-    min-height: 112px;
+    min-height: 120px;
+    margin-bottom: 12px !important;
     border-radius: 13px;
-    padding: 13px 14px 34px;
+    padding: 13px 14px 18px !important;
     font-size: 14px;
+  }
+
+  .condition-details-counter,
+  .condition-details-box small {
+    margin-bottom: 10px !important;
+    font-size: 12px;
   }
 
   .condition-details-box p {
     font-size: 12.5px;
-  }
-
-  .condition-details-box small {
-    bottom: 46px;
+    line-height: 1.45;
   }
 }
