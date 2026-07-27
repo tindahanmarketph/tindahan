@@ -19570,13 +19570,9 @@ body,
   }
 }
 /* ========================================================= */
-/* NEW LISTING - CONDITION DETAILS SPACING FIX               */
+/* CONDITION DETAILS - COUNTER BETWEEN TEXTAREA AND HELP     */
 /* À ajouter tout à la fin de src/index.css                  */
 /* ========================================================= */
-
-.condition-extra-detail-row {
-  background: #ffffff;
-}
 
 .condition-extra-detail-row .listing-detail-control {
   padding-top: 16px !important;
@@ -19584,68 +19580,84 @@ body,
 }
 
 .condition-details-box {
-  position: relative;
-  display: grid;
-  gap: 0;
-  width: 100%;
+  position: relative !important;
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  gap: 0 !important;
 }
 
 .condition-details-box textarea {
-  width: 100%;
-  min-height: 118px;
-  margin: 0 0 12px !important;
-  border: 1.5px solid #dfe6e6;
-  border-radius: 14px;
-  background: #ffffff;
-  padding: 14px 15px 18px !important;
-  color: #111111;
-  font-size: 15px;
-  line-height: 1.45;
-  resize: vertical;
-  outline: none;
+  order: 1 !important;
+  width: 100% !important;
+  min-height: 118px !important;
+  margin: 0 !important;
+  padding: 14px 15px !important;
+  border: 1.5px solid #dfe6e6 !important;
+  border-radius: 14px !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+  font-size: 15px !important;
+  line-height: 1.45 !important;
+  resize: vertical !important;
+  outline: none !important;
 }
 
 .condition-details-box textarea:focus {
-  border-color: var(--orange);
-  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
+  border-color: var(--orange) !important;
+  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1) !important;
 }
 
 .condition-details-box textarea::placeholder {
-  color: #7d8a90;
+  color: #7d8a90 !important;
 }
 
+/* Compteur placé juste sous l'encadré, avant le texte */
+.condition-details-box small,
 .condition-details-counter {
-  display: flex;
-  justify-content: flex-end;
-  width: 100%;
-  margin: 0 0 10px !important;
-  padding: 0 2px;
-  color: #7d8a90;
-  font-size: 12px;
-  font-weight: 850;
-  line-height: 1;
-}
-
-.condition-details-box small {
+  order: 2 !important;
   position: static !important;
   display: flex !important;
-  justify-content: flex-end;
-  width: 100%;
-  margin: 0 0 10px !important;
-  padding: 0 2px;
-  color: #7d8a90;
-  font-size: 12px;
-  font-weight: 850;
-  line-height: 1;
-  pointer-events: none;
+  justify-content: flex-end !important;
+  width: 100% !important;
+  margin: 8px 0 8px !important;
+  padding: 0 2px !important;
+  color: #7d8a90 !important;
+  font-size: 12px !important;
+  font-weight: 850 !important;
+  line-height: 1 !important;
+  pointer-events: none !important;
 }
 
+/* Texte d'aide placé après le compteur */
 .condition-details-box p {
+  order: 3 !important;
+  width: 100% !important;
   margin: 0 !important;
-  padding: 0 2px;
-  color: #5f6f75;
-  font-size: 13px;
-  line-height: 1.45;
+  padding: 0 2px !important;
+  color: #5f6f75 !important;
+  font-size: 13px !important;
+  line-height: 1.45 !important;
+}
+
+/* Corrige le titre "Condition detailsOptional" */
+.condition-extra-detail-row .listing-detail-label {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.condition-extra-detail-row .listing-detail-label span {
+  display: inline-flex !important;
+  align-items: center !important;
+  min-height: 22px !important;
+  padding: 0 8px !important;
+  border-radius: 999px !important;
+  background: var(--orange-soft) !important;
+  color: var(--orange) !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
 }
 
 @media (max-width: 760px) {
@@ -19655,21 +19667,20 @@ body,
   }
 
   .condition-details-box textarea {
-    min-height: 120px;
-    margin-bottom: 12px !important;
-    border-radius: 13px;
-    padding: 13px 14px 18px !important;
-    font-size: 14px;
+    min-height: 120px !important;
+    border-radius: 13px !important;
+    padding: 13px 14px !important;
+    font-size: 14px !important;
   }
 
-  .condition-details-counter,
-  .condition-details-box small {
-    margin-bottom: 10px !important;
-    font-size: 12px;
+  .condition-details-box small,
+  .condition-details-counter {
+    margin: 8px 0 8px !important;
+    font-size: 12px !important;
   }
 
   .condition-details-box p {
-    font-size: 12.5px;
-    line-height: 1.45;
+    font-size: 12.5px !important;
+    line-height: 1.45 !important;
   }
 }
