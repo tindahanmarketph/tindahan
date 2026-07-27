@@ -19847,3 +19847,224 @@ body,
     min-height: 44px;
   }
 }
+/* ========================================================= */
+/* NEW LISTING - PHOTO ORDER SELECTION UP TO 20              */
+/* À ajouter tout à la fin de src/index.css                  */
+/* ========================================================= */
+
+.listing-photo-upload-box {
+  position: relative;
+  min-height: 190px;
+  padding: 26px 20px !important;
+  border: 1.8px dashed rgba(255, 107, 44, 0.35) !important;
+  border-radius: 22px !important;
+  background:
+    radial-gradient(circle at top right, rgba(255, 107, 44, 0.1), transparent 32%),
+    #fff8f5 !important;
+  text-align: center;
+}
+
+.listing-photo-upload-box svg {
+  color: var(--orange);
+}
+
+.listing-photo-upload-box strong {
+  color: #111111;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.listing-photo-upload-box span {
+  max-width: 360px;
+  margin: 4px auto 0;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.listing-photo-upload-box small {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 28px;
+  margin-top: 10px;
+  padding: 0 12px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--orange);
+  font-size: 12px;
+  font-weight: 900;
+  box-shadow: 0 8px 20px rgba(255, 107, 44, 0.08);
+}
+
+.listing-photo-error {
+  margin: 10px 0 0;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fff0f0;
+  color: #d92d20;
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.listing-photo-preview-section {
+  margin-top: 18px;
+}
+
+.listing-photo-preview-header {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 12px;
+}
+
+.listing-photo-preview-header strong {
+  color: #111111;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.listing-photo-preview-header span {
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.preview-grid.listing-photo-order-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 12px !important;
+}
+
+.listing-photo-preview-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border: 1px solid #dfe6e6;
+  border-radius: 16px;
+  background: #f4f7f7;
+  box-shadow: 0 10px 24px rgba(17, 24, 39, 0.05);
+}
+
+.listing-photo-preview-card.cover {
+  border-color: var(--orange);
+  box-shadow: 0 12px 28px rgba(255, 107, 44, 0.18);
+}
+
+.listing-photo-preview-card img {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.listing-photo-order-badge {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 3;
+  min-width: 27px;
+  height: 27px;
+  display: grid;
+  place-items: center;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: rgba(17, 24, 39, 0.78);
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 950;
+  backdrop-filter: blur(8px);
+}
+
+.listing-photo-cover-badge {
+  position: absolute;
+  left: 8px;
+  bottom: 8px;
+  z-index: 3;
+  min-height: 27px;
+  display: inline-flex;
+  align-items: center;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 950;
+  letter-spacing: 0.2px;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.22);
+}
+
+.listing-photo-remove-button {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 4;
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.94);
+  color: #d92d20;
+  box-shadow: 0 8px 18px rgba(17, 24, 39, 0.14);
+  backdrop-filter: blur(8px);
+}
+
+.listing-photo-remove-button:hover {
+  background: #fff0f0;
+  color: #b42318;
+}
+
+@media (max-width: 760px) {
+  .listing-photo-upload-box {
+    min-height: 176px;
+    padding: 24px 16px !important;
+    border-radius: 20px !important;
+  }
+
+  .listing-photo-upload-box strong {
+    font-size: 16px;
+  }
+
+  .listing-photo-upload-box span {
+    font-size: 13px;
+  }
+
+  .preview-grid.listing-photo-order-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+    gap: 10px !important;
+  }
+
+  .listing-photo-preview-card {
+    border-radius: 14px;
+  }
+
+  .listing-photo-order-badge {
+    top: 6px;
+    left: 6px;
+    min-width: 25px;
+    height: 25px;
+    font-size: 11px;
+  }
+
+  .listing-photo-cover-badge {
+    left: 6px;
+    bottom: 6px;
+    min-height: 24px;
+    padding: 0 8px;
+    font-size: 10px;
+  }
+
+  .listing-photo-remove-button {
+    top: 6px;
+    right: 6px;
+    width: 28px;
+    height: 28px;
+  }
+}
+
+@media (max-width: 380px) {
+  .preview-grid.listing-photo-order-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  }
+}

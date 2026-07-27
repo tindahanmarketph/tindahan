@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   ShoppingBag,
   Store,
+  Trash2,
   Utensils,
   X
 } from "lucide-react";
@@ -24,6 +25,8 @@ import {
 } from "../lib/categories";
 import { supabase } from "../lib/supabase";
 import { BRAND_OPTIONS } from "../lib/brands";
+
+const MAX_LISTING_PHOTOS = 20;
 
 const conditionOptions = [
   {
@@ -436,6 +439,23 @@ const authenticityGuides = {
   }
 };
 
+function createPhotoId(file) {
+  return `${file.name}-${file.size}-${file.lastModified}-${Date.now()}-${Math.random()
+    .toString(16)
+    .slice(2)}`;
+}
+
+function createPhotoItem(file) {
+  return {
+    id: createPhotoId(file),
+    file,
+    previewUrl: URL.createObjectURL(file),
+    name: file.name,
+    size: file.size,
+    lastModified: file.lastModified
+  };
+}
+
 function getItemType(form) {
   const text = `${form.category || ""} ${form.subcategory || ""} ${
     form.child_category || ""
@@ -609,6 +629,7 @@ export default function NewListing() {
   const { user } = useAuth();
 
   const [files, setFiles] = useState([]);
+  const [photoError, setPhotoError] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAuthenticityModal, setShowAuthenticityModal] = useState(false);
   const [showDimensionsModal, setShowDimensionsModal] = useState(false);
@@ -700,7 +721,8 @@ export default function NewListing() {
     }
 
     return sellerMeetupSpots.filter((spot) => {
-      const searchable = `${spot.name} ${spot.address} ${spot.city} ${spot.district} ${spot.type}`.toLowerCase();
+      const searchable =
+        `${spot.name} ${spot.address} ${spot.city} ${spot.district} ${spot.type}`.toLowerCase();
       return searchable.includes(query);
     });
   }, [form.meetup_city_search]);
@@ -710,6 +732,8 @@ export default function NewListing() {
     visibleSellerMeetupSpots[0]?.city ||
     form.meetup_city_search ||
     "your area";
+
+  const remainingPhotoSlots = MAX_LISTING_PHOTOS - files.length;
 
   function updateField(e) {
     const { name, value, type, checked } = e.target;
@@ -873,14 +897,61 @@ export default function NewListing() {
   }
 
   function handleFiles(e) {
-    const selected = Array.from(e.target.files || []).slice(0, 8);
-    setFiles(selected);
+    const selected = Array.from(e.target.files || []).filter((file) =>
+      file.type.startsWith("image/")
+    );
+
+    if (selected.length === 0) {
+      e.target.value = "";
+      return;
+    }
+
+    setFiles((currentFiles) => {
+      const availableSlots = MAX_LISTING_PHOTOS - currentFiles.length;
+
+      if (availableSlots <= 0) {
+        setPhotoError(`You can upload up to ${MAX_LISTING_PHOTOS} photos.`);
+        return currentFiles;
+      }
+
+      const acceptedFiles = selected.slice(0, availableSlots);
+      const nextPhotoItems = acceptedFiles.map(createPhotoItem);
+
+      if (selected.length > availableSlots) {
+        setPhotoError(
+          `Only ${availableSlots} more photo${
+            availableSlots > 1 ? "s" : ""
+          } can be added. Maximum is ${MAX_LISTING_PHOTOS}.`
+        );
+      } else {
+        setPhotoError("");
+      }
+
+      return [...currentFiles, ...nextPhotoItems];
+    });
+
+    e.target.value = "";
+  }
+
+  function removePhoto(photoId) {
+    setFiles((currentFiles) => {
+      const photoToRemove = currentFiles.find((photo) => photo.id === photoId);
+
+      if (photoToRemove?.previewUrl) {
+        URL.revokeObjectURL(photoToRemove.previewUrl);
+      }
+
+      return currentFiles.filter((photo) => photo.id !== photoId);
+    });
+
+    setPhotoError("");
   }
 
   async function uploadPhotos() {
     const urls = [];
 
-    for (const file of files) {
+    for (const photo of files) {
+      const file = photo.file;
       const extension = file.name.split(".").pop();
       const filePath = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
 
@@ -974,22 +1045,68 @@ export default function NewListing() {
           <section className="form-section">
             <h2>Photos</h2>
 
-            <label className="upload-box">
+            <label className="upload-box listing-photo-upload-box">
               <Camera size={32} />
-              <strong>Add up to 8 photos</strong>
-              <span>Square photos work best.</span>
-              <input type="file" accept="image/*" multiple onChange={handleFiles} />
+              <strong>Add up to {MAX_LISTING_PHOTOS} photos</strong>
+              <span>
+                Photos keep the order in which you add them. The first photo is
+                the cover photo.
+              </span>
+              <small>
+                {files.length}/{MAX_LISTING_PHOTOS} selected ·{" "}
+                {remainingPhotoSlots} remaining
+              </small>
+              <input
+                type="file"
+                accept="image/*"
+                multiple
+                onChange={handleFiles}
+              />
             </label>
 
+            {photoError && <p className="listing-photo-error">{photoError}</p>}
+
             {files.length > 0 && (
-              <div className="preview-grid">
-                {files.map((file, index) => (
-                  <img
-                    key={`${file.name}-${index}`}
-                    src={URL.createObjectURL(file)}
-                    alt="Preview"
-                  />
-                ))}
+              <div className="listing-photo-preview-section">
+                <div className="listing-photo-preview-header">
+                  <strong>Photo order</strong>
+                  <span>
+                    Tap the upload box again to add more photos. Remove and
+                    re-add photos to change their order.
+                  </span>
+                </div>
+
+                <div className="preview-grid listing-photo-order-grid">
+                  {files.map((photo, index) => (
+                    <div
+                      key={photo.id}
+                      className={
+                        index === 0
+                          ? "listing-photo-preview-card cover"
+                          : "listing-photo-preview-card"
+                      }
+                    >
+                      <img src={photo.previewUrl} alt={`Preview ${index + 1}`} />
+
+                      <div className="listing-photo-order-badge">
+                        {index + 1}
+                      </div>
+
+                      {index === 0 && (
+                        <div className="listing-photo-cover-badge">Cover</div>
+                      )}
+
+                      <button
+                        type="button"
+                        className="listing-photo-remove-button"
+                        onClick={() => removePhoto(photo.id)}
+                        aria-label={`Remove photo ${index + 1}`}
+                      >
+                        <Trash2 size={15} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </section>
