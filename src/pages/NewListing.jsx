@@ -23,6 +23,7 @@ import {
   getSubcategoryById
 } from "../lib/categories";
 import { supabase } from "../lib/supabase";
+import { BRAND_OPTIONS } from "../lib/brands";
 
 const conditionOptions = [
   {
@@ -548,8 +549,8 @@ function buildDescriptionWithExtras(form) {
 
   if (conditionDetails) {
     const conditionLabel =
-      conditionOptions.find((condition) => condition.id === form.condition)?.label ||
-      form.condition;
+      conditionOptions.find((condition) => condition.id === form.condition)
+        ?.label || form.condition;
 
     extraBlocks.push(`Condition details:\n${conditionLabel} — ${conditionDetails}`);
   }
@@ -612,6 +613,7 @@ export default function NewListing() {
   const [showAuthenticityModal, setShowAuthenticityModal] = useState(false);
   const [showDimensionsModal, setShowDimensionsModal] = useState(false);
   const [openDropdown, setOpenDropdown] = useState("");
+  const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
 
   const [form, setForm] = useState({
     title: "",
@@ -643,6 +645,26 @@ export default function NewListing() {
   const authenticityGuide = getAuthenticityGuide(form);
   const sizeOptions = getSizeOptions(form);
   const suggestedColors = getSuggestedColors(form);
+
+  const filteredBrandOptions = useMemo(() => {
+    const query = String(form.brand || "").trim().toLowerCase();
+
+    if (!query) {
+      return BRAND_OPTIONS.slice(0, 18);
+    }
+
+    const startsWithMatches = BRAND_OPTIONS.filter((brand) =>
+      brand.toLowerCase().startsWith(query)
+    );
+
+    const includesMatches = BRAND_OPTIONS.filter(
+      (brand) =>
+        !brand.toLowerCase().startsWith(query) &&
+        brand.toLowerCase().includes(query)
+    );
+
+    return [...startsWithMatches, ...includesMatches].slice(0, 24);
+  }, [form.brand]);
 
   const selectedCondition = conditionOptions.find(
     (condition) => condition.id === form.condition
@@ -748,6 +770,24 @@ export default function NewListing() {
       ...prev,
       [name]: type === "checkbox" ? checked : value
     }));
+  }
+
+  function updateBrandValue(value) {
+    setForm((prev) => ({
+      ...prev,
+      brand: value
+    }));
+
+    setShowBrandSuggestions(true);
+  }
+
+  function selectBrand(brand) {
+    setForm((prev) => ({
+      ...prev,
+      brand
+    }));
+
+    setShowBrandSuggestions(false);
   }
 
   function selectSize(size) {
@@ -979,14 +1019,88 @@ export default function NewListing() {
               />
             </label>
 
-            <label>
+            <label className="brand-autocomplete-field">
               Brand
-              <input
-                name="brand"
-                value={form.brand}
-                onChange={updateField}
-                placeholder="ex: Nike"
-              />
+
+              <div className="brand-autocomplete">
+                <input
+                  name="brand"
+                  value={form.brand}
+                  onChange={(event) => updateBrandValue(event.target.value)}
+                  onFocus={() => setShowBrandSuggestions(true)}
+                  onBlur={() => {
+                    window.setTimeout(() => {
+                      setShowBrandSuggestions(false);
+                    }, 140);
+                  }}
+                  placeholder="ex: Nike, Bench, Uniqlo..."
+                  autoComplete="off"
+                />
+
+                {form.brand && (
+                  <button
+                    type="button"
+                    className="brand-clear-button"
+                    onMouseDown={(event) => {
+                      event.preventDefault();
+                      updateBrandValue("");
+                    }}
+                    aria-label="Clear brand"
+                  >
+                    ×
+                  </button>
+                )}
+
+                {showBrandSuggestions && (
+                  <div className="brand-suggestions-panel">
+                    <div className="brand-suggestions-header">
+                      <span>
+                        {form.brand.trim()
+                          ? "Suggested brands"
+                          : "Popular brands in the Philippines"}
+                      </span>
+
+                      <small>{filteredBrandOptions.length} results</small>
+                    </div>
+
+                    {filteredBrandOptions.length > 0 ? (
+                      <div className="brand-suggestions-list">
+                        {filteredBrandOptions.map((brand) => (
+                          <button
+                            key={brand}
+                            type="button"
+                            className={
+                              form.brand === brand
+                                ? "brand-suggestion-option active"
+                                : "brand-suggestion-option"
+                            }
+                            onMouseDown={(event) => {
+                              event.preventDefault();
+                              selectBrand(brand);
+                            }}
+                          >
+                            <span>{brand}</span>
+
+                            {form.brand === brand && <Check size={16} />}
+                          </button>
+                        ))}
+                      </div>
+                    ) : (
+                      <div className="brand-suggestions-empty">
+                        <strong>No saved brand found</strong>
+                        <p>
+                          You can keep “{form.brand}” as a custom brand if it is
+                          correct.
+                        </p>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+
+              <small className="brand-autocomplete-help">
+                Start typing to select a registered brand and avoid spelling mistakes.
+              </small>
             </label>
 
             <label>
@@ -1423,12 +1537,12 @@ export default function NewListing() {
                     placeholder="Add useful details about the condition, e.g. small stain near the collar, light scratches, worn twice, no visible flaws..."
                   />
 
+                  <small>{form.condition_details.length}/500</small>
+
                   <p>
                     Add extra details only if needed. This helps the buyer understand
                     the real condition of the item before purchasing.
                   </p>
-
-                  <small>{form.condition_details.length}/500</small>
                 </div>
               </div>
             </div>
