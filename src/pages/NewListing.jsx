@@ -1,10 +1,13 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
+  ArrowLeft,
+  ArrowRight,
   Camera,
   Check,
   ChevronDown,
   Coffee,
+  GripVertical,
   Landmark,
   MapPin,
   Ruler,
@@ -630,6 +633,7 @@ export default function NewListing() {
 
   const [files, setFiles] = useState([]);
   const [photoError, setPhotoError] = useState("");
+  const [draggedPhotoId, setDraggedPhotoId] = useState("");
   const [loading, setLoading] = useState(false);
   const [showAuthenticityModal, setShowAuthenticityModal] = useState(false);
   const [showDimensionsModal, setShowDimensionsModal] = useState(false);
@@ -721,8 +725,7 @@ export default function NewListing() {
     }
 
     return sellerMeetupSpots.filter((spot) => {
-      const searchable =
-        `${spot.name} ${spot.address} ${spot.city} ${spot.district} ${spot.type}`.toLowerCase();
+      const searchable = `${spot.name} ${spot.address} ${spot.city} ${spot.district} ${spot.type}`.toLowerCase();
       return searchable.includes(query);
     });
   }, [form.meetup_city_search]);
@@ -947,6 +950,70 @@ export default function NewListing() {
     setPhotoError("");
   }
 
+  function movePhoto(photoId, direction) {
+    setFiles((currentFiles) => {
+      const currentIndex = currentFiles.findIndex((photo) => photo.id === photoId);
+
+      if (currentIndex === -1) return currentFiles;
+
+      const nextIndex = currentIndex + direction;
+
+      if (nextIndex < 0 || nextIndex >= currentFiles.length) {
+        return currentFiles;
+      }
+
+      const nextFiles = [...currentFiles];
+      const [movedPhoto] = nextFiles.splice(currentIndex, 1);
+      nextFiles.splice(nextIndex, 0, movedPhoto);
+
+      return nextFiles;
+    });
+  }
+
+  function movePhotoToIndex(photoId, targetIndex) {
+    setFiles((currentFiles) => {
+      const currentIndex = currentFiles.findIndex((photo) => photo.id === photoId);
+
+      if (
+        currentIndex === -1 ||
+        targetIndex < 0 ||
+        targetIndex >= currentFiles.length ||
+        currentIndex === targetIndex
+      ) {
+        return currentFiles;
+      }
+
+      const nextFiles = [...currentFiles];
+      const [movedPhoto] = nextFiles.splice(currentIndex, 1);
+      nextFiles.splice(targetIndex, 0, movedPhoto);
+
+      return nextFiles;
+    });
+  }
+
+  function handlePhotoDragStart(photoId) {
+    setDraggedPhotoId(photoId);
+  }
+
+  function handlePhotoDragOver(event) {
+    event.preventDefault();
+  }
+
+  function handlePhotoDrop(targetPhotoId) {
+    if (!draggedPhotoId || draggedPhotoId === targetPhotoId) {
+      setDraggedPhotoId("");
+      return;
+    }
+
+    const targetIndex = files.findIndex((photo) => photo.id === targetPhotoId);
+    movePhotoToIndex(draggedPhotoId, targetIndex);
+    setDraggedPhotoId("");
+  }
+
+  function handlePhotoDragEnd() {
+    setDraggedPhotoId("");
+  }
+
   async function uploadPhotos() {
     const urls = [];
 
@@ -1071,8 +1138,8 @@ export default function NewListing() {
                 <div className="listing-photo-preview-header">
                   <strong>Photo order</strong>
                   <span>
-                    Tap the upload box again to add more photos. Remove and
-                    re-add photos to change their order.
+                    Drag photos to reorder them, or use the arrows on mobile.
+                    The first photo is always the cover photo.
                   </span>
                 </div>
 
@@ -1080,16 +1147,25 @@ export default function NewListing() {
                   {files.map((photo, index) => (
                     <div
                       key={photo.id}
-                      className={
-                        index === 0
-                          ? "listing-photo-preview-card cover"
-                          : "listing-photo-preview-card"
-                      }
+                      className={[
+                        "listing-photo-preview-card",
+                        index === 0 ? "cover" : "",
+                        draggedPhotoId === photo.id ? "dragging" : ""
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      draggable
+                      onDragStart={() => handlePhotoDragStart(photo.id)}
+                      onDragOver={handlePhotoDragOver}
+                      onDrop={() => handlePhotoDrop(photo.id)}
+                      onDragEnd={handlePhotoDragEnd}
                     >
                       <img src={photo.previewUrl} alt={`Preview ${index + 1}`} />
 
-                      <div className="listing-photo-order-badge">
-                        {index + 1}
+                      <div className="listing-photo-order-badge">{index + 1}</div>
+
+                      <div className="listing-photo-drag-handle" aria-hidden="true">
+                        <GripVertical size={15} />
                       </div>
 
                       {index === 0 && (
@@ -1104,6 +1180,26 @@ export default function NewListing() {
                       >
                         <Trash2 size={15} />
                       </button>
+
+                      <div className="listing-photo-reorder-actions">
+                        <button
+                          type="button"
+                          disabled={index === 0}
+                          onClick={() => movePhoto(photo.id, -1)}
+                          aria-label={`Move photo ${index + 1} left`}
+                        >
+                          <ArrowLeft size={14} />
+                        </button>
+
+                        <button
+                          type="button"
+                          disabled={index === files.length - 1}
+                          onClick={() => movePhoto(photo.id, 1)}
+                          aria-label={`Move photo ${index + 1} right`}
+                        >
+                          <ArrowRight size={14} />
+                        </button>
+                      </div>
                     </div>
                   ))}
                 </div>
