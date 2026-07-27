@@ -19569,3 +19569,96 @@ body,
     font-size: 14px !important;
   }
 }
+/* ========================================================= */
+/* NEW LISTING - CONDITION DETAILS OPTIONAL FIELD            */
+/* À ajouter tout à la fin de src/index.css                  */
+/* ========================================================= */
+
+.condition-extra-detail-row {
+  background: #ffffff;
+}
+
+.condition-extra-detail-row .listing-detail-label {
+  display: grid;
+  gap: 4px;
+}
+
+.condition-extra-detail-row .listing-detail-label span {
+  width: fit-content;
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 0 9px;
+  border-radius: 999px;
+  background: var(--orange-soft);
+  color: var(--orange);
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.condition-details-box {
+  position: relative;
+  display: grid;
+  gap: 8px;
+}
+
+.condition-details-box textarea {
+  width: 100%;
+  min-height: 104px;
+  border: 1.5px solid #dfe6e6;
+  border-radius: 14px;
+  background: #ffffff;
+  padding: 14px 15px 34px;
+  color: #111111;
+  font-size: 15px;
+  line-height: 1.45;
+  resize: vertical;
+  outline: none;
+}
+
+.condition-details-box textarea:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
+}
+
+.condition-details-box textarea::placeholder {
+  color: #7d8a90;
+}
+
+.condition-details-box p {
+  margin: 0;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.condition-details-box small {
+  position: absolute;
+  right: 13px;
+  bottom: 47px;
+  color: #8a969b;
+  font-size: 12px;
+  font-weight: 800;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .condition-extra-detail-row .listing-detail-label {
+    padding-bottom: 2px;
+  }
+
+  .condition-details-box textarea {
+    min-height: 112px;
+    border-radius: 13px;
+    padding: 13px 14px 34px;
+    font-size: 14px;
+  }
+
+  .condition-details-box p {
+    font-size: 12.5px;
+  }
+
+  .condition-details-box small {
+    bottom: 46px;
+  }
+}

@@ -544,6 +544,16 @@ function buildDescriptionWithExtras(form) {
     extraBlocks.push(`Materials:\n${form.selectedMaterials.join(", ")}`);
   }
 
+  const conditionDetails = form.condition_details?.trim();
+
+  if (conditionDetails) {
+    const conditionLabel =
+      conditionOptions.find((condition) => condition.id === form.condition)?.label ||
+      form.condition;
+
+    extraBlocks.push(`Condition details:\n${conditionLabel} — ${conditionDetails}`);
+  }
+
   if (getItemType(form) === "clothing") {
     const dimensions = [];
 
@@ -610,6 +620,7 @@ export default function NewListing() {
     subcategory: "women_clothing",
     child_category: "",
     condition: "like_new",
+    condition_details: "",
     price: "",
     brand: "",
     size: "",
@@ -1392,6 +1403,33 @@ export default function NewListing() {
                     ))}
                   </div>
                 )}
+              </div>
+            </div>
+
+            <div className="listing-detail-row condition-extra-detail-row">
+              <div className="listing-detail-label">
+                Condition details
+                <span>Optional</span>
+              </div>
+
+              <div className="listing-detail-control">
+                <div className="condition-details-box">
+                  <textarea
+                    name="condition_details"
+                    value={form.condition_details}
+                    onChange={updateField}
+                    rows="4"
+                    maxLength="500"
+                    placeholder="Add useful details about the condition, e.g. small stain near the collar, light scratches, worn twice, no visible flaws..."
+                  />
+
+                  <p>
+                    Add extra details only if needed. This helps the buyer understand
+                    the real condition of the item before purchasing.
+                  </p>
+
+                  <small>{form.condition_details.length}/500</small>
+                </div>
               </div>
             </div>
 
