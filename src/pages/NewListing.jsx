@@ -628,6 +628,566 @@ function getMeetupCityOptions() {
   return Array.from(new Set(sellerMeetupSpots.map((spot) => spot.city)));
 }
 
+function normaliseSmartText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+}
+
+function smartTextIncludes(text, words) {
+  return words.some((word) => text.includes(normaliseSmartText(word)));
+}
+
+function findCategoryPath(categoryId, subcategoryId, childCategoryId = "") {
+  const category = getCategoryById(categoryId);
+  const subcategory = getSubcategoryById(subcategoryId);
+
+  if (!category || !subcategory) return null;
+
+  const child =
+    childCategoryId && subcategory.children
+      ? subcategory.children.find((item) => item.id === childCategoryId)
+      : null;
+
+  return {
+    categoryId,
+    subcategoryId,
+    childCategoryId: child?.id || "",
+    label: child
+      ? `${category.label} > ${subcategory.label} > ${child.label}`
+      : `${category.label} > ${subcategory.label}`
+  };
+}
+
+function getSmartCategorySuggestion(form) {
+  const text = normaliseSmartText(
+    `${form.title || ""} ${form.description || ""} ${form.brand || ""}`
+  );
+
+  if (!text.trim()) return null;
+
+  if (
+    smartTextIncludes(text, [
+      "iphone",
+      "samsung galaxy",
+      "phone",
+      "smartphone",
+      "mobile",
+      "cellphone",
+      "redmi",
+      "oppo",
+      "vivo",
+      "realme",
+      "huawei",
+      "xiaomi"
+    ])
+  ) {
+    return findCategoryPath("electronics", "electronics_phones");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "ipad",
+      "tablet",
+      "galaxy tab",
+      "tab s",
+      "lenovo tab"
+    ])
+  ) {
+    return findCategoryPath("electronics", "electronics_tablets");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "macbook",
+      "laptop",
+      "computer",
+      "pc",
+      "notebook",
+      "chromebook",
+      "thinkpad",
+      "vivobook",
+      "aspire"
+    ])
+  ) {
+    return findCategoryPath("electronics", "electronics_computers");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "camera",
+      "dslr",
+      "mirrorless",
+      "canon",
+      "nikon",
+      "sony alpha",
+      "fujifilm",
+      "gopro"
+    ])
+  ) {
+    return findCategoryPath("electronics", "electronics_cameras");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "airpods",
+      "headphones",
+      "earbuds",
+      "speaker",
+      "jbl",
+      "marshall",
+      "bose",
+      "sony wh",
+      "audio"
+    ])
+  ) {
+    return findCategoryPath("electronics", "electronics_audio");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "ps4",
+      "ps5",
+      "playstation",
+      "xbox",
+      "nintendo",
+      "switch",
+      "console"
+    ])
+  ) {
+    return findCategoryPath("electronics", "electronics_gaming");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "watch",
+      "smartwatch",
+      "apple watch",
+      "galaxy watch",
+      "garmin",
+      "g-shock",
+      "casio"
+    ])
+  ) {
+    return smartTextIncludes(text, ["luxury", "rolex", "omega", "tag heuer"])
+      ? findCategoryPath("designer", "designer_watches")
+      : findCategoryPath("electronics", "electronics_smartwatches");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "shoe",
+      "shoes",
+      "sneaker",
+      "sneakers",
+      "air force",
+      "air max",
+      "dunk",
+      "jordan",
+      "yeezy",
+      "vans",
+      "converse",
+      "crocs",
+      "sandals",
+      "heels",
+      "boots"
+    ])
+  ) {
+    if (smartTextIncludes(text, ["kid", "kids", "child", "children", "baby", "youth"])) {
+      return findCategoryPath("kids", "kids_shoes");
+    }
+
+    if (
+      smartTextIncludes(text, [
+        "gucci",
+        "prada",
+        "dior",
+        "balenciaga",
+        "louis vuitton",
+        "designer"
+      ])
+    ) {
+      return findCategoryPath("designer", "designer_shoes");
+    }
+
+    if (smartTextIncludes(text, ["men", "mens", "man", "male", "boyfriend"])) {
+      return findCategoryPath("men", "men_shoes");
+    }
+
+    return findCategoryPath("women", "women_shoes");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "bag",
+      "handbag",
+      "shoulder bag",
+      "tote",
+      "backpack",
+      "pouch",
+      "wallet",
+      "crossbody",
+      "sling bag"
+    ])
+  ) {
+    if (
+      smartTextIncludes(text, [
+        "gucci",
+        "prada",
+        "dior",
+        "chanel",
+        "louis vuitton",
+        "coach",
+        "kate spade",
+        "designer"
+      ])
+    ) {
+      return findCategoryPath("designer", "designer_bags");
+    }
+
+    if (smartTextIncludes(text, ["travel", "luggage", "suitcase", "duffel"])) {
+      return findCategoryPath("travel_motorbike", "travel_bags");
+    }
+
+    if (smartTextIncludes(text, ["men", "mens", "man", "male"])) {
+      return findCategoryPath("men", "men_bags");
+    }
+
+    return findCategoryPath("women", "women_bags");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "dress",
+      "skirt",
+      "blouse",
+      "top",
+      "shirt",
+      "t-shirt",
+      "tshirt",
+      "hoodie",
+      "jacket",
+      "coat",
+      "pants",
+      "jeans",
+      "shorts",
+      "sweater",
+      "cardigan",
+      "polo",
+      "barong",
+      "filipiniana",
+      "uniform"
+    ])
+  ) {
+    if (smartTextIncludes(text, ["barong"])) {
+      return findCategoryPath("local_cultural", "local_barong");
+    }
+
+    if (smartTextIncludes(text, ["filipiniana"])) {
+      return findCategoryPath("local_cultural", "local_filipiniana");
+    }
+
+    if (smartTextIncludes(text, ["uniform", "school uniform"])) {
+      return findCategoryPath("school_office", "school_uniforms");
+    }
+
+    if (smartTextIncludes(text, ["kid", "kids", "baby", "girl", "boy", "child"])) {
+      if (smartTextIncludes(text, ["baby"])) {
+        return findCategoryPath("kids", "kids_baby_clothing");
+      }
+
+      if (smartTextIncludes(text, ["boy"])) {
+        return findCategoryPath("kids", "kids_boys_clothing");
+      }
+
+      return findCategoryPath("kids", "kids_girls_clothing");
+    }
+
+    if (
+      smartTextIncludes(text, [
+        "gucci",
+        "prada",
+        "dior",
+        "chanel",
+        "balenciaga",
+        "louis vuitton",
+        "designer"
+      ])
+    ) {
+      return findCategoryPath("designer", "designer_clothing");
+    }
+
+    if (smartTextIncludes(text, ["men", "mens", "man", "male"])) {
+      return findCategoryPath("men", "men_clothing");
+    }
+
+    return findCategoryPath("women", "women_clothing");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "makeup",
+      "lipstick",
+      "foundation",
+      "concealer",
+      "blush",
+      "mascara",
+      "eyeshadow",
+      "powder"
+    ])
+  ) {
+    return findCategoryPath("beauty", "beauty_makeup");
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "skincare",
+      "serum",
+      "cleanser",
+      "toner",
+      "moisturizer",
+      "sunscreen",
+      "cream"
+    ])
+  ) {
+    return findCategoryPath("beauty", "beauty_skincare");
+  }
+
+  if (smartTextIncludes(text, ["perfume", "fragrance", "cologne"])) {
+    return findCategoryPath("beauty", "beauty_fragrance");
+  }
+
+  if (smartTextIncludes(text, ["book", "novel", "textbook"])) {
+    return findCategoryPath("entertainment", "entertainment_books");
+  }
+
+  if (smartTextIncludes(text, ["manga", "comic", "comics"])) {
+    return findCategoryPath("entertainment", "entertainment_comics_manga");
+  }
+
+  if (smartTextIncludes(text, ["video game", "game cartridge", "nintendo game"])) {
+    return findCategoryPath("entertainment", "entertainment_video_games");
+  }
+
+  if (smartTextIncludes(text, ["rice cooker"])) {
+    return findCategoryPath("home", "home_appliances", "home_rice_cookers");
+  }
+
+  if (smartTextIncludes(text, ["electric fan", "stand fan", "desk fan"])) {
+    return findCategoryPath("home", "home_appliances", "home_electric_fans");
+  }
+
+  if (smartTextIncludes(text, ["kettle", "electric kettle"])) {
+    return findCategoryPath("home", "home_appliances", "home_kettles");
+  }
+
+  if (smartTextIncludes(text, ["helmet", "motorcycle helmet"])) {
+    return findCategoryPath("travel_motorbike", "motorbike_helmets");
+  }
+
+  if (smartTextIncludes(text, ["raincoat", "riding jacket"])) {
+    return findCategoryPath("travel_motorbike", "motorbike_jackets");
+  }
+
+  return null;
+}
+
+function getSmartParcelSize(form, categorySuggestion) {
+  const text = normaliseSmartText(
+    `${form.title || ""} ${form.description || ""} ${form.subcategory || ""} ${
+      categorySuggestion?.subcategoryId || ""
+    }`
+  );
+
+  if (
+    smartTextIncludes(text, [
+      "furniture",
+      "chair",
+      "table",
+      "cabinet",
+      "drawer",
+      "electric fan",
+      "rice cooker",
+      "air cooler",
+      "large",
+      "bulky"
+    ])
+  ) {
+    return "large";
+  }
+
+  if (
+    smartTextIncludes(text, [
+      "shoes",
+      "sneaker",
+      "sneakers",
+      "bag",
+      "handbag",
+      "hoodie",
+      "jacket",
+      "coat",
+      "helmet",
+      "camera",
+      "console",
+      "laptop",
+      "tablet"
+    ])
+  ) {
+    return "medium";
+  }
+
+  return "small";
+}
+
+function getSmartMaterialSuggestions(form) {
+  const text = normaliseSmartText(`${form.title || ""} ${form.description || ""}`);
+
+  return materialOptions
+    .filter((material) => text.includes(normaliseSmartText(material)))
+    .slice(0, 3);
+}
+
+function getSmartBrandSuggestion(form) {
+  const text = normaliseSmartText(`${form.title || ""} ${form.description || ""}`);
+
+  if (!text.trim() || form.brand?.trim()) return "";
+
+  const sortedBrands = [...BRAND_OPTIONS].sort((a, b) => b.length - a.length);
+
+  return (
+    sortedBrands.find((brand) => {
+      const normalizedBrand = normaliseSmartText(brand);
+      return new RegExp(`(^|[^a-z0-9])${normalizedBrand.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9]|$)`).test(text);
+    }) || ""
+  );
+}
+
+function getSmartSizeSuggestion(form) {
+  const text = normaliseSmartText(`${form.title || ""} ${form.description || ""}`);
+
+  if (smartTextIncludes(text, ["xxs"])) return "XXS";
+  if (smartTextIncludes(text, ["xs", "extra small"])) return "XS";
+  if (smartTextIncludes(text, ["small", " size s", " s "])) return "S";
+  if (smartTextIncludes(text, ["medium", " size m", " m "])) return "M";
+  if (smartTextIncludes(text, ["large", " size l", " l "])) return "L";
+  if (smartTextIncludes(text, ["xl", "extra large"])) return "XL";
+  if (smartTextIncludes(text, ["xxl"])) return "XXL";
+  if (smartTextIncludes(text, ["one size", "free size"])) return "One size";
+
+  const shoeSizeMatch = text.match(/\b(us\s*)?(kids\s*)?([4-9]|1[0-3])(\.5)?\b/);
+
+  if (shoeSizeMatch && getItemType(form) === "shoes") {
+    return `US ${shoeSizeMatch[3]}${shoeSizeMatch[4] || ""}`;
+  }
+
+  return "";
+}
+
+function buildSmartProductSuggestions(form) {
+  const sourceText = `${form.title || ""} ${form.description || ""} ${form.brand || ""}`;
+  const text = normaliseSmartText(sourceText);
+
+  if (!text.trim()) {
+    return {
+      hasInput: false,
+      chips: [],
+      features: []
+    };
+  }
+
+  const categorySuggestion = getSmartCategorySuggestion(form);
+  const parcelSuggestion = getSmartParcelSize(form, categorySuggestion);
+  const brandSuggestion = getSmartBrandSuggestion(form);
+  const detectedColors = allColors
+    .filter((color) => text.includes(normaliseSmartText(color.label)))
+    .slice(0, MAX_LISTING_COLORS);
+  const materialSuggestions = getSmartMaterialSuggestions(form);
+  const sizeSuggestion = getSmartSizeSuggestion(form);
+
+  const chips = [];
+  const features = [];
+
+  if (categorySuggestion) {
+    chips.push({
+      id: "category",
+      type: "category",
+      label: categorySuggestion.label,
+      value: categorySuggestion
+    });
+    features.push(`Suggested category: ${categorySuggestion.label}`);
+  }
+
+  if (brandSuggestion) {
+    chips.push({
+      id: "brand",
+      type: "brand",
+      label: `Brand: ${brandSuggestion}`,
+      value: brandSuggestion
+    });
+    features.push(`Detected brand: ${brandSuggestion}`);
+  }
+
+  if (sizeSuggestion && !form.size) {
+    chips.push({
+      id: "size",
+      type: "size",
+      label: `Size: ${sizeSuggestion}`,
+      value: sizeSuggestion
+    });
+  }
+
+  detectedColors
+    .filter((color) => !form.selectedColors.includes(color.id))
+    .forEach((color) => {
+      chips.push({
+        id: `color-${color.id}`,
+        type: "color",
+        label: `Color: ${color.label}`,
+        value: color.id
+      });
+    });
+
+  materialSuggestions
+    .filter((material) => !form.selectedMaterials.includes(material))
+    .forEach((material) => {
+      chips.push({
+        id: `material-${material}`,
+        type: "material",
+        label: `Material: ${material}`,
+        value: material
+      });
+    });
+
+  if (parcelSuggestion && form.parcel_size !== parcelSuggestion) {
+    chips.push({
+      id: "parcel",
+      type: "parcel",
+      label: `Recommended parcel: ${parcelSuggestion}`,
+      value: parcelSuggestion
+    });
+    features.push(`Recommended parcel size: ${parcelSuggestion}`);
+  }
+
+  if (getItemType(form) === "shoes") {
+    features.push("Authenticity focus: soles, inside label, serial number and box.");
+  }
+
+  if (getItemType(form) === "bags") {
+    features.push("Authenticity focus: logo, inside label, stitching and serial number.");
+  }
+
+  if (getItemType(form) === "clothing") {
+    features.push("Recommended details: size label, material tag and dimensions.");
+  }
+
+  return {
+    hasInput: true,
+    chips: chips.slice(0, 10),
+    features: Array.from(new Set(features)).slice(0, 5)
+  };
+}
+
 export default function NewListing() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -671,6 +1231,21 @@ export default function NewListing() {
   const authenticityGuide = getAuthenticityGuide(form);
   const sizeOptions = getSizeOptions(form);
   const suggestedColors = getSuggestedColors(form);
+  const smartProductSuggestions = useMemo(
+    () => buildSmartProductSuggestions(form),
+    [
+      form.title,
+      form.description,
+      form.brand,
+      form.category,
+      form.subcategory,
+      form.child_category,
+      form.size,
+      form.parcel_size,
+      form.selectedColors,
+      form.selectedMaterials
+    ]
+  );
 
   const filteredBrandOptions = useMemo(() => {
     const query = String(form.brand || "").trim().toLowerCase();
@@ -816,6 +1391,98 @@ export default function NewListing() {
     }));
 
     setShowBrandSuggestions(false);
+  }
+
+  function applySmartSuggestion(suggestion) {
+    if (!suggestion) return;
+
+    if (suggestion.type === "category") {
+      const categoryPath = suggestion.value;
+      const nextSubcategory = getSubcategoryById(categoryPath.subcategoryId);
+      const nextChildCategory =
+        categoryPath.childCategoryId ||
+        nextSubcategory?.children?.[0]?.id ||
+        "";
+
+      setForm((prev) => ({
+        ...prev,
+        category: categoryPath.categoryId,
+        subcategory: categoryPath.subcategoryId,
+        child_category: nextChildCategory,
+        size: "",
+        selectedMaterials: [],
+        material: "",
+        shoulder_width: "",
+        item_length: ""
+      }));
+
+      return;
+    }
+
+    if (suggestion.type === "brand") {
+      setForm((prev) => ({
+        ...prev,
+        brand: suggestion.value
+      }));
+
+      return;
+    }
+
+    if (suggestion.type === "size") {
+      setForm((prev) => ({
+        ...prev,
+        size: suggestion.value
+      }));
+
+      return;
+    }
+
+    if (suggestion.type === "color") {
+      setForm((prev) => {
+        if (prev.selectedColors.includes(suggestion.value)) return prev;
+        if (prev.selectedColors.length >= MAX_LISTING_COLORS) return prev;
+
+        const nextColors = [...prev.selectedColors, suggestion.value];
+
+        return {
+          ...prev,
+          selectedColors: nextColors,
+          color: formatColorValue(nextColors)
+        };
+      });
+
+      return;
+    }
+
+    if (suggestion.type === "material") {
+      setForm((prev) => {
+        if (prev.selectedMaterials.includes(suggestion.value)) return prev;
+        if (prev.selectedMaterials.length >= 3) return prev;
+
+        const nextMaterials = [...prev.selectedMaterials, suggestion.value];
+
+        return {
+          ...prev,
+          selectedMaterials: nextMaterials,
+          material: formatMaterialValue(nextMaterials)
+        };
+      });
+
+      return;
+    }
+
+    if (suggestion.type === "parcel") {
+      setForm((prev) => ({
+        ...prev,
+        parcel_size: suggestion.value
+      }));
+    }
+  }
+
+  function applyAllSmartSuggestions() {
+    smartProductSuggestions.chips.forEach((suggestion) => {
+      applySmartSuggestion(suggestion);
+    });
   }
 
   function selectSize(size) {
@@ -1329,6 +1996,54 @@ export default function NewListing() {
                 placeholder="ex: Manila, Cebu, Davao"
               />
             </label>
+
+            {smartProductSuggestions.hasInput && (
+              <div className="smart-product-suggestions">
+                <div className="smart-product-suggestions-header">
+                  <div>
+                    <strong>Smart product suggestions</strong>
+                    <p>
+                      TindaHan detected possible characteristics from your title and
+                      description. Nothing is pre-filled automatically.
+                    </p>
+                  </div>
+
+                  {smartProductSuggestions.chips.length > 0 && (
+                    <button type="button" onClick={applyAllSmartSuggestions}>
+                      Apply all
+                    </button>
+                  )}
+                </div>
+
+                {smartProductSuggestions.chips.length > 0 ? (
+                  <div className="smart-product-chip-list">
+                    {smartProductSuggestions.chips.map((suggestion) => (
+                      <button
+                        key={suggestion.id}
+                        type="button"
+                        className={`smart-product-chip ${suggestion.type}`}
+                        onClick={() => applySmartSuggestion(suggestion)}
+                      >
+                        <Check size={14} />
+                        {suggestion.label}
+                      </button>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="smart-product-no-result">
+                    Add more details in the title or description to get suggestions.
+                  </p>
+                )}
+
+                {smartProductSuggestions.features.length > 0 && (
+                  <div className="smart-product-feature-list">
+                    {smartProductSuggestions.features.map((feature) => (
+                      <span key={feature}>{feature}</span>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </section>
 
           <section className="form-section seller-meetup-form-section">

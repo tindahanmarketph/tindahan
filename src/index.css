@@ -20068,3 +20068,149 @@ body,
     grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
   }
 }
+/* ========================================================= */
+/* NEW LISTING - SMART PRODUCT SUGGESTIONS                   */
+/* À ajouter tout à la fin de src/index.css                  */
+/* ========================================================= */
+
+.smart-product-suggestions {
+  display: grid;
+  gap: 14px;
+  margin-top: 8px;
+  padding: 16px;
+  border: 1px solid rgba(255, 107, 44, 0.22);
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at top right, rgba(255, 107, 44, 0.12), transparent 34%),
+    #fff8f5;
+}
+
+.smart-product-suggestions-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+}
+
+.smart-product-suggestions-header strong {
+  display: block;
+  color: #111111;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.smart-product-suggestions-header p {
+  margin: 4px 0 0;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.smart-product-suggestions-header button {
+  min-height: 36px;
+  padding: 0 13px;
+  border: none;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.smart-product-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.smart-product-chip {
+  min-height: 36px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 107, 44, 0.28);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 13px;
+  font-weight: 850;
+  text-align: left;
+}
+
+.smart-product-chip svg {
+  color: var(--orange);
+}
+
+.smart-product-chip:hover {
+  border-color: var(--orange);
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.smart-product-chip.category {
+  border-color: rgba(255, 107, 44, 0.45);
+  background: #ffffff;
+}
+
+.smart-product-chip.parcel {
+  border-color: rgba(42, 157, 143, 0.28);
+}
+
+.smart-product-chip.parcel svg {
+  color: #0f8f7e;
+}
+
+.smart-product-feature-list {
+  display: grid;
+  gap: 7px;
+}
+
+.smart-product-feature-list span {
+  display: block;
+  padding: 10px 12px;
+  border-radius: 13px;
+  background: #ffffff;
+  color: #34444a;
+  font-size: 12.5px;
+  line-height: 1.35;
+  font-weight: 750;
+}
+
+.smart-product-no-result {
+  margin: 0;
+  padding: 12px;
+  border-radius: 13px;
+  background: #ffffff;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+@media (max-width: 760px) {
+  .smart-product-suggestions {
+    margin-top: 6px;
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .smart-product-suggestions-header {
+    grid-template-columns: 1fr;
+  }
+
+  .smart-product-suggestions-header button {
+    width: fit-content;
+  }
+
+  .smart-product-chip-list {
+    gap: 8px;
+  }
+
+  .smart-product-chip {
+    max-width: 100%;
+    min-height: 35px;
+    padding: 0 11px;
+    font-size: 12.5px;
+  }
+}
