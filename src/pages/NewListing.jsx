@@ -839,14 +839,9 @@ export default function NewListing() {
     setForm((prev) => {
       const exists = prev.selectedColors.includes(colorId);
 
-      let nextColors;
-
-      if (exists) {
-        nextColors = prev.selectedColors.filter((item) => item !== colorId);
-      } else {
-        if (prev.selectedColors.length >= 2) return prev;
-        nextColors = [...prev.selectedColors, colorId];
-      }
+      const nextColors = exists
+        ? prev.selectedColors.filter((item) => item !== colorId)
+        : [...prev.selectedColors, colorId];
 
       return {
         ...prev,
@@ -1761,7 +1756,7 @@ export default function NewListing() {
             </div>
 
             <div className="listing-detail-row">
-              <div className="listing-detail-label">Color</div>
+              <div className="listing-detail-label">Colors</div>
 
               <div className="listing-detail-control">
                 <button
@@ -1773,7 +1768,7 @@ export default function NewListing() {
                     setOpenDropdown(openDropdown === "color" ? "" : "color")
                   }
                 >
-                  <span>{form.color || "Select up to 2 colors"}</span>
+                  <span>{form.color || "Select colors"}</span>
                   <ChevronDown size={18} />
                 </button>
 
