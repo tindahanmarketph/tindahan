@@ -30,6 +30,7 @@ import { supabase } from "../lib/supabase";
 import { BRAND_OPTIONS } from "../lib/brands";
 
 const MAX_LISTING_PHOTOS = 20;
+const MAX_LISTING_COLORS = 5;
 
 const conditionOptions = [
   {
@@ -839,9 +840,17 @@ export default function NewListing() {
     setForm((prev) => {
       const exists = prev.selectedColors.includes(colorId);
 
-      const nextColors = exists
-        ? prev.selectedColors.filter((item) => item !== colorId)
-        : [...prev.selectedColors, colorId];
+      let nextColors;
+
+      if (exists) {
+        nextColors = prev.selectedColors.filter((item) => item !== colorId);
+      } else {
+        if (prev.selectedColors.length >= MAX_LISTING_COLORS) {
+          return prev;
+        }
+
+        nextColors = [...prev.selectedColors, colorId];
+      }
 
       return {
         ...prev,
@@ -1768,7 +1777,7 @@ export default function NewListing() {
                     setOpenDropdown(openDropdown === "color" ? "" : "color")
                   }
                 >
-                  <span>{form.color || "Select colors"}</span>
+                  <span>{form.color || `Select up to ${MAX_LISTING_COLORS} colors`}</span>
                   <ChevronDown size={18} />
                 </button>
 
