@@ -498,7 +498,9 @@ export async function updateOfferStatus({
         ? `Offer accepted at ₱${formatRealtimePrice(mappedOffer.offerPrice)}.`
         : `Offer declined at ₱${formatRealtimePrice(mappedOffer.offerPrice)}.`,
     payload: {
-      offer: mappedOffer
+      offer: mappedOffer,
+      status: nextStatus,
+      actorId: currentUserId
     }
   });
 
