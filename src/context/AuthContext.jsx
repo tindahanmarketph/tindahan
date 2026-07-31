@@ -4,6 +4,7 @@ import { supabase } from "../lib/supabase";
 const AuthContext = createContext(null);
 
 const AUTH_TIMEOUT_MS = 5000;
+const NEW_SIGNUP_STORAGE_KEY = "tindahan_new_signup";
 
 function withTimeout(promise, ms, fallbackValue) {
   return Promise.race([
@@ -20,6 +21,16 @@ function getWelcomeRedirectUrl() {
   }
 
   return `${window.location.origin}/welcome`;
+}
+
+function markNewSignup() {
+  if (typeof window === "undefined") return;
+  window.localStorage.setItem(NEW_SIGNUP_STORAGE_KEY, "true");
+}
+
+function clearNewSignup() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(NEW_SIGNUP_STORAGE_KEY);
 }
 
 export function AuthProvider({ children }) {
@@ -195,6 +206,8 @@ export function AuthProvider({ children }) {
   }, []);
 
   async function login(email, password) {
+    clearNewSignup();
+
     const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password
@@ -219,6 +232,8 @@ export function AuthProvider({ children }) {
       .toLowerCase()
       .replace(/[^a-z0-9_]/g, "");
 
+    clearNewSignup();
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
@@ -231,8 +246,11 @@ export function AuthProvider({ children }) {
     });
 
     if (error) {
+      clearNewSignup();
       return { data: null, error };
     }
+
+    markNewSignup();
 
     return { data, error: null };
   }
@@ -252,6 +270,8 @@ export function AuthProvider({ children }) {
   }
 
   async function logout() {
+    clearNewSignup();
+
     const { error } = await supabase.auth.signOut();
 
     if (error) {

@@ -1,12 +1,46 @@
-import { ArrowRight, Recycle, ShieldCheck, ShoppingBag, Sparkles } from "lucide-react";
-import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  Recycle,
+  ShieldCheck,
+  ShoppingBag,
+  Sparkles
+} from "lucide-react";
+import { Link, Navigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+const NEW_SIGNUP_STORAGE_KEY = "tindahan_new_signup";
+
+function isNewSignupWelcomeAllowed() {
+  if (typeof window === "undefined") return false;
+  return window.localStorage.getItem(NEW_SIGNUP_STORAGE_KEY) === "true";
+}
+
+function completeWelcome() {
+  if (typeof window === "undefined") return;
+  window.localStorage.removeItem(NEW_SIGNUP_STORAGE_KEY);
+}
+
 export default function Welcome() {
-  const { profile, user } = useAuth();
+  const { profile, user, loadingAuth } = useAuth();
+
+  if (loadingAuth) {
+    return (
+      <main className="welcome-page">
+        <section className="welcome-card">
+          <p>Loading...</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (!isNewSignupWelcomeAllowed()) {
+    return <Navigate to="/" replace />;
+  }
 
   const displayName =
-    profile?.username || user?.user_metadata?.username || user?.email?.split("@")[0];
+    profile?.username ||
+    user?.user_metadata?.username ||
+    user?.email?.split("@")[0];
 
   return (
     <main className="welcome-page">
@@ -44,11 +78,19 @@ export default function Welcome() {
         </div>
 
         <div className="welcome-actions">
-          <Link to="/" className="welcome-primary-button">
+          <Link
+            to="/"
+            className="welcome-primary-button"
+            onClick={completeWelcome}
+          >
             Start exploring <ArrowRight size={19} />
           </Link>
 
-          <Link to="/sell" className="welcome-secondary-button">
+          <Link
+            to="/sell"
+            className="welcome-secondary-button"
+            onClick={completeWelcome}
+          >
             Sell your first item
           </Link>
         </div>
