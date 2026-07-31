@@ -387,7 +387,14 @@ export async function scheduleCourierPickup(orderId) {
   return getOrderById(orderId);
 }
 
-export async function markParcelDroppedOff(orderId, carrier = "J&T Express") {
+export async function markParcelDroppedOff(
+  orderId,
+  carrier = "J&T Express",
+  dropOffPoint = null
+) {
+  const pointName = dropOffPoint?.name || carrier;
+  const pointAddress = dropOffPoint?.address || "";
+
   const updatedOrder = await updateOrder(orderId, {
     seller_shipping_choice: "dropoff",
     carrier,
@@ -395,15 +402,19 @@ export async function markParcelDroppedOff(orderId, carrier = "J&T Express") {
   });
 
   await addOrderTrackingEvent(orderId, {
-    title: `Parcel dropped off at ${carrier}`,
-    description: "The parcel has been handed over to the delivery partner.",
+    title: `Parcel dropped off at ${pointName}`,
+    description: pointAddress
+      ? `The parcel has been handed over to ${carrier} at ${pointAddress}.`
+      : "The parcel has been handed over to the delivery partner.",
     completed: true
   });
 
   await sendOrderConversationUpdate(
     updatedOrder,
     "parcel_dropped_off",
-    `The seller dropped off your parcel at ${carrier}. Tracking is now available.`
+    pointAddress
+      ? `The seller dropped off your parcel at ${pointName}. Tracking is now available.`
+      : `The seller dropped off your parcel at ${carrier}. Tracking is now available.`
   );
 
   return getOrderById(orderId);

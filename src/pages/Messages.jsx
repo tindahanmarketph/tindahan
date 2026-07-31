@@ -10,6 +10,7 @@ import {
   Plus,
   Send,
   ShieldCheck,
+  Store,
   Truck,
   Users,
   X
@@ -32,10 +33,54 @@ import {
   formatOrderDate,
   formatTindaHanPrice,
   getOrderById,
+  markParcelDroppedOff,
   updateMeetupChangeStatus
 } from "../lib/orders";
 
 const MESSAGES_SAFETY_STORAGE_KEY = "tindahan_messages_safety_hidden";
+
+const DROP_OFF_POINTS = [
+  {
+    id: "jt-makati-ave",
+    carrier: "J&T Express",
+    name: "J&T Express - Makati Avenue",
+    address: "Makati Avenue, Makati City, Metro Manila",
+    openingHours: "Open today · 9:00 AM - 6:00 PM",
+    distance: "0.8 km",
+    mapX: 34,
+    mapY: 55
+  },
+  {
+    id: "ninja-bgc",
+    carrier: "Ninja Van",
+    name: "Ninja Van Drop-Off - BGC",
+    address: "Bonifacio Global City, Taguig, Metro Manila",
+    openingHours: "Open today · 10:00 AM - 7:00 PM",
+    distance: "2.1 km",
+    mapX: 68,
+    mapY: 42
+  },
+  {
+    id: "lbc-greenbelt",
+    carrier: "LBC Express",
+    name: "LBC Express - Greenbelt",
+    address: "Greenbelt, Ayala Center, Makati City",
+    openingHours: "Open today · 10:00 AM - 8:00 PM",
+    distance: "1.4 km",
+    mapX: 48,
+    mapY: 66
+  },
+  {
+    id: "jt-ortigas",
+    carrier: "J&T Express",
+    name: "J&T Express - Ortigas Center",
+    address: "Ortigas Center, Pasig, Metro Manila",
+    openingHours: "Open today · 9:00 AM - 6:00 PM",
+    distance: "3.7 km",
+    mapX: 78,
+    mapY: 28
+  }
+];
 
 function getInitialSafetyVisibility() {
   if (typeof window === "undefined") return true;
@@ -99,6 +144,16 @@ function fileToDataUrl(file) {
   });
 }
 
+function canTrackParcel(order) {
+  return [
+    "dropped_off",
+    "in_transit",
+    "ready_for_pickup",
+    "delivery_scheduled",
+    "completed"
+  ].includes(order?.status);
+}
+
 function getLastMessage(conversation) {
   const messages = conversation?.messages || [];
   const lastMessage = messages[messages.length - 1];
@@ -121,6 +176,20 @@ function getLastMessage(conversation) {
     }
 
     return `Offer sent · ${formatPrice(offer.offerPrice)}`;
+  }
+
+  if (lastMessage.type === "offer_status") {
+    const offer = lastMessage.payload?.offer;
+
+    if (offer?.status === "accepted") {
+      return `Offer accepted · ${formatPrice(offer.offerPrice)}`;
+    }
+
+    if (offer?.status === "declined") {
+      return `Offer declined · ${formatPrice(offer.offerPrice)}`;
+    }
+
+    return "Offer updated";
   }
 
   if (lastMessage.type === "meetup_change_request") {
@@ -187,14 +256,131 @@ function MeetupLocationBox({ label, spot, muted = false }) {
   );
 }
 
+function DropOffPointModal({
+  order,
+  selectedPoint,
+  onSelectPoint,
+  onClose,
+  onConfirm,
+  loading
+}) {
+  return (
+    <div className="dropoff-modal-overlay" role="presentation" onClick={onClose}>
+      <section
+        className="dropoff-modal"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Find drop-off point"
+        onClick={(event) => event.stopPropagation()}
+      >
+        <header className="dropoff-modal-header">
+          <div>
+            <h2>Find a drop-off point</h2>
+            <p>
+              Choose where you will deposit the parcel. Tracking will become
+              available for the buyer after you confirm the drop-off.
+            </p>
+          </div>
+
+          <button type="button" onClick={onClose} aria-label="Close">
+            <X size={22} />
+          </button>
+        </header>
+
+        <div className="dropoff-map-card">
+          <div className="dropoff-map-grid" />
+          <div className="dropoff-map-road road-one" />
+          <div className="dropoff-map-road road-two" />
+          <div className="dropoff-map-road road-three" />
+
+          <div className="dropoff-map-label">
+            <MapPin size={15} />
+            <span>Nearby drop-off points</span>
+          </div>
+
+          {DROP_OFF_POINTS.map((point) => (
+            <button
+              key={point.id}
+              type="button"
+              className={
+                selectedPoint?.id === point.id
+                  ? "dropoff-map-pin active"
+                  : "dropoff-map-pin"
+              }
+              style={{
+                "--dropoff-x": `${point.mapX}%`,
+                "--dropoff-y": `${point.mapY}%`
+              }}
+              onClick={() => onSelectPoint(point)}
+              aria-label={point.name}
+            >
+              <Store size={15} />
+            </button>
+          ))}
+        </div>
+
+        <div className="dropoff-point-list">
+          {DROP_OFF_POINTS.map((point) => (
+            <button
+              key={point.id}
+              type="button"
+              className={
+                selectedPoint?.id === point.id
+                  ? "dropoff-point-card active"
+                  : "dropoff-point-card"
+              }
+              onClick={() => onSelectPoint(point)}
+            >
+              <div className="dropoff-point-icon">
+                <Store size={20} />
+              </div>
+
+              <div>
+                <strong>{point.name}</strong>
+                <span>{point.carrier}</span>
+                <p>{point.address}</p>
+                <small>
+                  {point.distance} · {point.openingHours}
+                </small>
+              </div>
+
+              {selectedPoint?.id === point.id && (
+                <div className="dropoff-point-check">
+                  <Check size={15} />
+                </div>
+              )}
+            </button>
+          ))}
+        </div>
+
+        <div className="dropoff-modal-order">
+          <span>Parcel</span>
+          <strong>{order?.listingTitle}</strong>
+        </div>
+
+        <button
+          type="button"
+          className="dropoff-confirm-button"
+          onClick={onConfirm}
+          disabled={!selectedPoint || loading}
+        >
+          {loading ? "Confirming..." : "Confirm parcel dropped off"}
+        </button>
+      </section>
+    </div>
+  );
+}
+
 function MessageOrderCard({
   item,
   userId,
   navigate,
-  onMeetupStatusUpdated
+  onOrderUpdated
 }) {
   const [order, setOrder] = useState(null);
   const [loadingAction, setLoadingAction] = useState("");
+  const [showDropOffModal, setShowDropOffModal] = useState(false);
+  const [selectedDropOffPoint, setSelectedDropOffPoint] = useState(DROP_OFF_POINTS[0]);
 
   useEffect(() => {
     let mounted = true;
@@ -238,6 +424,7 @@ function MessageOrderCard({
 
   const meetupStatus = order.meetupChangeStatus || "none";
   const meetupPending = hasMeetupSuggestion && meetupStatus === "pending";
+  const trackingAvailable = canTrackParcel(order);
 
   async function handleMeetupDecision(nextStatus) {
     if (!order?.id || loadingAction) return;
@@ -247,10 +434,33 @@ function MessageOrderCard({
     try {
       const updatedOrder = await updateMeetupChangeStatus(order.id, nextStatus);
       setOrder(updatedOrder);
-      await onMeetupStatusUpdated?.();
+      await onOrderUpdated?.();
     } catch (error) {
       console.error("Meet-Up status update error:", error);
       alert(error.message || "Unable to update this Meet-Up request.");
+    } finally {
+      setLoadingAction("");
+    }
+  }
+
+  async function handleConfirmDropOff() {
+    if (!order?.id || !selectedDropOffPoint || loadingAction) return;
+
+    setLoadingAction("dropoff");
+
+    try {
+      const updatedOrder = await markParcelDroppedOff(
+        order.id,
+        selectedDropOffPoint.carrier,
+        selectedDropOffPoint
+      );
+
+      setOrder(updatedOrder);
+      setShowDropOffModal(false);
+      await onOrderUpdated?.();
+    } catch (error) {
+      console.error("Drop-off update error:", error);
+      alert(error.message || "Unable to confirm parcel drop-off.");
     } finally {
       setLoadingAction("");
     }
@@ -351,59 +561,113 @@ function MessageOrderCard({
     );
   }
 
+  const orderTitle = isSellerOrder
+    ? "Your item has been sold"
+    : trackingAvailable
+    ? "Parcel tracking is available"
+    : "Purchase successful";
+
+  const orderMessage = isSellerOrder
+    ? trackingAvailable
+      ? "The parcel has been deposited. Tracking is now available."
+      : `The buyer has paid. Ship the parcel before ${formatOrderDate(
+          order.maxShippingDate
+        )}.`
+    : trackingAvailable
+    ? "The seller has dropped off your parcel. You can now follow the delivery."
+    : `The seller must send the parcel before ${formatOrderDate(
+        order.maxShippingDate
+      )}. We will keep you updated on your order.`;
+
   return (
-    <div className="conversation-order-card">
-      <div className="conversation-order-icon">
-        <PackageCheck size={24} />
-      </div>
-
-      <div className="conversation-order-content">
-        <strong>
-          {isSellerOrder ? "Your item has been sold" : "Order confirmed"}
-        </strong>
-
-        <p>{item.text}</p>
-
-        <div className="conversation-order-product">
-          {order.listingPhoto && (
-            <img src={order.listingPhoto} alt={order.listingTitle} />
-          )}
-
-          <div>
-            <span>{order.listingTitle}</span>
-            <small>₱{formatTindaHanPrice(order.total)}</small>
-          </div>
+    <>
+      <div
+        className={
+          isSellerOrder
+            ? "conversation-order-card seller-view"
+            : "conversation-order-card buyer-view"
+        }
+      >
+        <div className="conversation-order-icon">
+          <PackageCheck size={24} />
         </div>
 
-        {isSellerOrder && order.deliveryMethod !== "meetup" && (
-          <div className="conversation-order-deadline">
-            Ship before {formatOrderDate(order.maxShippingDate)}
-          </div>
-        )}
+        <div className="conversation-order-content">
+          <strong>{orderTitle}</strong>
 
-        <div className="conversation-order-actions">
-          {isSellerOrder && order.deliveryMethod !== "meetup" && (
-            <button
-              type="button"
-              className="parcel-outline-button"
-              onClick={() => navigate(`/shipping-label/${order.id}`)}
-            >
-              <Download size={15} />
-              Shipping label
-            </button>
+          <p>{orderMessage}</p>
+
+          <div className="conversation-order-product">
+            {order.listingPhoto && (
+              <img src={order.listingPhoto} alt={order.listingTitle} />
+            )}
+
+            <div>
+              <span>{order.listingTitle}</span>
+              <small>₱{formatTindaHanPrice(order.total)}</small>
+            </div>
+          </div>
+
+          {isSellerOrder && !trackingAvailable && order.deliveryMethod !== "meetup" && (
+            <div className="conversation-order-deadline">
+              Ship before {formatOrderDate(order.maxShippingDate)}
+            </div>
           )}
 
-          <button
-            type="button"
-            className="parcel-primary-button"
-            onClick={() => navigate(`/tracking/${order.id}`)}
-          >
-            <Truck size={15} />
-            Track parcel
-          </button>
+          {!isSellerOrder && !trackingAvailable && (
+            <div className="conversation-order-waiting">
+              Tracking will be available once the seller drops off the parcel.
+            </div>
+          )}
+
+          <div className="conversation-order-actions">
+            {isSellerOrder && order.deliveryMethod !== "meetup" && !trackingAvailable && (
+              <>
+                <button
+                  type="button"
+                  className="parcel-outline-button"
+                  onClick={() => navigate(`/shipping-label/${order.id}`)}
+                >
+                  <Download size={15} />
+                  Shipping label
+                </button>
+
+                <button
+                  type="button"
+                  className="parcel-primary-button"
+                  onClick={() => setShowDropOffModal(true)}
+                >
+                  <MapPin size={15} />
+                  Find drop-off point
+                </button>
+              </>
+            )}
+
+            {trackingAvailable && (
+              <button
+                type="button"
+                className="parcel-primary-button"
+                onClick={() => navigate(`/tracking/${order.id}`)}
+              >
+                <Truck size={15} />
+                Track parcel
+              </button>
+            )}
+          </div>
         </div>
       </div>
-    </div>
+
+      {showDropOffModal && (
+        <DropOffPointModal
+          order={order}
+          selectedPoint={selectedDropOffPoint}
+          onSelectPoint={setSelectedDropOffPoint}
+          onClose={() => setShowDropOffModal(false)}
+          onConfirm={handleConfirmDropOff}
+          loading={loadingAction === "dropoff"}
+        />
+      )}
+    </>
   );
 }
 
@@ -937,6 +1201,71 @@ export default function Messages() {
     );
   }
 
+  function renderOfferStatusCard(item) {
+    const offer = item.payload?.offer || item.offer;
+
+    if (!offer) {
+      return (
+        <div className="message-bubble">
+          <p>{item.text}</p>
+        </div>
+      );
+    }
+
+    const isAccepted = offer.status === "accepted";
+    const isDeclined = offer.status === "declined";
+    const isBuyerOffer = offer.senderRole === "buyer_offer";
+    const showBuyerBuyCta = !isCurrentUserSeller && isAccepted && isBuyerOffer;
+
+    const title = isAccepted
+      ? isCurrentUserSeller
+        ? "You accepted the buyer’s offer"
+        : "The seller accepted your offer"
+      : isCurrentUserSeller
+      ? "You declined the buyer’s offer"
+      : "The seller declined your offer";
+
+    const description = isAccepted
+      ? isCurrentUserSeller
+        ? "The buyer can now complete the purchase from this conversation."
+        : "You can now buy this item at the accepted offer price."
+      : isCurrentUserSeller
+      ? "The buyer has been notified."
+      : "You can make another offer if you are still interested.";
+
+    return (
+      <div
+        className={
+          isAccepted
+            ? "offer-status-message-card accepted"
+            : "offer-status-message-card declined"
+        }
+      >
+        <div className="offer-status-message-heading">
+          <Check size={18} />
+          <strong>{title}</strong>
+        </div>
+
+        <p>{description}</p>
+
+        <div className="offer-status-price-row">
+          <span>Offer price</span>
+          <strong>₱{formatRealtimePrice(offer.offerPrice)}</strong>
+        </div>
+
+        {showBuyerBuyCta && (
+          <button
+            type="button"
+            className="offer-status-buy-button"
+            onClick={() => handleBuyClick(offer)}
+          >
+            Buy now
+          </button>
+        )}
+      </div>
+    );
+  }
+
   function renderChatPanel({ mobile = false } = {}) {
     if (!activeConversation) {
       return (
@@ -1055,12 +1384,14 @@ export default function Messages() {
             >
               {item.type === "offer" ? (
                 renderOfferCard(item)
+              ) : item.type === "offer_status" ? (
+                renderOfferStatusCard(item)
               ) : item.orderId || item.payload?.orderId ? (
                 <MessageOrderCard
                   item={item}
                   userId={user?.id}
                   navigate={navigate}
-                  onMeetupStatusUpdated={refreshActiveConversation}
+                  onOrderUpdated={refreshActiveConversation}
                 />
               ) : (
                 <div className="message-bubble">
