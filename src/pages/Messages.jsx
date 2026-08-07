@@ -879,6 +879,26 @@ export default function Messages() {
     await loadConversations({ keepActive: true });
   }
 
+  function getVisibleConversationMessages(messages = []) {
+    const latestOrderMessageByOrderId = new Map();
+
+    messages.forEach((item) => {
+      const orderId = item.orderId || item.payload?.orderId;
+
+      if (orderId) {
+        latestOrderMessageByOrderId.set(String(orderId), item.id);
+      }
+    });
+
+    return messages.filter((item) => {
+      const orderId = item.orderId || item.payload?.orderId;
+
+      if (!orderId) return true;
+
+      return latestOrderMessageByOrderId.get(String(orderId)) === item.id;
+    });
+  }
+
   async function handleOfferStatus(messageId, offer, nextStatus) {
     if (!activeConversation?.id || !user?.id) return;
 
@@ -1375,7 +1395,7 @@ export default function Messages() {
             </div>
           )}
 
-          {(activeConversation.messages || []).map((item) => (
+          {getVisibleConversationMessages(activeConversation.messages || []).map((item) => (
             <div
               key={item.id}
               className={`message-bubble-row ${

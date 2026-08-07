@@ -195,13 +195,58 @@ async function sendOrderConversationUpdate(order, type, text) {
   const currentUserId = await getCurrentUserId();
   const senderId = currentUserId || order.buyerId || order.sellerId;
 
+  const { data: existingMessages, error: existingError } = await supabase
+    .from("messages")
+    .select("*")
+    .eq("conversation_id", conversation.id)
+    .filter("payload->>orderId", "eq", String(order.id))
+    .order("created_at", { ascending: true });
+
+  if (existingError) {
+    throw existingError;
+  }
+
+  const existingOrderMessage = existingMessages?.[0];
+
+  if (existingOrderMessage) {
+    const { data, error } = await supabase
+      .from("messages")
+      .update({
+        sender_id: senderId,
+        message_type: type,
+        body: text,
+        payload: {
+          ...(existingOrderMessage.payload || {}),
+          orderId: order.id,
+          latestOrderStatus: order.status,
+          updatedAt: new Date().toISOString()
+        }
+      })
+      .eq("id", existingOrderMessage.id)
+      .select("*")
+      .single();
+
+    if (error) {
+      throw error;
+    }
+
+    await supabase
+      .from("conversations")
+      .update({ updated_at: new Date().toISOString() })
+      .eq("id", conversation.id);
+
+    return data;
+  }
+
   return sendSystemMessage({
     conversationId: conversation.id,
     senderId,
     type,
     text,
     payload: {
-      orderId: order.id
+      orderId: order.id,
+      latestOrderStatus: order.status,
+      updatedAt: new Date().toISOString()
     }
   });
 }
