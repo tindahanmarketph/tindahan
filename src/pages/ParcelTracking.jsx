@@ -83,6 +83,8 @@ export default function ParcelTracking() {
   const [showInstructions, setShowInstructions] = useState(false);
   const [instructions, setInstructions] = useState("");
   const [showReceivedModal, setShowReceivedModal] = useState(false);
+  const [showRefundModal, setShowRefundModal] = useState(false);
+  const [refundReason, setRefundReason] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -576,13 +578,23 @@ export default function ParcelTracking() {
           {(order.status === "ready_for_pickup" ||
             order.status === "delivery_scheduled" ||
             order.status === "in_transit") && (
-            <button
-              type="button"
-              className="parcel-primary-button"
-              onClick={() => setShowReceivedModal(true)}
-            >
-              Item received
-            </button>
+            <>
+              <button
+                type="button"
+                className="parcel-primary-button"
+                onClick={() => setShowReceivedModal(true)}
+              >
+                Item received
+              </button>
+
+              <button
+                type="button"
+                className="parcel-refund-button"
+                onClick={() => setShowRefundModal(true)}
+              >
+                Something wrong with the item?
+              </button>
+            </>
           )}
         </section>
       )}
@@ -646,6 +658,69 @@ export default function ParcelTracking() {
               onClick={() => setShowReceivedModal(false)}
             >
               Not yet
+            </button>
+          </section>
+        </div>
+      )}
+
+      {showRefundModal && (
+        <div className="parcel-modal-overlay">
+          <section className="parcel-bottom-sheet refund-bottom-sheet">
+            <h2>Request a refund</h2>
+
+            <p>
+              Tell us what is wrong with the item. The payment will remain
+              protected while TindaHan reviews the case.
+            </p>
+
+            <div className="refund-reason-list">
+              {[
+                "Item does not match the description",
+                "Wrong item received",
+                "Item is damaged",
+                "Item appears counterfeit",
+                "Missing parts or accessories",
+                "Other issue"
+              ].map((reason) => (
+                <button
+                  key={reason}
+                  type="button"
+                  className={
+                    refundReason === reason
+                      ? "refund-reason-card active"
+                      : "refund-reason-card"
+                  }
+                  onClick={() => setRefundReason(reason)}
+                >
+                  {reason}
+                </button>
+              ))}
+            </div>
+
+            <button
+              type="button"
+              className="parcel-primary-button"
+              disabled={!refundReason}
+              onClick={() => {
+                alert(
+                  `Refund request submitted: ${refundReason}. In the next step, the buyer will be able to add photos and details.`
+                );
+                setShowRefundModal(false);
+                setRefundReason("");
+              }}
+            >
+              Submit refund request
+            </button>
+
+            <button
+              type="button"
+              className="parcel-sheet-secondary"
+              onClick={() => {
+                setShowRefundModal(false);
+                setRefundReason("");
+              }}
+            >
+              Cancel
             </button>
           </section>
         </div>

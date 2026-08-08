@@ -20730,3 +20730,55 @@ body,
     min-height: 46px;
   }
 }
+/* ========================================================= */
+/* PARCEL TRACKING - REFUND CTA                              */
+/* ========================================================= */
+
+.parcel-refund-button {
+  width: 100%;
+  min-height: 48px;
+  border: 1.5px solid rgba(217, 45, 32, 0.24);
+  border-radius: 14px;
+  background: #fff7f7;
+  color: #d92d20;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.parcel-refund-button:hover {
+  background: #fff1f1;
+}
+
+.refund-bottom-sheet {
+  display: grid;
+  gap: 14px;
+}
+
+.refund-reason-list {
+  display: grid;
+  gap: 9px;
+}
+
+.refund-reason-card {
+  width: 100%;
+  min-height: 44px;
+  padding: 12px 14px;
+  border: 1px solid #dfe6e6;
+  border-radius: 13px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 850;
+  text-align: left;
+}
+
+.refund-reason-card.active {
+  border-color: #d92d20;
+  background: #fff7f7;
+  color: #d92d20;
+}
+
+.refund-bottom-sheet .parcel-primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
