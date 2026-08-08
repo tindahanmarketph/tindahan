@@ -21102,3 +21102,325 @@ body,
     margin-bottom: 0;
   }
 }
+/* ========================================================= */
+/* PARCEL TRACKING - CLEAN MOBILE LAYOUT                     */
+/* À ajouter tout en bas de src/index.css                    */
+/* ========================================================= */
+
+.parcel-tracking-page {
+  width: min(100%, 430px);
+  min-height: 100vh;
+  margin: 0 auto;
+  background: #ffffff;
+  padding-bottom: 34px;
+}
+
+.parcel-tracking-header {
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  padding: 0 22px;
+  border-bottom: 1px solid #eef0f0;
+  background: #ffffff;
+}
+
+.parcel-tracking-header h1 {
+  margin: 0;
+  color: #111111;
+  font-size: 21px;
+  font-weight: 950;
+  text-align: center;
+  letter-spacing: -0.35px;
+}
+
+.parcel-tracking-header button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: #111111;
+}
+
+.parcel-tracking-header button:hover {
+  background: #f4f6f6;
+}
+
+.parcel-tracking-help-card,
+.parcel-tracking-product,
+.parcel-tracking-pending-card,
+.parcel-tracking-hero,
+.parcel-seller-deadline,
+.parcel-actions-panel,
+.parcel-conversation-link,
+.parcel-tracking-timeline {
+  width: calc(100% - 44px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.parcel-tracking-help-card {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 13px;
+  align-items: start;
+  padding: 16px;
+  border: 1px solid rgba(255, 107, 44, 0.22);
+  border-radius: 15px;
+  background: #fff8f5;
+  color: var(--orange);
+}
+
+.parcel-tracking-help-card p {
+  margin: 0;
+  color: #34444a;
+  font-size: 14px;
+  line-height: 1.42;
+}
+
+.parcel-tracking-product {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #dfe6e6;
+  border-radius: 15px;
+  background: #ffffff;
+}
+
+.parcel-tracking-product-image {
+  width: 74px;
+  height: 74px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  background: #f2f5f5;
+  color: var(--orange);
+}
+
+.parcel-tracking-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.parcel-tracking-product strong {
+  display: block;
+  color: #111111;
+  font-size: 15.5px;
+  font-weight: 950;
+  line-height: 1.18;
+}
+
+.parcel-tracking-product p {
+  margin: 7px 0 0;
+  color: #5f6f75;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.parcel-tracking-pending-card {
+  margin-top: 4px;
+  display: grid;
+  grid-template-columns: 24px minmax(0, 1fr);
+  gap: 13px;
+  align-items: start;
+  padding: 16px;
+  border: 1px solid rgba(255, 107, 44, 0.24);
+  border-radius: 16px;
+  background: #fff8f5;
+}
+
+.parcel-tracking-pending-card svg {
+  color: var(--orange);
+}
+
+.parcel-tracking-pending-card strong {
+  display: block;
+  color: #111111;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.parcel-tracking-pending-card p {
+  margin: 7px 0 0;
+  color: #5f6f75;
+  font-size: 13.5px;
+  line-height: 1.45;
+}
+
+.parcel-tracking-timeline {
+  margin-top: 38px;
+  padding: 0;
+}
+
+.parcel-tracking-timeline h3 {
+  margin: 0 0 20px;
+  color: #6b777c;
+  font-size: 20px;
+  font-weight: 950;
+  letter-spacing: -0.25px;
+}
+
+.parcel-timeline-list {
+  display: grid;
+  gap: 0;
+  padding-left: 0;
+}
+
+.parcel-timeline-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: 48px minmax(0, 1fr);
+  gap: 9px;
+  padding-bottom: 24px;
+}
+
+.parcel-timeline-item::before {
+  content: "";
+  position: absolute;
+  left: 23px;
+  top: 42px;
+  bottom: -2px;
+  width: 2px;
+  border-radius: 999px;
+  background: rgba(255, 107, 44, 0.32);
+}
+
+.parcel-timeline-item:last-child::before {
+  display: none;
+}
+
+.parcel-timeline-marker {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #ffffff;
+  box-shadow: 0 8px 18px rgba(255, 107, 44, 0.2);
+}
+
+.parcel-timeline-item div:last-child {
+  min-width: 0;
+  padding-top: 2px;
+}
+
+.parcel-timeline-item strong {
+  display: block;
+  color: #111111;
+  font-size: 18px;
+  line-height: 1.18;
+  font-weight: 950;
+  letter-spacing: -0.25px;
+}
+
+.parcel-timeline-item p {
+  margin: 7px 0 0;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.42;
+}
+
+.parcel-timeline-item span {
+  display: block;
+  margin-top: 8px;
+  color: #6f7f85;
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.parcel-conversation-link {
+  margin-top: 30px;
+}
+
+.parcel-conversation-link button {
+  width: 100%;
+  min-height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  border: none;
+  border-radius: 11px;
+  background: #f2f5f5;
+  color: #34444a;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.parcel-conversation-link button:hover {
+  background: #e9eeee;
+}
+
+.parcel-actions-panel {
+  margin-top: 26px;
+  padding: 18px;
+  border: 1px solid #dfe6e6;
+  border-radius: 16px;
+  background: #ffffff;
+}
+
+.parcel-actions-panel h3 {
+  margin: 0 0 14px;
+  color: #6b777c;
+  font-size: 19px;
+  font-weight: 950;
+}
+
+.parcel-primary-button,
+.parcel-outline-button,
+.parcel-refund-button {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 12px;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.parcel-actions-panel .parcel-primary-button + .parcel-refund-button,
+.parcel-actions-panel .parcel-primary-button + .parcel-outline-button,
+.parcel-actions-panel .parcel-outline-button + .parcel-outline-button {
+  margin-top: 10px;
+}
+
+@media (max-width: 520px) {
+  .parcel-tracking-page {
+    width: 100%;
+  }
+
+  .parcel-tracking-header {
+    padding: 0 18px;
+  }
+
+  .parcel-tracking-help-card,
+  .parcel-tracking-product,
+  .parcel-tracking-pending-card,
+  .parcel-tracking-hero,
+  .parcel-seller-deadline,
+  .parcel-actions-panel,
+  .parcel-conversation-link,
+  .parcel-tracking-timeline {
+    width: calc(100% - 36px);
+  }
+
+  .parcel-tracking-timeline {
+    margin-top: 34px;
+  }
+
+  .parcel-timeline-item {
+    grid-template-columns: 46px minmax(0, 1fr);
+  }
+
+  .parcel-timeline-item strong {
+    font-size: 17px;
+  }
+}
