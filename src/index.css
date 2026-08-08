@@ -20782,3 +20782,323 @@ body,
   opacity: 0.5;
   cursor: not-allowed;
 }
+/* ========================================================= */
+/* VINTED-LIKE ORDER DELIVERY FLOW                           */
+/* À ajouter tout en bas de src/index.css                    */
+/* ========================================================= */
+
+.buyer-vinted-order-card {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: #ffffff;
+}
+
+.buyer-vinted-order-card strong {
+  color: #111111;
+  font-size: 22px;
+  font-weight: 950;
+  line-height: 1.15;
+  letter-spacing: -0.35px;
+}
+
+.buyer-vinted-order-card p {
+  margin: 0;
+  color: #5f6f75;
+  font-size: 16px;
+  line-height: 1.45;
+}
+
+.vinted-buyer-order-view {
+  border-color: #dfe6e6 !important;
+  background: #ffffff !important;
+}
+
+.vinted-buyer-order-view .conversation-order-icon {
+  background: #eef6f6;
+  color: #007782;
+}
+
+.vinted-buyer-order-view .conversation-order-actions {
+  display: grid;
+  gap: 10px;
+}
+
+.vinted-buyer-order-view .parcel-outline-button,
+.buyer-vinted-order-card .parcel-outline-button {
+  width: 100%;
+  min-height: 48px;
+  border: 1.5px solid #007782;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #007782;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.vinted-buyer-order-view .parcel-primary-button,
+.buyer-vinted-order-card .parcel-primary-button {
+  width: 100%;
+  min-height: 48px;
+  border: none;
+  border-radius: 9px;
+  background: #007782;
+  color: #ffffff;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.vinted-problem-button,
+.buyer-vinted-order-card .vinted-problem-button {
+  width: 100%;
+  min-height: 48px;
+  border: 1.5px solid #007782;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #007782;
+  font-size: 15px;
+  font-weight: 900;
+}
+
+.order-acceptance-sheet {
+  position: relative;
+  width: min(92vw, 460px);
+  padding: 30px 22px 24px !important;
+  text-align: center;
+}
+
+.order-acceptance-sheet h2 {
+  max-width: 360px;
+  margin: 10px auto 0;
+  color: #111111;
+  font-size: 26px;
+  line-height: 1.12;
+  letter-spacing: -0.55px;
+  font-weight: 950;
+}
+
+.order-acceptance-sheet p {
+  max-width: 390px;
+  margin: 0 auto;
+  color: #5f6f75;
+  font-size: 18px;
+  line-height: 1.38;
+}
+
+.order-acceptance-sheet > button:not(.parcel-sheet-close):not(.parcel-sheet-secondary) {
+  width: 100%;
+  min-height: 52px;
+  border: none;
+  border-radius: 9px;
+  background: #007782;
+  color: #ffffff;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.order-acceptance-sheet .parcel-sheet-secondary {
+  width: 100%;
+  min-height: 46px;
+  border: none;
+  background: transparent;
+  color: #007782;
+  font-size: 17px;
+  font-weight: 950;
+}
+
+.parcel-sheet-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 34px;
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: #f2f5f5;
+  color: #34444a;
+}
+
+.order-acceptance-illustration {
+  position: relative;
+  width: 220px;
+  height: 168px;
+  margin: 0 auto 12px;
+}
+
+.order-acceptance-box {
+  position: absolute;
+  left: 32px;
+  right: 22px;
+  bottom: 12px;
+  height: 72px;
+  border-radius: 10px 10px 16px 16px;
+  background: #c9835d;
+  transform: skewX(-8deg);
+  box-shadow: inset 0 -12px rgba(138, 77, 52, 0.22);
+}
+
+.order-acceptance-box::before,
+.order-acceptance-box::after {
+  content: "";
+  position: absolute;
+  top: -30px;
+  width: 92px;
+  height: 42px;
+  border-radius: 10px;
+  background: #d99873;
+}
+
+.order-acceptance-box::before {
+  left: -20px;
+  transform: rotate(-18deg);
+}
+
+.order-acceptance-box::after {
+  right: -20px;
+  transform: rotate(18deg);
+}
+
+.order-acceptance-person {
+  position: absolute;
+  left: 66px;
+  top: 2px;
+  width: 98px;
+  height: 130px;
+  z-index: 3;
+}
+
+.person-head {
+  position: absolute;
+  left: 34px;
+  top: 24px;
+  width: 38px;
+  height: 44px;
+  border-radius: 48% 48% 44% 44%;
+  background: #f0b18d;
+  z-index: 2;
+}
+
+.person-hair {
+  position: absolute;
+  left: 16px;
+  top: 8px;
+  width: 74px;
+  height: 72px;
+  border-radius: 50% 50% 46% 46%;
+  background:
+    repeating-radial-gradient(circle at 45% 35%, #90a0a3 0 3px, #c5d0d1 3px 6px);
+  z-index: 1;
+}
+
+.person-body {
+  position: absolute;
+  left: 18px;
+  top: 66px;
+  width: 78px;
+  height: 64px;
+  border-radius: 24px 24px 10px 10px;
+  background: #ffffff;
+  border: 4px solid #8586ff;
+  border-bottom: none;
+  z-index: 3;
+}
+
+.person-phone {
+  position: absolute;
+  right: -8px;
+  top: 64px;
+  width: 22px;
+  height: 36px;
+  border-radius: 7px;
+  background: #111111;
+  transform: rotate(22deg);
+  z-index: 4;
+}
+
+.refund-bottom-sheet {
+  display: grid;
+  gap: 14px;
+}
+
+.refund-bottom-sheet h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 23px;
+  font-weight: 950;
+  letter-spacing: -0.4px;
+}
+
+.refund-bottom-sheet p {
+  margin: 0;
+  color: #5f6f75;
+  font-size: 15px;
+  line-height: 1.45;
+}
+
+.refund-reason-list {
+  display: grid;
+  gap: 9px;
+}
+
+.refund-reason-card {
+  width: 100%;
+  min-height: 46px;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 12px 14px;
+  border: 1px solid #dfe6e6;
+  border-radius: 13px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 850;
+  text-align: left;
+}
+
+.refund-reason-card.active {
+  border-color: #d92d20;
+  background: #fff7f7;
+  color: #d92d20;
+}
+
+.refund-bottom-sheet .parcel-primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (max-width: 760px) {
+  .buyer-vinted-order-card {
+    padding: 16px;
+  }
+
+  .buyer-vinted-order-card strong {
+    font-size: 20px;
+  }
+
+  .buyer-vinted-order-card p {
+    font-size: 15px;
+  }
+
+  .order-acceptance-sheet {
+    width: calc(100vw - 32px);
+    border-radius: 24px !important;
+  }
+
+  .order-acceptance-sheet h2 {
+    font-size: 24px;
+  }
+
+  .order-acceptance-sheet p {
+    font-size: 17px;
+  }
+
+  .order-acceptance-illustration {
+    transform: scale(0.92);
+    margin-bottom: 0;
+  }
+}

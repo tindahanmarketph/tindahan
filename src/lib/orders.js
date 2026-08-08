@@ -458,8 +458,8 @@ export async function markParcelDroppedOff(
     updatedOrder,
     "parcel_dropped_off",
     pointAddress
-      ? `The seller dropped off your parcel at ${pointName}. Tracking is now available.`
-      : `The seller dropped off your parcel at ${carrier}. Tracking is now available.`
+      ? `Commande envoyée. Le vendeur a déposé le colis chez ${pointName}.`
+      : `Commande envoyée. Le vendeur a déposé le colis chez ${carrier}.`
   );
 
   return getOrderById(orderId);
@@ -479,7 +479,7 @@ export async function markParcelInTransit(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "parcel_in_transit",
-    "Your parcel is now in transit."
+    "Commande envoyée. Le colis est en cours d'acheminement."
   );
 
   return getOrderById(orderId);
@@ -499,7 +499,7 @@ export async function markParcelReadyForPickup(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "parcel_ready_for_pickup",
-    "Your parcel is ready for pick-up at J&T Express."
+    "Ton colis est arrivé au point relais. Vérifie ta commande avant de la confirmer."
   );
 
   return getOrderById(orderId);
@@ -519,7 +519,7 @@ export async function notifyHomeDeliveryTomorrow(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "delivery_tomorrow",
-    "Your parcel will arrive tomorrow between 10:00 AM and 2:00 PM. You can add delivery instructions or reschedule the delivery."
+    "Ton colis est en cours de livraison. Vérifie ta commande avant de la confirmer."
   );
 
   return getOrderById(orderId);
@@ -546,7 +546,30 @@ export async function completeOrder(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "order_completed",
-    "The buyer confirmed the item was received. The transaction is now completed."
+    "Commande acceptée. Le paiement peut maintenant être versé au vendeur."
+  );
+
+  return getOrderById(orderId);
+}
+
+export async function requestOrderRefund(orderId, reason = "Issue reported") {
+  const updatedOrder = await updateOrder(orderId, {
+    status: "refund_requested"
+  });
+
+  await addOrderTrackingEvent(orderId, {
+    title: "Problem reported",
+    description:
+      reason || "The buyer reported a problem with the order. The payment remains protected while TindaHan reviews the case.",
+    completed: true
+  });
+
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "refund_requested",
+    `The buyer reported a problem with the order: ${
+      reason || "Issue reported"
+    }. The payment remains protected while TindaHan reviews the case.`
   );
 
   return getOrderById(orderId);
