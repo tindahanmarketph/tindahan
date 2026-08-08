@@ -6,8 +6,8 @@ import {
   MessageSquare,
   PackageCheck,
   ShieldCheck,
-  Store,
-  Truck
+  Truck,
+  X
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
@@ -20,7 +20,8 @@ import {
   markParcelDroppedOff,
   markParcelInTransit,
   markParcelReadyForPickup,
-  notifyHomeDeliveryTomorrow
+  notifyHomeDeliveryTomorrow,
+  requestOrderRefund
 } from "../lib/orders";
 
 const TRACKING_VISIBLE_STATUSES = [
@@ -28,7 +29,8 @@ const TRACKING_VISIBLE_STATUSES = [
   "in_transit",
   "ready_for_pickup",
   "delivery_scheduled",
-  "completed"
+  "completed",
+  "refund_requested"
 ];
 
 const DROP_OFF_POINTS = [
@@ -52,16 +54,26 @@ const DROP_OFF_POINTS = [
   }
 ];
 
+const REFUND_REASONS = [
+  "Item does not match the description",
+  "Wrong item received",
+  "Item is damaged",
+  "Item appears counterfeit",
+  "Missing parts or accessories",
+  "Other issue"
+];
+
 function getReadableStatus(status) {
   const labels = {
     paid_waiting_seller: "Waiting for seller to ship",
     label_downloaded: "Shipping label downloaded",
     courier_pickup_scheduled: "Courier pick-up scheduled",
-    dropped_off: "Parcel dropped off",
+    dropped_off: "Order shipped",
     in_transit: "Parcel in transit",
-    ready_for_pickup: "Ready for pick-up",
+    ready_for_pickup: "Parcel arrived",
     delivery_scheduled: "Delivery scheduled",
-    completed: "Delivered",
+    completed: "Order completed",
+    refund_requested: "Problem reported",
     cancelled: "Cancelled"
   };
 
@@ -70,6 +82,36 @@ function getReadableStatus(status) {
 
 function canTrackParcel(order) {
   return TRACKING_VISIBLE_STATUSES.includes(order?.status);
+}
+
+function isOrderReadyForBuyerReview(order) {
+  return [
+    "ready_for_pickup",
+    "delivery_scheduled",
+    "in_transit",
+    "dropped_off"
+  ].includes(order?.status);
+}
+
+function getBuyerReviewDeadline(order) {
+  const baseDate =
+    order?.estimatedDeliveryEnd ||
+    order?.estimatedDeliveryStart ||
+    order?.updatedAt ||
+    new Date().toISOString();
+
+  const deadline = new Date(baseDate);
+  deadline.setDate(deadline.getDate() + 2);
+
+  return deadline.toISOString();
+}
+
+function getPickupPointText(order) {
+  if (order?.status !== "ready_for_pickup") return "";
+
+  const carrier = order?.carrier || "the selected pick-up point";
+
+  return `Your parcel is waiting at ${carrier}.`;
 }
 
 export default function ParcelTracking() {
@@ -140,6 +182,10 @@ export default function ParcelTracking() {
   const orderedEvents = useMemo(() => {
     return [...(order?.trackingEvents || [])];
   }, [order?.trackingEvents]);
+
+  const buyerReviewDeadline = useMemo(() => {
+    return getBuyerReviewDeadline(order);
+  }, [order]);
 
   async function refreshOrder(updatedOrder = null) {
     if (updatedOrder) {
@@ -238,6 +284,24 @@ export default function ParcelTracking() {
     }
   }
 
+  async function handleRefundRequest() {
+    if (!order?.id || !refundReason || loadingAction) return;
+
+    setLoadingAction("refund");
+
+    try {
+      const updatedOrder = await requestOrderRefund(order.id, refundReason);
+      await refreshOrder(updatedOrder);
+      setShowRefundModal(false);
+      setRefundReason("");
+    } catch (error) {
+      console.error("Refund request error:", error);
+      alert(error.message || "Unable to submit this refund request.");
+    } finally {
+      setLoadingAction("");
+    }
+  }
+
   function handleSaveInstructions() {
     const savedOrder = {
       ...order,
@@ -247,6 +311,137 @@ export default function ParcelTracking() {
 
     setOrder(savedOrder);
     setShowInstructions(false);
+  }
+
+  function renderBuyerPendingSummaryCard() {
+    return (
+      <section className="parcel-order-summary-card">
+        <div className="parcel-order-product-row">
+          <div className="parcel-order-product-image">
+            {order.listingPhoto ? (
+              <img src={order.listingPhoto} alt={order.listingTitle} />
+            ) : (
+              <PackageCheck size={30} />
+            )}
+          </div>
+
+          <div className="parcel-order-product-info">
+            <strong>{order.listingTitle}</strong>
+            <span>₱{Number(order.total || 0).toLocaleString("en-PH")}</span>
+          </div>
+        </div>
+
+        <div className="parcel-order-status-row">
+          <div className="parcel-order-status-icon">
+            <ShieldCheck size={18} />
+          </div>
+
+          <div>
+            <strong>Purchase successful</strong>
+            <p>
+              Your purchase is confirmed. The seller must send the parcel before{" "}
+              {formatOrderDate(order.maxShippingDate)}. Tracking will become
+              available once the seller drops off the parcel.
+            </p>
+          </div>
+        </div>
+      </section>
+    );
+  }
+
+  function renderBuyerReviewCard() {
+    const pickupPointText = getPickupPointText(order);
+    const isRefundRequested = order.status === "refund_requested";
+
+    if (isRefundRequested) {
+      return (
+        <section className="buyer-vinted-order-card">
+          <strong>Problem reported</strong>
+
+          <p>
+            Your report has been sent. The payment remains protected while
+            TindaHan reviews the case.
+          </p>
+
+          <button
+            type="button"
+            className="parcel-outline-button"
+            onClick={() => navigate("/messages")}
+          >
+            <MessageSquare size={18} />
+            Open conversation
+          </button>
+        </section>
+      );
+    }
+
+    if (order.status === "ready_for_pickup") {
+      return (
+        <section className="buyer-vinted-order-card">
+          <strong>Your parcel has arrived!</strong>
+
+          <p>
+            {pickupPointText ||
+              "Your parcel is waiting at the selected pick-up point."}
+          </p>
+
+          <button
+            type="button"
+            className="parcel-outline-button"
+            onClick={() => navigate(`/tracking/${order.id}`)}
+          >
+            <Truck size={18} />
+            Track parcel
+          </button>
+
+          <button
+            type="button"
+            className="parcel-primary-button"
+            onClick={() => setShowReceivedModal(true)}
+          >
+            Item received
+          </button>
+        </section>
+      );
+    }
+
+    if (
+      order.status === "delivery_scheduled" ||
+      order.status === "in_transit" ||
+      order.status === "dropped_off"
+    ) {
+      return (
+        <section className="buyer-vinted-order-card">
+          <strong>
+            Check your order before {formatOrderDate(buyerReviewDeadline)}
+          </strong>
+
+          <p>
+            If your order matches its description, confirm that everything is
+            okay. Report a problem if it has not arrived or does not match what
+            you expected.
+          </p>
+
+          <button
+            type="button"
+            className="parcel-primary-button"
+            onClick={() => setShowReceivedModal(true)}
+          >
+            Everything is OK
+          </button>
+
+          <button
+            type="button"
+            className="vinted-problem-button"
+            onClick={() => setShowRefundModal(true)}
+          >
+            I have a problem
+          </button>
+        </section>
+      );
+    }
+
+    return null;
   }
 
   if (loadingOrder) {
@@ -304,41 +499,7 @@ export default function ParcelTracking() {
           <span />
         </header>
 
-        <section className="parcel-tracking-help-card">
-          <ShieldCheck size={20} />
-          <p>
-            Your purchase is confirmed. Tracking will become available once the
-            seller drops off the parcel.
-          </p>
-        </section>
-
-        <section className="parcel-tracking-product">
-          <div className="parcel-tracking-product-image">
-            {order.listingPhoto ? (
-              <img src={order.listingPhoto} alt={order.listingTitle} />
-            ) : (
-              <PackageCheck size={30} />
-            )}
-          </div>
-
-          <div>
-            <strong>{order.listingTitle}</strong>
-            <p>₱{Number(order.total || 0).toLocaleString("en-PH")}</p>
-          </div>
-        </section>
-
-        <section className="parcel-tracking-pending-card">
-          <Clock size={22} />
-
-          <div>
-            <strong>Purchase successful</strong>
-            <p>
-              The seller must send the parcel before{" "}
-              {formatOrderDate(order.maxShippingDate)}. We will keep you updated
-              on your order.
-            </p>
-          </div>
-        </section>
+        {renderBuyerPendingSummaryCard()}
 
         <section className="parcel-tracking-timeline muted">
           <h3>Order information</h3>
@@ -382,70 +543,78 @@ export default function ParcelTracking() {
         <span />
       </header>
 
-      <section className="parcel-tracking-help-card">
-        <ShieldCheck size={20} />
-        <p>
-          {trackingAvailable
-            ? "For more information, check your carrier page or follow updates from your TindaHan conversation."
-            : `The buyer has paid. Deposit the parcel before ${formatOrderDate(
-                order.maxShippingDate
-              )}. Tracking will start after drop-off.`}
-        </p>
-      </section>
+      {!isBuyer && (
+        <section className="parcel-tracking-help-card">
+          <ShieldCheck size={20} />
+          <p>
+            {trackingAvailable
+              ? "For more information, check your carrier page or follow updates from your TindaHan conversation."
+              : `The buyer has paid. Deposit the parcel before ${formatOrderDate(
+                  order.maxShippingDate
+                )}. Tracking will start after drop-off.`}
+          </p>
+        </section>
+      )}
 
-      <section className="parcel-tracking-hero">
-        <span>{getReadableStatus(order.status)}</span>
+      {isBuyer && trackingAvailable && order.deliveryMethod !== "meetup" ? (
+        renderBuyerReviewCard()
+      ) : (
+        <>
+          <section className="parcel-tracking-hero">
+            <span>{getReadableStatus(order.status)}</span>
 
-        {trackingAvailable ? (
-          <>
-            <h2>
-              Estimated delivery
-              <br />
-              {formatOrderDate(order.estimatedDeliveryStart)} -{" "}
-              {formatOrderDate(order.estimatedDeliveryEnd)}
-            </h2>
+            {trackingAvailable ? (
+              <>
+                <h2>
+                  Estimated delivery
+                  <br />
+                  {formatOrderDate(order.estimatedDeliveryStart)} -{" "}
+                  {formatOrderDate(order.estimatedDeliveryEnd)}
+                </h2>
 
-            <div className="parcel-tracking-number">
-              <Truck size={18} />
-              <p>
-                {order.carrier || "J&T Express"}
-                <strong>{order.trackingNumber}</strong>
-              </p>
+                <div className="parcel-tracking-number">
+                  <Truck size={18} />
+                  <p>
+                    {order.carrier || "J&T Express"}
+                    <strong>{order.trackingNumber}</strong>
+                  </p>
+                </div>
+              </>
+            ) : (
+              <>
+                <h2>
+                  Ship before
+                  <br />
+                  {formatOrderDate(order.maxShippingDate)}
+                </h2>
+
+                <div className="parcel-tracking-number inactive">
+                  <Clock size={18} />
+                  <p>
+                    Tracking not active yet
+                    <strong>Deposit the parcel first</strong>
+                  </p>
+                </div>
+              </>
+            )}
+          </section>
+
+          <section className="parcel-tracking-product">
+            <div className="parcel-tracking-product-image">
+              {order.listingPhoto ? (
+                <img src={order.listingPhoto} alt={order.listingTitle} />
+              ) : (
+                <PackageCheck size={30} />
+              )}
             </div>
-          </>
-        ) : (
-          <>
-            <h2>
-              Ship before
-              <br />
-              {formatOrderDate(order.maxShippingDate)}
-            </h2>
 
-            <div className="parcel-tracking-number inactive">
-              <Clock size={18} />
-              <p>
-                Tracking not active yet
-                <strong>Deposit the parcel first</strong>
-              </p>
+            <div>
+              <strong>{order.listingTitle}</strong>
+              <p>₱{Number(order.total || 0).toLocaleString("en-PH")}</p>
             </div>
-          </>
-        )}
-      </section>
-
-      <section className="parcel-tracking-product">
-        <div className="parcel-tracking-product-image">
-          {order.listingPhoto ? (
-            <img src={order.listingPhoto} alt={order.listingTitle} />
-          ) : (
-            <PackageCheck size={30} />
-          )}
-        </div>
-
-        <div>
-          <strong>{order.listingTitle}</strong>
-          <p>₱{Number(order.total || 0).toLocaleString("en-PH")}</p>
-        </div>
-      </section>
+          </section>
+        </>
+      )}
 
       {isSeller && !trackingAvailable && order.deliveryMethod !== "meetup" && (
         <section className="parcel-seller-deadline">
@@ -550,7 +719,7 @@ export default function ParcelTracking() {
       )}
 
       {isBuyer && order.deliveryMethod !== "meetup" && trackingAvailable && (
-        <section className="parcel-actions-panel">
+        <section className="parcel-actions-panel buyer-options-panel">
           <h3>Buyer options</h3>
 
           {order.status === "delivery_scheduled" && (
@@ -567,7 +736,9 @@ export default function ParcelTracking() {
                 type="button"
                 className="parcel-outline-button"
                 onClick={() =>
-                  alert("Delivery rescheduling will be available in the next prototype step.")
+                  alert(
+                    "Delivery rescheduling will be available in the next prototype step."
+                  )
                 }
               >
                 Reschedule delivery
@@ -575,26 +746,31 @@ export default function ParcelTracking() {
             </>
           )}
 
-          {(order.status === "ready_for_pickup" ||
-            order.status === "delivery_scheduled" ||
-            order.status === "in_transit") && (
+          {isOrderReadyForBuyerReview(order) && (
             <>
               <button
                 type="button"
                 className="parcel-primary-button"
                 onClick={() => setShowReceivedModal(true)}
               >
-                Item received
+                Everything is OK
               </button>
 
               <button
                 type="button"
-                className="parcel-refund-button"
+                className="vinted-problem-button"
                 onClick={() => setShowRefundModal(true)}
               >
-                Something wrong with the item?
+                I have a problem
               </button>
             </>
+          )}
+
+          {order.status === "refund_requested" && (
+            <p className="refund-status-note">
+              A problem has been reported. The payment remains protected while
+              TindaHan reviews the case.
+            </p>
           )}
         </section>
       )}
@@ -609,6 +785,15 @@ export default function ParcelTracking() {
       {showInstructions && (
         <div className="parcel-modal-overlay">
           <section className="parcel-bottom-sheet">
+            <button
+              type="button"
+              className="parcel-sheet-close"
+              onClick={() => setShowInstructions(false)}
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+
             <h2>Delivery instructions</h2>
 
             <p>Add details to help the courier deliver your parcel safely.</p>
@@ -636,12 +821,32 @@ export default function ParcelTracking() {
 
       {showReceivedModal && (
         <div className="parcel-modal-overlay">
-          <section className="parcel-bottom-sheet">
-            <h2>Confirm item received?</h2>
+          <section className="parcel-bottom-sheet order-acceptance-sheet">
+            <button
+              type="button"
+              className="parcel-sheet-close"
+              onClick={() => setShowReceivedModal(false)}
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+
+            <div className="order-acceptance-illustration" aria-hidden="true">
+              <div className="order-acceptance-person">
+                <div className="person-hair" />
+                <div className="person-head" />
+                <div className="person-body" />
+                <div className="person-phone" />
+              </div>
+
+              <div className="order-acceptance-box" />
+            </div>
+
+            <h2>Confirm order acceptance</h2>
 
             <p>
-              This will complete the transaction and release the payment to the
-              seller.
+              Your payment will be released to the seller and you will no longer
+              be able to request a refund or return the order.
             </p>
 
             <button
@@ -649,7 +854,7 @@ export default function ParcelTracking() {
               disabled={Boolean(loadingAction)}
               onClick={handleCompleteOrder}
             >
-              {loadingAction === "complete" ? "Confirming..." : "Yes, item received"}
+              {loadingAction === "complete" ? "Confirming..." : "Accept order"}
             </button>
 
             <button
@@ -657,7 +862,7 @@ export default function ParcelTracking() {
               className="parcel-sheet-secondary"
               onClick={() => setShowReceivedModal(false)}
             >
-              Not yet
+              No, go back
             </button>
           </section>
         </div>
@@ -666,7 +871,19 @@ export default function ParcelTracking() {
       {showRefundModal && (
         <div className="parcel-modal-overlay">
           <section className="parcel-bottom-sheet refund-bottom-sheet">
-            <h2>Request a refund</h2>
+            <button
+              type="button"
+              className="parcel-sheet-close"
+              onClick={() => {
+                setShowRefundModal(false);
+                setRefundReason("");
+              }}
+              aria-label="Close"
+            >
+              <X size={18} />
+            </button>
+
+            <h2>Report a problem</h2>
 
             <p>
               Tell us what is wrong with the item. The payment will remain
@@ -674,14 +891,7 @@ export default function ParcelTracking() {
             </p>
 
             <div className="refund-reason-list">
-              {[
-                "Item does not match the description",
-                "Wrong item received",
-                "Item is damaged",
-                "Item appears counterfeit",
-                "Missing parts or accessories",
-                "Other issue"
-              ].map((reason) => (
+              {REFUND_REASONS.map((reason) => (
                 <button
                   key={reason}
                   type="button"
@@ -700,16 +910,12 @@ export default function ParcelTracking() {
             <button
               type="button"
               className="parcel-primary-button"
-              disabled={!refundReason}
-              onClick={() => {
-                alert(
-                  `Refund request submitted: ${refundReason}. In the next step, the buyer will be able to add photos and details.`
-                );
-                setShowRefundModal(false);
-                setRefundReason("");
-              }}
+              disabled={!refundReason || Boolean(loadingAction)}
+              onClick={handleRefundRequest}
             >
-              Submit refund request
+              {loadingAction === "refund"
+                ? "Submitting..."
+                : "Submit problem report"}
             </button>
 
             <button
