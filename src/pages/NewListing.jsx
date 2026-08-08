@@ -1247,6 +1247,24 @@ export default function NewListing() {
     ]
   );
 
+  const recommendedParcelSize = useMemo(() => {
+    const sourceText = `${form.title || ""} ${form.description || ""} ${
+      form.brand || ""
+    }`.trim();
+
+    if (!sourceText) return "medium";
+
+    const categorySuggestion = getSmartCategorySuggestion(form);
+    return getSmartParcelSize(form, categorySuggestion) || "medium";
+  }, [
+    form.title,
+    form.description,
+    form.brand,
+    form.category,
+    form.subcategory,
+    form.child_category
+  ]);
+
   const filteredBrandOptions = useMemo(() => {
     const query = String(form.brand || "").trim().toLowerCase();
 
@@ -2696,8 +2714,8 @@ export default function NewListing() {
                   onClick={() => selectParcelSize(parcel.id)}
                 >
                   <span>
-                    {parcel.badge && (
-                      <small className="parcel-badge">{parcel.badge}</small>
+                    {recommendedParcelSize === parcel.id && (
+                      <small className="parcel-badge">Recommended</small>
                     )}
                     <strong>{parcel.label}</strong>
                     <em>{parcel.description}</em>
