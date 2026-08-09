@@ -85,10 +85,6 @@ function canSellerPrepareShipment(order) {
   ].includes(order?.status);
 }
 
-function isOrderReadyForBuyerReview(order) {
-  return ["ready_for_pickup", "delivered"].includes(order?.status);
-}
-
 function getBuyerReviewDeadline(order) {
   const baseDate =
     order?.estimatedDeliveryEnd ||
@@ -736,42 +732,6 @@ export default function ParcelTracking() {
             )}
         </section>
       )}
-
-      {isBuyer &&
-        order.deliveryMethod !== "meetup" &&
-        trackingAvailable &&
-        (isOrderReadyForBuyerReview(order) || order.status === "refund_requested") && (
-          <section className="parcel-actions-panel buyer-options-panel">
-            <h3>Buyer options</h3>
-
-            {isOrderReadyForBuyerReview(order) && (
-              <>
-                <button
-                  type="button"
-                  className="parcel-primary-button"
-                  onClick={() => setShowReceivedModal(true)}
-                >
-                  Everything is OK
-                </button>
-
-                <button
-                  type="button"
-                  className="vinted-problem-button"
-                  onClick={() => navigate(`/refund-request/${order.id}`)}
-                >
-                  I have a problem
-                </button>
-              </>
-            )}
-
-            {order.status === "refund_requested" && (
-              <p className="refund-status-note">
-                A problem has been reported. The payment remains protected while
-                TindaHan reviews the case.
-              </p>
-            )}
-          </section>
-        )}
 
       <section className="parcel-conversation-link">
         <button type="button" onClick={() => navigate("/messages")}>
