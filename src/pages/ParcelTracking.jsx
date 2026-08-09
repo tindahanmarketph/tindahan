@@ -21,8 +21,7 @@ import {
   markParcelInTransit,
   markParcelReadyForPickup,
   markParcelDelivered,
-  notifyHomeDeliveryTomorrow,
-  requestOrderRefund
+  notifyHomeDeliveryTomorrow
 } from "../lib/orders";
 
 const TRACKING_VISIBLE_STATUSES = [
@@ -54,15 +53,6 @@ const DROP_OFF_POINTS = [
     name: "LBC Express - Greenbelt",
     address: "Greenbelt, Ayala Center, Makati City"
   }
-];
-
-const REFUND_REASONS = [
-  "Item does not match the description",
-  "Wrong item received",
-  "Item is damaged",
-  "Item appears counterfeit",
-  "Missing parts or accessories",
-  "Other issue"
 ];
 
 function getReadableStatus(status) {
@@ -131,8 +121,6 @@ export default function ParcelTracking() {
   const [showInstructions, setShowInstructions] = useState(false);
   const [instructions, setInstructions] = useState("");
   const [showReceivedModal, setShowReceivedModal] = useState(false);
-  const [showRefundModal, setShowRefundModal] = useState(false);
-  const [refundReason, setRefundReason] = useState("");
 
   useEffect(() => {
     let mounted = true;
@@ -306,24 +294,6 @@ export default function ParcelTracking() {
     }
   }
 
-  async function handleRefundRequest() {
-    if (!order?.id || !refundReason || loadingAction) return;
-
-    setLoadingAction("refund");
-
-    try {
-      const updatedOrder = await requestOrderRefund(order.id, refundReason);
-      await refreshOrder(updatedOrder);
-      setShowRefundModal(false);
-      setRefundReason("");
-    } catch (error) {
-      console.error("Refund request error:", error);
-      alert(error.message || "Unable to submit this refund request.");
-    } finally {
-      setLoadingAction("");
-    }
-  }
-
   function handleSaveInstructions() {
     const savedOrder = {
       ...order,
@@ -409,7 +379,7 @@ export default function ParcelTracking() {
           <button
             type="button"
             className="vinted-problem-button"
-            onClick={() => setShowRefundModal(true)}
+            onClick={() => navigate(`/refund-request/${order.id}`)}
           >
             I have a problem
           </button>
@@ -440,7 +410,7 @@ export default function ParcelTracking() {
           <button
             type="button"
             className="vinted-problem-button"
-            onClick={() => setShowRefundModal(true)}
+            onClick={() => navigate(`/refund-request/${order.id}`)}
           >
             I have a problem
           </button>
@@ -787,7 +757,7 @@ export default function ParcelTracking() {
                 <button
                   type="button"
                   className="vinted-problem-button"
-                  onClick={() => setShowRefundModal(true)}
+                  onClick={() => navigate(`/refund-request/${order.id}`)}
                 >
                   I have a problem
                 </button>
@@ -891,70 +861,6 @@ export default function ParcelTracking() {
               onClick={() => setShowReceivedModal(false)}
             >
               No, go back
-            </button>
-          </section>
-        </div>
-      )}
-
-      {showRefundModal && (
-        <div className="parcel-modal-overlay">
-          <section className="parcel-bottom-sheet refund-bottom-sheet">
-            <button
-              type="button"
-              className="parcel-sheet-close"
-              onClick={() => {
-                setShowRefundModal(false);
-                setRefundReason("");
-              }}
-              aria-label="Close"
-            >
-              <X size={18} />
-            </button>
-
-            <h2>Report a problem</h2>
-
-            <p>
-              Tell us what is wrong with the item. The payment will remain
-              protected while TindaHan reviews the case.
-            </p>
-
-            <div className="refund-reason-list">
-              {REFUND_REASONS.map((reason) => (
-                <button
-                  key={reason}
-                  type="button"
-                  className={
-                    refundReason === reason
-                      ? "refund-reason-card active"
-                      : "refund-reason-card"
-                  }
-                  onClick={() => setRefundReason(reason)}
-                >
-                  {reason}
-                </button>
-              ))}
-            </div>
-
-            <button
-              type="button"
-              className="parcel-primary-button"
-              disabled={!refundReason || Boolean(loadingAction)}
-              onClick={handleRefundRequest}
-            >
-              {loadingAction === "refund"
-                ? "Submitting..."
-                : "Submit problem report"}
-            </button>
-
-            <button
-              type="button"
-              className="parcel-sheet-secondary"
-              onClick={() => {
-                setShowRefundModal(false);
-                setRefundReason("");
-              }}
-            >
-              Cancel
             </button>
           </section>
         </div>

@@ -31,6 +31,7 @@ import {
 } from "../lib/tindahanRealtime";
 import {
   formatOrderDate,
+  completeOrder,
   formatTindaHanPrice,
   getOrderById,
   markParcelDroppedOff,
@@ -150,7 +151,17 @@ function canTrackParcel(order) {
     "in_transit",
     "ready_for_pickup",
     "delivery_scheduled",
-    "completed"
+    "delivered",
+    "completed",
+    "refund_requested"
+  ].includes(order?.status);
+}
+
+function canSellerPrepareShipment(order) {
+  return [
+    "paid_waiting_seller",
+    "label_downloaded",
+    "courier_pickup_scheduled"
   ].includes(order?.status);
 }
 
@@ -371,6 +382,158 @@ function DropOffPointModal({
   );
 }
 
+function getReviewDeadline(order) {
+  const baseDate =
+    order?.status === "ready_for_pickup" || order?.status === "delivery_scheduled"
+      ? order?.updatedAt || order?.createdAt || new Date().toISOString()
+      : new Date().toISOString();
+
+  const date = new Date(baseDate);
+  date.setDate(date.getDate() + 2);
+
+  return date.toISOString();
+}
+
+function getRelayAddress(order) {
+  return (
+    order?.address?.pickupPoint?.address ||
+    order?.address?.relayPoint?.address ||
+    order?.address?.dropOffPoint?.address ||
+    "the selected pick-up point"
+  );
+}
+
+function canBuyerReviewOrder(order) {
+  return ["ready_for_pickup", "delivered"].includes(order?.status);
+}
+
+function getBuyerOrderCopy(order) {
+  if (order?.status === "completed") {
+    return {
+      title: "Commande acceptée",
+      text:
+        "Tu as confirmé que tout est en ordre. Le paiement peut maintenant être versé au vendeur.",
+      showTrack: true,
+      showReviewActions: false
+    };
+  }
+
+  if (order?.status === "refund_requested") {
+    return {
+      title: "Problème signalé",
+      text:
+        "Ta demande a été envoyée. Le paiement reste protégé pendant que TindaHan examine le dossier.",
+      showTrack: true,
+      showReviewActions: false
+    };
+  }
+
+  if (order?.status === "ready_for_pickup") {
+    return {
+      title: "Ton colis est arrivé !",
+      text: `Il t'attend à l'adresse suivante : ${getRelayAddress(order)}.`,
+      showTrack: true,
+      showReviewActions: true
+    };
+  }
+
+  if (order?.status === "delivered") {
+    return {
+      title: `Vérifie ta commande avant le ${formatOrderDate(
+        getReviewDeadline(order)
+      )}`,
+      text:
+        "Si ta commande correspond à sa description, confirme que tout est en ordre. Signale un problème si elle ne correspond pas à ce que tu attendais.",
+      showTrack: true,
+      showReviewActions: true
+    };
+  }
+
+  if (order?.status === "delivery_scheduled") {
+    return {
+      title: "Livraison programmée",
+      text:
+        "Le colis est en cours de livraison. Tu pourras confirmer la commande ou signaler un problème une fois le colis livré.",
+      showTrack: true,
+      showReviewActions: false
+    };
+  }
+
+  if (order?.status === "in_transit") {
+    return {
+      title: "Commande envoyée",
+      text:
+        "Le colis est en cours d'acheminement. Tu pourras confirmer la réception une fois le colis arrivé.",
+      showTrack: true,
+      showReviewActions: false
+    };
+  }
+
+  if (order?.status === "dropped_off") {
+    return {
+      title: "Commande envoyée",
+      text:
+        "Le vendeur a déposé le colis. Tu peux suivre son acheminement depuis le suivi.",
+      showTrack: true,
+      showReviewActions: false
+    };
+  }
+
+  return {
+    title: "Purchase successful",
+    text: `The seller must send the parcel before ${formatOrderDate(
+      order?.maxShippingDate
+    )}. We will keep you updated on your order.`,
+    showTrack: false,
+    showReviewActions: false
+  };
+}
+
+function OrderAcceptanceModal({ loading, onClose, onConfirm }) {
+  return (
+    <div className="parcel-modal-overlay">
+      <section className="parcel-bottom-sheet order-acceptance-sheet">
+        <button
+          type="button"
+          className="parcel-sheet-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X size={22} />
+        </button>
+
+        <div className="order-acceptance-illustration" aria-hidden="true">
+          <div className="order-acceptance-person">
+            <span className="person-hair" />
+            <span className="person-head" />
+            <span className="person-body" />
+            <span className="person-phone" />
+          </div>
+          <div className="order-acceptance-box">
+            <span />
+            <span />
+          </div>
+        </div>
+
+        <h2>Confirme l'acceptation de la commande</h2>
+
+        <p>
+          Ton paiement sera versé au vendeur et tu ne pourras plus obtenir de
+          remboursement ni retourner ta commande.
+        </p>
+
+        <button type="button" disabled={loading} onClick={onConfirm}>
+          {loading ? "Confirmation..." : "Accepter la commande"}
+        </button>
+
+        <button type="button" className="parcel-sheet-secondary" onClick={onClose}>
+          Non, retour
+        </button>
+      </section>
+    </div>
+  );
+}
+
 function MessageOrderCard({
   item,
   userId,
@@ -380,6 +543,7 @@ function MessageOrderCard({
   const [order, setOrder] = useState(null);
   const [loadingAction, setLoadingAction] = useState("");
   const [showDropOffModal, setShowDropOffModal] = useState(false);
+  const [showAcceptanceModal, setShowAcceptanceModal] = useState(false);
   const [selectedDropOffPoint, setSelectedDropOffPoint] = useState(DROP_OFF_POINTS[0]);
 
   useEffect(() => {
@@ -425,6 +589,7 @@ function MessageOrderCard({
   const meetupStatus = order.meetupChangeStatus || "none";
   const meetupPending = hasMeetupSuggestion && meetupStatus === "pending";
   const trackingAvailable = canTrackParcel(order);
+  const buyerCopy = getBuyerOrderCopy(order);
 
   async function handleMeetupDecision(nextStatus) {
     if (!order?.id || loadingAction) return;
@@ -461,6 +626,24 @@ function MessageOrderCard({
     } catch (error) {
       console.error("Drop-off update error:", error);
       alert(error.message || "Unable to confirm parcel drop-off.");
+    } finally {
+      setLoadingAction("");
+    }
+  }
+
+  async function handleConfirmReceived() {
+    if (!order?.id || loadingAction) return;
+
+    setLoadingAction("complete");
+
+    try {
+      const updatedOrder = await completeOrder(order.id);
+      setOrder(updatedOrder);
+      setShowAcceptanceModal(false);
+      await onOrderUpdated?.();
+    } catch (error) {
+      console.error("Complete order error:", error);
+      alert(error.message || "Unable to complete this order.");
     } finally {
       setLoadingAction("");
     }
@@ -563,9 +746,7 @@ function MessageOrderCard({
 
   const orderTitle = isSellerOrder
     ? "Your item has been sold"
-    : trackingAvailable
-    ? "Parcel tracking is available"
-    : "Purchase successful";
+    : buyerCopy.title;
 
   const orderMessage = isSellerOrder
     ? trackingAvailable
@@ -573,11 +754,7 @@ function MessageOrderCard({
       : `The buyer has paid. Ship the parcel before ${formatOrderDate(
           order.maxShippingDate
         )}.`
-    : trackingAvailable
-    ? "The seller has dropped off your parcel. You can now follow the delivery."
-    : `The seller must send the parcel before ${formatOrderDate(
-        order.maxShippingDate
-      )}. We will keep you updated on your order.`;
+    : buyerCopy.text;
 
   return (
     <>
@@ -585,7 +762,7 @@ function MessageOrderCard({
         className={
           isSellerOrder
             ? "conversation-order-card seller-view"
-            : "conversation-order-card buyer-view"
+            : "conversation-order-card buyer-view vinted-buyer-order-view"
         }
       >
         <div className="conversation-order-icon">
@@ -621,29 +798,62 @@ function MessageOrderCard({
           )}
 
           <div className="conversation-order-actions">
-            {isSellerOrder && order.deliveryMethod !== "meetup" && !trackingAvailable && (
+            {isSellerOrder &&
+              order.deliveryMethod !== "meetup" &&
+              canSellerPrepareShipment(order) && (
+                <>
+                  <button
+                    type="button"
+                    className="parcel-outline-button"
+                    onClick={() => navigate(`/shipping-label/${order.id}`)}
+                  >
+                    <Download size={15} />
+                    Shipping label
+                  </button>
+
+                  <button
+                    type="button"
+                    className="parcel-primary-button"
+                    onClick={() => setShowDropOffModal(true)}
+                  >
+                    <MapPin size={15} />
+                    Find drop-off point
+                  </button>
+                </>
+              )}
+
+            {!isSellerOrder && buyerCopy.showTrack && (
+              <button
+                type="button"
+                className="parcel-outline-button"
+                onClick={() => navigate(`/tracking/${order.id}`)}
+              >
+                <Truck size={15} />
+                Suivre le colis
+              </button>
+            )}
+
+            {!isSellerOrder && canBuyerReviewOrder(order) && (
               <>
                 <button
                   type="button"
-                  className="parcel-outline-button"
-                  onClick={() => navigate(`/shipping-label/${order.id}`)}
+                  className="parcel-primary-button"
+                  onClick={() => setShowAcceptanceModal(true)}
                 >
-                  <Download size={15} />
-                  Shipping label
+                  Tout est OK
                 </button>
 
                 <button
                   type="button"
-                  className="parcel-primary-button"
-                  onClick={() => setShowDropOffModal(true)}
+                  className="parcel-refund-button vinted-problem-button"
+                  onClick={() => navigate(`/refund-request/${order.id}`)}
                 >
-                  <MapPin size={15} />
-                  Find drop-off point
+                  J'ai un problème
                 </button>
               </>
             )}
 
-            {trackingAvailable && (
+            {isSellerOrder && trackingAvailable && (
               <button
                 type="button"
                 className="parcel-primary-button"
@@ -665,6 +875,14 @@ function MessageOrderCard({
           onClose={() => setShowDropOffModal(false)}
           onConfirm={handleConfirmDropOff}
           loading={loadingAction === "dropoff"}
+        />
+      )}
+
+      {showAcceptanceModal && (
+        <OrderAcceptanceModal
+          loading={loadingAction === "complete"}
+          onClose={() => setShowAcceptanceModal(false)}
+          onConfirm={handleConfirmReceived}
         />
       )}
     </>
