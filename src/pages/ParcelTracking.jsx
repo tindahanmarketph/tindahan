@@ -384,15 +384,6 @@ export default function ParcelTracking() {
             Your report has been sent. The payment remains protected while
             TindaHan reviews the case.
           </p>
-
-          <button
-            type="button"
-            className="parcel-outline-button"
-            onClick={() => navigate("/messages")}
-          >
-            <MessageSquare size={18} />
-            Open conversation
-          </button>
         </section>
       );
     }
@@ -409,19 +400,18 @@ export default function ParcelTracking() {
 
           <button
             type="button"
-            className="parcel-outline-button"
-            onClick={() => navigate(`/tracking/${order.id}`)}
-          >
-            <Truck size={18} />
-            Track parcel
-          </button>
-
-          <button
-            type="button"
             className="parcel-primary-button"
             onClick={() => setShowReceivedModal(true)}
           >
             Item received
+          </button>
+
+          <button
+            type="button"
+            className="vinted-problem-button"
+            onClick={() => setShowRefundModal(true)}
+          >
+            I have a problem
           </button>
         </section>
       );
@@ -472,15 +462,6 @@ export default function ParcelTracking() {
             report a problem once the parcel has been delivered or is ready for
             pick-up.
           </p>
-
-          <button
-            type="button"
-            className="parcel-outline-button"
-            onClick={() => navigate(`/tracking/${order.id}`)}
-          >
-            <Truck size={18} />
-            Track parcel
-          </button>
         </section>
       );
     }
