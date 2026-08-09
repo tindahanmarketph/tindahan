@@ -410,9 +410,9 @@ function canBuyerReviewOrder(order) {
 function getBuyerOrderCopy(order) {
   if (order?.status === "completed") {
     return {
-      title: "Commande acceptée",
+      title: "Order accepted",
       text:
-        "Tu as confirmé que tout est en ordre. Le paiement peut maintenant être versé au vendeur.",
+        "You confirmed that everything is okay. The payment can now be released to the seller.",
       showTrack: true,
       showReviewActions: false
     };
@@ -420,9 +420,9 @@ function getBuyerOrderCopy(order) {
 
   if (order?.status === "refund_requested") {
     return {
-      title: "Problème signalé",
+      title: "Problem reported",
       text:
-        "Ta demande a été envoyée. Le paiement reste protégé pendant que TindaHan examine le dossier.",
+        "Your request has been submitted. The payment remains protected while TindaHan reviews the case.",
       showTrack: true,
       showReviewActions: false
     };
@@ -430,8 +430,8 @@ function getBuyerOrderCopy(order) {
 
   if (order?.status === "ready_for_pickup") {
     return {
-      title: "Ton colis est arrivé !",
-      text: `Il t'attend à l'adresse suivante : ${getRelayAddress(order)}.`,
+      title: "Your parcel has arrived!",
+      text: `It is waiting at the following address: ${getRelayAddress(order)}.`,
       showTrack: true,
       showReviewActions: true
     };
@@ -439,11 +439,11 @@ function getBuyerOrderCopy(order) {
 
   if (order?.status === "delivered") {
     return {
-      title: `Vérifie ta commande avant le ${formatOrderDate(
+      title: `Check your order before ${formatOrderDate(
         getReviewDeadline(order)
       )}`,
       text:
-        "Si ta commande correspond à sa description, confirme que tout est en ordre. Signale un problème si elle ne correspond pas à ce que tu attendais.",
+        "If your order matches its description, confirm that everything is okay. Report a problem if it does not match what you expected.",
       showTrack: true,
       showReviewActions: true
     };
@@ -451,9 +451,9 @@ function getBuyerOrderCopy(order) {
 
   if (order?.status === "delivery_scheduled") {
     return {
-      title: "Livraison programmée",
+      title: "Delivery scheduled",
       text:
-        "Le colis est en cours de livraison. Tu pourras confirmer la commande ou signaler un problème une fois le colis livré.",
+        "Your parcel is on its way. You will be able to confirm the order or report a problem once it has been delivered.",
       showTrack: true,
       showReviewActions: false
     };
@@ -461,9 +461,9 @@ function getBuyerOrderCopy(order) {
 
   if (order?.status === "in_transit") {
     return {
-      title: "Commande envoyée",
+      title: "Order shipped",
       text:
-        "Le colis est en cours d'acheminement. Tu pourras confirmer la réception une fois le colis arrivé.",
+        "Your parcel is currently in transit. You will be able to confirm the order once it has arrived.",
       showTrack: true,
       showReviewActions: false
     };
@@ -471,9 +471,9 @@ function getBuyerOrderCopy(order) {
 
   if (order?.status === "dropped_off") {
     return {
-      title: "Commande envoyée",
+      title: "Order shipped",
       text:
-        "Le vendeur a déposé le colis. Tu peux suivre son acheminement depuis le suivi.",
+        "The seller has dropped off the parcel. You can follow its delivery progress from the tracking page.",
       showTrack: true,
       showReviewActions: false
     };
@@ -509,25 +509,26 @@ function OrderAcceptanceModal({ loading, onClose, onConfirm }) {
             <span className="person-body" />
             <span className="person-phone" />
           </div>
+
           <div className="order-acceptance-box">
             <span />
             <span />
           </div>
         </div>
 
-        <h2>Confirme l'acceptation de la commande</h2>
+        <h2>Confirm order acceptance</h2>
 
         <p>
-          Ton paiement sera versé au vendeur et tu ne pourras plus obtenir de
-          remboursement ni retourner ta commande.
+          Your payment will be released to the seller and you will no longer be
+          able to request a refund or return this order.
         </p>
 
         <button type="button" disabled={loading} onClick={onConfirm}>
-          {loading ? "Confirmation..." : "Accepter la commande"}
+          {loading ? "Confirming..." : "Accept order"}
         </button>
 
         <button type="button" className="parcel-sheet-secondary" onClick={onClose}>
-          Non, retour
+          No, go back
         </button>
       </section>
     </div>
@@ -829,7 +830,7 @@ function MessageOrderCard({
                 onClick={() => navigate(`/tracking/${order.id}`)}
               >
                 <Truck size={15} />
-                Suivre le colis
+                Track parcel
               </button>
             )}
 
@@ -840,7 +841,7 @@ function MessageOrderCard({
                   className="parcel-primary-button"
                   onClick={() => setShowAcceptanceModal(true)}
                 >
-                  Tout est OK
+                  Everything is OK
                 </button>
 
                 <button
@@ -848,7 +849,7 @@ function MessageOrderCard({
                   className="parcel-refund-button vinted-problem-button"
                   onClick={() => navigate(`/refund-request/${order.id}`)}
                 >
-                  J'ai un problème
+                  I have a problem
                 </button>
               </>
             )}

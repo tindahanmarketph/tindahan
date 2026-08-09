@@ -21551,3 +21551,622 @@ body,
     font-size: 13.2px;
   }
 }
+/* ========================================================= */
+/* TINDAHAN - REFUND REQUEST FLOW                            */
+/* À ajouter tout en bas de src/index.css                    */
+/* ========================================================= */
+
+.refund-request-page {
+  width: min(100%, 430px);
+  min-height: 100vh;
+  margin: 0 auto;
+  padding-bottom: 36px;
+  background: #ffffff;
+}
+
+.refund-request-header {
+  min-height: 72px;
+  display: grid;
+  grid-template-columns: 44px minmax(0, 1fr) 44px;
+  align-items: center;
+  padding: 0 22px;
+  border-bottom: 1px solid #eef0f0;
+  background: #ffffff;
+}
+
+.refund-request-header h1 {
+  margin: 0;
+  color: #111111;
+  font-size: 21px;
+  font-weight: 950;
+  text-align: center;
+  letter-spacing: -0.35px;
+}
+
+.refund-request-header button {
+  width: 38px;
+  height: 38px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: #f4f6f6;
+  color: #111111;
+}
+
+.refund-request-product-card,
+.refund-request-card,
+.refund-request-empty {
+  width: calc(100% - 36px);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.refund-request-product-card {
+  margin-top: 18px;
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  gap: 14px;
+  align-items: center;
+  padding: 14px;
+  border: 1px solid #dfe6e6;
+  border-radius: 17px;
+  background: #ffffff;
+}
+
+.refund-request-product-image {
+  width: 74px;
+  height: 74px;
+  overflow: hidden;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff3ed;
+  color: var(--orange);
+}
+
+.refund-request-product-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.refund-request-product-card strong {
+  display: block;
+  color: #111111;
+  font-size: 15px;
+  font-weight: 950;
+  line-height: 1.2;
+}
+
+.refund-request-product-card span {
+  display: block;
+  margin-top: 6px;
+  color: #34444a;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.refund-request-product-card small {
+  display: block;
+  margin-top: 5px;
+  color: var(--orange);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.refund-request-progress {
+  width: calc(100% - 72px);
+  margin: 18px auto 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+}
+
+.refund-request-progress div {
+  height: 34px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f2f5f5;
+  color: #7d8a90;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.refund-request-progress div.active {
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.refund-request-progress div.completed {
+  background: #fff3ed;
+  color: var(--orange);
+}
+
+.refund-request-card {
+  margin-top: 18px;
+  display: grid;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid #dfe6e6;
+  border-radius: 20px;
+  background: #ffffff;
+  box-shadow: 0 16px 34px rgba(15, 23, 42, 0.05);
+}
+
+.refund-request-title-row {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+}
+
+.refund-request-title-row svg {
+  color: var(--orange);
+}
+
+.refund-request-title-row h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 22px;
+  font-weight: 950;
+  letter-spacing: -0.45px;
+  line-height: 1.15;
+}
+
+.refund-request-title-row p {
+  margin: 7px 0 0;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.refund-field-group {
+  display: grid;
+  gap: 10px;
+}
+
+.refund-field-group label {
+  color: #111111;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.refund-field-group textarea {
+  width: 100%;
+  min-height: 124px;
+  padding: 14px;
+  border: 1.5px solid #dfe6e6;
+  border-radius: 15px;
+  background: #ffffff;
+  color: #111111;
+  font-size: 14px;
+  line-height: 1.45;
+  resize: vertical;
+  outline: none;
+}
+
+.refund-field-group textarea:focus {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 4px rgba(255, 107, 44, 0.1);
+}
+
+.refund-field-group small {
+  color: #7d8a90;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.refund-reason-grid,
+.refund-return-method-grid,
+.refund-relay-list {
+  display: grid;
+  gap: 10px;
+}
+
+.refund-choice-card,
+.refund-return-method,
+.refund-relay-card {
+  width: 100%;
+  border: 1.5px solid #dfe6e6;
+  border-radius: 15px;
+  background: #ffffff;
+  color: #111111;
+  text-align: left;
+}
+
+.refund-choice-card {
+  min-height: 46px;
+  padding: 12px 14px;
+  font-size: 14px;
+  font-weight: 850;
+}
+
+.refund-choice-card.active,
+.refund-return-method.active,
+.refund-relay-card.active {
+  border-color: var(--orange);
+  background: #fff8f5;
+  box-shadow: 0 12px 26px rgba(255, 107, 44, 0.1);
+}
+
+.refund-upload-box {
+  min-height: 92px;
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr);
+  gap: 12px;
+  align-items: center;
+  padding: 15px;
+  border: 1.8px dashed rgba(255, 107, 44, 0.38);
+  border-radius: 16px;
+  background: #fff8f5;
+  color: var(--orange);
+  cursor: pointer;
+}
+
+.refund-upload-box input {
+  display: none;
+}
+
+.refund-upload-box strong {
+  display: block;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.refund-upload-box span {
+  display: block;
+  margin-top: 3px;
+  color: #5f6f75;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.refund-photo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 9px;
+}
+
+.refund-photo-card {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  overflow: hidden;
+  border-radius: 14px;
+  background: #f2f5f5;
+}
+
+.refund-photo-card img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.refund-photo-card button {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 25px;
+  height: 25px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 999px;
+  background: rgba(17, 17, 17, 0.72);
+  color: #ffffff;
+}
+
+.refund-return-method {
+  min-height: 82px;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  gap: 12px;
+  align-items: start;
+  padding: 14px;
+}
+
+.refund-return-method svg {
+  color: var(--orange);
+}
+
+.refund-return-method strong,
+.refund-relay-card strong {
+  display: block;
+  color: #111111;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.refund-return-method span,
+.refund-relay-card span {
+  display: block;
+  margin-top: 4px;
+  color: #5f6f75;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.refund-relay-card {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: start;
+  padding: 13px;
+}
+
+.refund-relay-icon {
+  width: 42px;
+  height: 42px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #fff3ed;
+  color: var(--orange);
+}
+
+.refund-relay-card p {
+  margin: 5px 0 0;
+  color: #5f6f75;
+  font-size: 12.5px;
+  line-height: 1.35;
+}
+
+.refund-relay-card small {
+  display: block;
+  margin-top: 5px;
+  color: #7d8a90;
+  font-size: 12px;
+  font-weight: 750;
+}
+
+.refund-relay-check {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.refund-review-box {
+  display: grid;
+  gap: 5px;
+  padding: 13px;
+  border-radius: 15px;
+  background: #f7faf9;
+}
+
+.refund-review-box span {
+  color: #7d8a90;
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.refund-review-box strong {
+  color: #111111;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.refund-review-box p {
+  margin: 0;
+  color: #34444a;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+.refund-process-card {
+  display: grid;
+  gap: 10px;
+  padding: 15px;
+  border-radius: 17px;
+  background: #fff8f5;
+  border: 1px solid rgba(255, 107, 44, 0.2);
+}
+
+.refund-process-card h3 {
+  margin: 0 0 4px;
+  color: #111111;
+  font-size: 16px;
+  font-weight: 950;
+}
+
+.refund-process-card div {
+  display: grid;
+  grid-template-columns: 22px minmax(0, 1fr);
+  gap: 8px;
+  align-items: start;
+}
+
+.refund-process-card svg {
+  margin-top: 2px;
+  color: var(--orange);
+}
+
+.refund-process-card p {
+  margin: 0;
+  color: #34444a;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.refund-step-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.refund-primary-button,
+.refund-secondary-button {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 14px;
+  font-size: 15px;
+  font-weight: 950;
+}
+
+.refund-primary-button {
+  border: none;
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.refund-primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.refund-secondary-button {
+  border: 1.5px solid #dfe6e6;
+  background: #ffffff;
+  color: #34444a;
+}
+
+.refund-success-card {
+  text-align: center;
+}
+
+.refund-success-icon {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  margin: 0 auto;
+  border-radius: 999px;
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.refund-success-card h2 {
+  margin: 0;
+  color: #111111;
+  font-size: 24px;
+  font-weight: 950;
+  letter-spacing: -0.5px;
+}
+
+.refund-success-card p {
+  margin: 0;
+  color: #5f6f75;
+  font-size: 14px;
+  line-height: 1.45;
+}
+
+.refund-success-timeline {
+  display: grid;
+  gap: 10px;
+  text-align: left;
+}
+
+.refund-success-timeline div {
+  display: grid;
+  grid-template-columns: 30px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+}
+
+.refund-success-timeline span {
+  width: 30px;
+  height: 30px;
+  display: grid;
+  place-items: center;
+  border-radius: 999px;
+  background: #f2f5f5;
+  color: #7d8a90;
+  font-size: 13px;
+  font-weight: 950;
+}
+
+.refund-success-timeline div.active span {
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.refund-success-timeline p {
+  color: #34444a;
+  font-weight: 850;
+}
+
+@media (max-width: 520px) {
+  .refund-request-page {
+    width: 100%;
+  }
+
+  .refund-request-header {
+    padding: 0 18px;
+  }
+
+  .refund-request-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .refund-request-title-row h2 {
+    font-size: 20px;
+  }
+
+  .refund-photo-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .refund-step-actions {
+    grid-template-columns: 1fr;
+  }
+}
+/* ========================================================= */
+/* TINDAHAN - MESSAGE ORDER CARD ORANGE BRANDING             */
+/* À ajouter tout en bas de src/index.css                    */
+/* ========================================================= */
+
+.conversation-order-card.buyer-view.vinted-buyer-order-view {
+  border: 1px solid rgba(255, 107, 44, 0.22) !important;
+  background: #ffffff !important;
+  box-shadow: 0 14px 34px rgba(255, 107, 44, 0.08);
+}
+
+.conversation-order-card.buyer-view.vinted-buyer-order-view .conversation-order-icon {
+  background: #fff3ed !important;
+  color: var(--orange) !important;
+}
+
+.conversation-order-card.buyer-view.vinted-buyer-order-view .conversation-order-content > strong {
+  color: #111111 !important;
+  font-weight: 950;
+}
+
+.conversation-order-card.buyer-view.vinted-buyer-order-view .conversation-order-content > p {
+  color: #34444a !important;
+}
+
+.conversation-order-card.buyer-view.vinted-buyer-order-view .conversation-order-product {
+  background: #fff8f5 !important;
+  border: 1px solid rgba(255, 107, 44, 0.14);
+}
+
+.conversation-order-card.buyer-view.vinted-buyer-order-view .parcel-primary-button {
+  background: var(--orange) !important;
+  color: #ffffff !important;
+  border: none !important;
+  box-shadow: 0 12px 24px rgba(255, 107, 44, 0.24);
+}
+
+.conversation-order-card.buyer-view.vinted-buyer-order-view .parcel-primary-button:hover {
+  filter: brightness(0.97);
+}
+
+.conversation-order-card.buyer-view.vinted-buyer-order-view .vinted-problem-button,
+.conversation-order-card.buyer-view.vinted-buyer-order-view .parcel-refund-button,
+.conversation-order-card.buyer-view.vinted-buyer-order-view .parcel-outline-button {
+  background: #ffffff !important;
+  color: var(--orange) !important;
+  border: 1.5px solid var(--orange) !important;
+}
+
+.conversation-order-card.buyer-view.vinted-buyer-order-view .vinted-problem-button:hover,
+.conversation-order-card.buyer-view.vinted-buyer-order-view .parcel-refund-button:hover,
+.conversation-order-card.buyer-view.vinted-buyer-order-view .parcel-outline-button:hover {
+  background: #fff8f5 !important;
+}
