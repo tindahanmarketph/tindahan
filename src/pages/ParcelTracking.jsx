@@ -20,6 +20,7 @@ import {
   markParcelDroppedOff,
   markParcelInTransit,
   markParcelReadyForPickup,
+  markParcelDelivered,
   notifyHomeDeliveryTomorrow,
   requestOrderRefund
 } from "../lib/orders";
@@ -29,6 +30,7 @@ const TRACKING_VISIBLE_STATUSES = [
   "in_transit",
   "ready_for_pickup",
   "delivery_scheduled",
+  "delivered",
   "completed",
   "refund_requested"
 ];
@@ -72,6 +74,7 @@ function getReadableStatus(status) {
     in_transit: "Parcel in transit",
     ready_for_pickup: "Parcel arrived",
     delivery_scheduled: "Delivery scheduled",
+    delivered: "Parcel delivered",
     completed: "Order completed",
     refund_requested: "Problem reported",
     cancelled: "Cancelled"
@@ -84,13 +87,16 @@ function canTrackParcel(order) {
   return TRACKING_VISIBLE_STATUSES.includes(order?.status);
 }
 
-function isOrderReadyForBuyerReview(order) {
+function canSellerPrepareShipment(order) {
   return [
-    "ready_for_pickup",
-    "delivery_scheduled",
-    "in_transit",
-    "dropped_off"
+    "paid_waiting_seller",
+    "label_downloaded",
+    "courier_pickup_scheduled"
   ].includes(order?.status);
+}
+
+function isOrderReadyForBuyerReview(order) {
+  return ["ready_for_pickup", "delivered"].includes(order?.status);
 }
 
 function getBuyerReviewDeadline(order) {
@@ -267,6 +273,22 @@ export default function ParcelTracking() {
     }
   }
 
+  async function handleDelivered() {
+    if (!order?.id || loadingAction) return;
+
+    setLoadingAction("delivered");
+
+    try {
+      const updatedOrder = await markParcelDelivered(order.id);
+      await refreshOrder(updatedOrder);
+    } catch (error) {
+      console.error("Delivered update error:", error);
+      alert(error.message || "Unable to update parcel status.");
+    } finally {
+      setLoadingAction("");
+    }
+  }
+
   async function handleCompleteOrder() {
     if (!order?.id || loadingAction) return;
 
@@ -405,11 +427,7 @@ export default function ParcelTracking() {
       );
     }
 
-    if (
-      order.status === "delivery_scheduled" ||
-      order.status === "in_transit" ||
-      order.status === "dropped_off"
-    ) {
+    if (order.status === "delivered") {
       return (
         <section className="buyer-vinted-order-card">
           <strong>
@@ -418,8 +436,7 @@ export default function ParcelTracking() {
 
           <p>
             If your order matches its description, confirm that everything is
-            okay. Report a problem if it has not arrived or does not match what
-            you expected.
+            okay. Report a problem if it does not match what you expected.
           </p>
 
           <button
@@ -436,6 +453,33 @@ export default function ParcelTracking() {
             onClick={() => setShowRefundModal(true)}
           >
             I have a problem
+          </button>
+        </section>
+      );
+    }
+
+    if (
+      order.status === "delivery_scheduled" ||
+      order.status === "in_transit" ||
+      order.status === "dropped_off"
+    ) {
+      return (
+        <section className="buyer-vinted-order-card">
+          <strong>{getReadableStatus(order.status)}</strong>
+
+          <p>
+            Your parcel is on its way. You will be able to confirm the order or
+            report a problem once the parcel has been delivered or is ready for
+            pick-up.
+          </p>
+
+          <button
+            type="button"
+            className="parcel-outline-button"
+            onClick={() => navigate(`/tracking/${order.id}`)}
+          >
+            <Truck size={18} />
+            Track parcel
           </button>
         </section>
       );
@@ -654,33 +698,35 @@ export default function ParcelTracking() {
         <section className="parcel-actions-panel">
           <h3>Seller actions</h3>
 
-          <button
-            type="button"
-            className="parcel-primary-button"
-            onClick={() => navigate(`/shipping-label/${order.id}`)}
-          >
-            Download shipping label
-          </button>
+          {canSellerPrepareShipment(order) && (
+            <>
+              <button
+                type="button"
+                className="parcel-primary-button"
+                onClick={() => navigate(`/shipping-label/${order.id}`)}
+              >
+                Download shipping label
+              </button>
 
-          {!trackingAvailable && (
-            <div className="parcel-dropoff-quick-list">
-              <strong>Confirm drop-off at a relay point</strong>
+              <div className="parcel-dropoff-quick-list">
+                <strong>Confirm drop-off at a relay point</strong>
 
-              {DROP_OFF_POINTS.map((point) => (
-                <button
-                  key={point.id}
-                  type="button"
-                  className="parcel-outline-button"
-                  disabled={Boolean(loadingAction)}
-                  onClick={() => handleDroppedOff(point)}
-                >
-                  <MapPin size={17} />
-                  {loadingAction === "dropoff"
-                    ? "Confirming..."
-                    : `Dropped off at ${point.carrier}`}
-                </button>
-              ))}
-            </div>
+                {DROP_OFF_POINTS.map((point) => (
+                  <button
+                    key={point.id}
+                    type="button"
+                    className="parcel-outline-button"
+                    disabled={Boolean(loadingAction)}
+                    onClick={() => handleDroppedOff(point)}
+                  >
+                    <MapPin size={17} />
+                    {loadingAction === "dropoff"
+                      ? "Confirming..."
+                      : `Dropped off at ${point.carrier}`}
+                  </button>
+                ))}
+              </div>
+            </>
           )}
 
           {order.status === "dropped_off" && (
@@ -715,65 +761,66 @@ export default function ParcelTracking() {
               Simulate delivery tomorrow
             </button>
           )}
-        </section>
-      )}
-
-      {isBuyer && order.deliveryMethod !== "meetup" && trackingAvailable && (
-        <section className="parcel-actions-panel buyer-options-panel">
-          <h3>Buyer options</h3>
 
           {order.status === "delivery_scheduled" && (
-            <>
-              <button
-                type="button"
-                className="parcel-outline-button"
-                onClick={() => setShowInstructions(true)}
-              >
-                Add delivery instructions
-              </button>
-
-              <button
-                type="button"
-                className="parcel-outline-button"
-                onClick={() =>
-                  alert(
-                    "Delivery rescheduling will be available in the next prototype step."
-                  )
-                }
-              >
-                Reschedule delivery
-              </button>
-            </>
+            <button
+              type="button"
+              className="parcel-outline-button"
+              disabled={Boolean(loadingAction)}
+              onClick={handleDelivered}
+            >
+              {loadingAction === "delivered"
+                ? "Confirming..."
+                : "Simulate parcel delivered"}
+            </button>
           )}
 
-          {isOrderReadyForBuyerReview(order) && (
-            <>
-              <button
-                type="button"
-                className="parcel-primary-button"
-                onClick={() => setShowReceivedModal(true)}
-              >
-                Everything is OK
-              </button>
-
-              <button
-                type="button"
-                className="vinted-problem-button"
-                onClick={() => setShowRefundModal(true)}
-              >
-                I have a problem
-              </button>
-            </>
-          )}
-
-          {order.status === "refund_requested" && (
-            <p className="refund-status-note">
-              A problem has been reported. The payment remains protected while
-              TindaHan reviews the case.
-            </p>
-          )}
+          {!canSellerPrepareShipment(order) &&
+            !["dropped_off", "in_transit", "delivery_scheduled"].includes(
+              order.status
+            ) && (
+              <p className="refund-status-note">
+                No seller action is required for this order at the moment.
+              </p>
+            )}
         </section>
       )}
+
+      {isBuyer &&
+        order.deliveryMethod !== "meetup" &&
+        trackingAvailable &&
+        (isOrderReadyForBuyerReview(order) || order.status === "refund_requested") && (
+          <section className="parcel-actions-panel buyer-options-panel">
+            <h3>Buyer options</h3>
+
+            {isOrderReadyForBuyerReview(order) && (
+              <>
+                <button
+                  type="button"
+                  className="parcel-primary-button"
+                  onClick={() => setShowReceivedModal(true)}
+                >
+                  Everything is OK
+                </button>
+
+                <button
+                  type="button"
+                  className="vinted-problem-button"
+                  onClick={() => setShowRefundModal(true)}
+                >
+                  I have a problem
+                </button>
+              </>
+            )}
+
+            {order.status === "refund_requested" && (
+              <p className="refund-status-note">
+                A problem has been reported. The payment remains protected while
+                TindaHan reviews the case.
+              </p>
+            )}
+          </section>
+        )}
 
       <section className="parcel-conversation-link">
         <button type="button" onClick={() => navigate("/messages")}>
