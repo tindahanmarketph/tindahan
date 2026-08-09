@@ -519,7 +519,27 @@ export async function notifyHomeDeliveryTomorrow(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "delivery_tomorrow",
-    "Ton colis est en cours de livraison. Vérifie ta commande avant de la confirmer."
+    "Ton colis est en cours de livraison. Tu pourras confirmer la commande ou signaler un problème une fois le colis livré."
+  );
+
+  return getOrderById(orderId);
+}
+
+export async function markParcelDelivered(orderId) {
+  const updatedOrder = await updateOrder(orderId, {
+    status: "delivered"
+  });
+
+  await addOrderTrackingEvent(orderId, {
+    title: "Parcel delivered",
+    description: "The parcel has been delivered to the buyer.",
+    completed: true
+  });
+
+  await sendOrderConversationUpdate(
+    updatedOrder,
+    "parcel_delivered",
+    "Ton colis a été livré. Vérifie ta commande avant de la confirmer."
   );
 
   return getOrderById(orderId);
