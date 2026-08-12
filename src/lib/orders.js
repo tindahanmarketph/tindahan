@@ -458,8 +458,8 @@ export async function markParcelDroppedOff(
     updatedOrder,
     "parcel_dropped_off",
     pointAddress
-      ? `Commande envoyée. Le vendeur a déposé le colis chez ${pointName}.`
-      : `Commande envoyée. Le vendeur a déposé le colis chez ${carrier}.`
+      ? `Order shipped. The seller dropped off the parcel at ${pointName}.`
+      : `Order shipped. The seller dropped off the parcel with ${carrier}.`
   );
 
   return getOrderById(orderId);
@@ -479,7 +479,7 @@ export async function markParcelInTransit(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "parcel_in_transit",
-    "Commande envoyée. Le colis est en cours d'acheminement."
+    "Order shipped. The parcel is currently in transit."
   );
 
   return getOrderById(orderId);
@@ -499,7 +499,7 @@ export async function markParcelReadyForPickup(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "parcel_ready_for_pickup",
-    "Ton colis est arrivé au point relais. Vérifie ta commande avant de la confirmer."
+    "Your parcel has arrived at the pick-up point. Check your order before confirming it."
   );
 
   return getOrderById(orderId);
@@ -519,7 +519,7 @@ export async function notifyHomeDeliveryTomorrow(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "delivery_tomorrow",
-    "Ton colis est en cours de livraison. Tu pourras confirmer la commande ou signaler un problème une fois le colis livré."
+    "Your parcel is on its way. You will be able to confirm the order or report a problem once it has been delivered."
   );
 
   return getOrderById(orderId);
@@ -539,7 +539,7 @@ export async function markParcelDelivered(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "parcel_delivered",
-    "Ton colis a été livré. Vérifie ta commande avant de la confirmer."
+    "Your parcel has been delivered. Check your order before confirming it."
   );
 
   return getOrderById(orderId);
@@ -566,30 +566,61 @@ export async function completeOrder(orderId) {
   await sendOrderConversationUpdate(
     updatedOrder,
     "order_completed",
-    "Commande acceptée. Le paiement peut maintenant être versé au vendeur."
+    "Order accepted. The payment can now be released to the seller."
   );
 
   return getOrderById(orderId);
 }
 
-export async function requestOrderRefund(orderId, reason = "Issue reported") {
+export async function requestOrderRefund(orderId, complaint = "Issue reported") {
+  const isDetailedComplaint =
+    complaint && typeof complaint === "object" && !Array.isArray(complaint);
+
+  const reason = isDetailedComplaint
+    ? complaint.reason || "Issue reported"
+    : complaint || "Issue reported";
+
+  const details = isDetailedComplaint ? complaint.details || "" : "";
+  const photosCount = isDetailedComplaint ? Number(complaint.photosCount || 0) : 0;
+  const returnMethod = isDetailedComplaint ? complaint.returnMethod || "" : "";
+  const returnPoint = isDetailedComplaint ? complaint.returnPoint || null : null;
+
+  const returnLabel =
+    returnMethod === "home_pickup"
+      ? "home pickup"
+      : returnPoint?.name
+      ? `${returnPoint.carrier || "relay point"} - ${returnPoint.name}`
+      : "return method to be confirmed after review";
+
   const updatedOrder = await updateOrder(orderId, {
     status: "refund_requested"
   });
 
+  const cleanProblemDescription = details
+    ? `The buyer reported a problem: ${reason}. ${details}`
+    : `The buyer reported a problem: ${reason}. TindaHan will review the evidence.`;
+
+  const cleanEvidenceDescription =
+    photosCount > 0
+      ? `${photosCount} photo${photosCount > 1 ? "s" : ""} attached. Return method: ${returnLabel}.`
+      : `No photo attached. Return method: ${returnLabel}.`;
+
   await addOrderTrackingEvent(orderId, {
     title: "Problem reported",
-    description:
-      reason || "The buyer reported a problem with the order. The payment remains protected while TindaHan reviews the case.",
+    description: cleanProblemDescription,
+    completed: true
+  });
+
+  await addOrderTrackingEvent(orderId, {
+    title: "Evidence submitted",
+    description: cleanEvidenceDescription,
     completed: true
   });
 
   await sendOrderConversationUpdate(
     updatedOrder,
     "refund_requested",
-    `The buyer reported a problem with the order: ${
-      reason || "Issue reported"
-    }. The payment remains protected while TindaHan reviews the case.`
+    `The buyer reported a problem with the order: ${reason}. The payment remains protected while TindaHan reviews the case.`
   );
 
   return getOrderById(orderId);
