@@ -25,6 +25,7 @@ import SafeMeetUp from "./pages/SafeMeetUp";
 import MakeOffer from "./pages/MakeOffer";
 import ParcelTracking from "./pages/ParcelTracking";
 import ShippingLabel from "./pages/ShippingLabel";
+import RefundRequest from "./pages/RefundRequest";
 
 import Personalisation from "./pages/Personalisation";
 import PreferredSizes from "./pages/PreferredSizes";
@@ -120,6 +121,7 @@ export default function App() {
     location.pathname.startsWith("/offer/") ||
     location.pathname.startsWith("/tracking/") ||
     location.pathname.startsWith("/shipping-label/") ||
+    location.pathname.startsWith("/refund-request/") ||
     location.pathname.startsWith("/welcome");
 
   const shouldShowMobileBottomNav = !isProductPage;
@@ -180,6 +182,15 @@ export default function App() {
           element={
             <ProtectedRoute>
               <ParcelTracking />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/refund-request/:orderId"
+          element={
+            <ProtectedRoute>
+              <RefundRequest />
             </ProtectedRoute>
           }
         />
