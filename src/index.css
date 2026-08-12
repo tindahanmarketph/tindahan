@@ -23286,3 +23286,233 @@ body,
     min-height: 64px;
   }
 }
+/* ========================================================= */
+/* TINDAHAN - REFUND REQUEST FIXES                           */
+/* ========================================================= */
+
+.refund-request-card.refund-next-card {
+  display: grid !important;
+  gap: 16px !important;
+  border-color: rgba(255, 107, 44, 0.24) !important;
+  background: #fff8f5 !important;
+}
+
+.refund-request-title-row {
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: start !important;
+}
+
+.refund-request-title-row > svg {
+  grid-column: 1 !important;
+  margin-top: 2px !important;
+  color: var(--orange) !important;
+}
+
+.refund-request-title-copy {
+  grid-column: 2 !important;
+  display: grid !important;
+  gap: 6px !important;
+  min-width: 0 !important;
+}
+
+.refund-request-title-copy h2,
+.refund-request-title-row h2 {
+  margin: 0 !important;
+  color: #111111 !important;
+  font-size: 20px !important;
+  line-height: 1.16 !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.35px !important;
+  white-space: normal !important;
+}
+
+.refund-request-title-copy p,
+.refund-request-title-row p {
+  margin: 0 !important;
+  color: #5f6f75 !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  font-weight: 700 !important;
+  white-space: normal !important;
+}
+
+.refund-next-steps {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.refund-process-line {
+  display: grid !important;
+  grid-template-columns: 22px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  align-items: start !important;
+}
+
+.refund-process-line svg {
+  margin-top: 2px !important;
+  color: var(--orange) !important;
+}
+
+.refund-process-line p {
+  margin: 0 !important;
+  color: #34444a !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  font-weight: 750 !important;
+}
+
+/* Neutralise les anciens styles qui faisaient se chevaucher le titre */
+.refund-process-card .refund-request-title-row div,
+.refund-next-card .refund-request-title-row div {
+  display: grid !important;
+  grid-template-columns: unset !important;
+  gap: 6px !important;
+  align-items: start !important;
+}
+
+.parcel-timeline-item p {
+  word-break: normal !important;
+  overflow-wrap: anywhere !important;
+  white-space: normal !important;
+}
+
+/* Sécurité : cache les anciennes descriptions JSON brutes si elles existent encore */
+.parcel-timeline-item p:empty {
+  display: none !important;
+}
+
+@media (max-width: 520px) {
+  .refund-request-title-row {
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .refund-request-title-copy h2,
+  .refund-request-title-row h2 {
+    font-size: 19px !important;
+  }
+
+  .refund-request-title-copy p,
+  .refund-request-title-row p {
+    font-size: 13.5px !important;
+  }
+}
+/* ========================================================= */
+/* TINDAHAN - FINAL FIX REFUND NEXT SECTION                  */
+/* À mettre tout en bas de src/index.css                     */
+/* ========================================================= */
+
+.refund-request-card.refund-next-card-fixed {
+  display: block !important;
+  width: calc(100% - 36px) !important;
+  margin: 16px auto 0 !important;
+  padding: 16px !important;
+  border: 1px solid rgba(255, 107, 44, 0.24) !important;
+  border-radius: 20px !important;
+  background: #fff8f5 !important;
+  box-shadow: 0 14px 30px rgba(255, 107, 44, 0.06) !important;
+}
+
+.refund-next-heading-fixed {
+  display: grid !important;
+  grid-template-columns: 30px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: flex-start !important;
+  margin: 0 0 16px !important;
+}
+
+.refund-next-icon-fixed {
+  width: 30px !important;
+  height: 30px !important;
+  display: grid !important;
+  place-items: center !important;
+  color: var(--orange) !important;
+}
+
+.refund-next-copy-fixed {
+  display: block !important;
+  min-width: 0 !important;
+}
+
+.refund-next-copy-fixed h2 {
+  display: block !important;
+  margin: 0 0 7px !important;
+  padding: 0 !important;
+  color: #111111 !important;
+  font-size: 20px !important;
+  line-height: 1.15 !important;
+  font-weight: 950 !important;
+  letter-spacing: -0.35px !important;
+  white-space: normal !important;
+}
+
+.refund-next-copy-fixed p {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #5f6f75 !important;
+  font-size: 14px !important;
+  line-height: 1.45 !important;
+  font-weight: 700 !important;
+  white-space: normal !important;
+}
+
+.refund-next-steps-fixed {
+  display: grid !important;
+  gap: 12px !important;
+}
+
+.refund-next-step-fixed {
+  display: grid !important;
+  grid-template-columns: 22px minmax(0, 1fr) !important;
+  gap: 8px !important;
+  align-items: flex-start !important;
+}
+
+.refund-next-step-fixed svg {
+  margin-top: 2px !important;
+  color: var(--orange) !important;
+}
+
+.refund-next-step-fixed p {
+  display: block !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  color: #34444a !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  font-weight: 750 !important;
+  white-space: normal !important;
+}
+
+/* Neutralise les anciens styles qui cassaient le bloc */
+.refund-process-card div.refund-next-heading-fixed,
+.refund-process-card div.refund-next-copy-fixed,
+.refund-process-card div.refund-next-steps-fixed,
+.refund-process-card div.refund-next-step-fixed,
+.refund-next-card-fixed div {
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 520px) {
+  .refund-request-card.refund-next-card-fixed {
+    width: calc(100% - 32px) !important;
+    padding: 15px !important;
+    border-radius: 18px !important;
+  }
+
+  .refund-next-heading-fixed {
+    grid-template-columns: 28px minmax(0, 1fr) !important;
+    gap: 10px !important;
+  }
+
+  .refund-next-copy-fixed h2 {
+    font-size: 19px !important;
+  }
+
+  .refund-next-copy-fixed p {
+    font-size: 13.5px !important;
+  }
+}

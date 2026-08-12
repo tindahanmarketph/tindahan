@@ -331,7 +331,7 @@ export default function RefundRequest() {
         <div className="refund-request-title-row">
           <AlertTriangle size={23} />
 
-          <div>
+          <div className="refund-request-title-copy">
             <h2>What is wrong with the item?</h2>
             <p>
               Choose the reason that best describes the problem. You will need
@@ -363,7 +363,7 @@ export default function RefundRequest() {
         <div className="refund-request-title-row">
           <FileText size={23} />
 
-          <div>
+          <div className="refund-request-title-copy">
             <h2>Add details</h2>
             <p>
               Explain clearly why the product does not match what you bought.
@@ -387,7 +387,7 @@ export default function RefundRequest() {
         <div className="refund-request-title-row">
           <Camera size={23} />
 
-          <div>
+          <div className="refund-request-title-copy">
             <h2>Add photos</h2>
             <p>
               Add clear photos showing the issue. At least one photo is required.
@@ -430,11 +430,13 @@ export default function RefundRequest() {
         )}
       </section>
 
-      <section className="refund-request-card refund-process-card">
-        <div className="refund-request-title-row">
-          <ShieldCheck size={23} />
+      <section className="refund-request-card refund-next-card-fixed">
+        <div className="refund-next-heading-fixed">
+          <div className="refund-next-icon-fixed">
+            <ShieldCheck size={23} />
+          </div>
 
-          <div>
+          <div className="refund-next-copy-fixed">
             <h2>What happens next?</h2>
             <p>
               TindaHan will review your request. If it is approved, you will be
@@ -443,24 +445,26 @@ export default function RefundRequest() {
           </div>
         </div>
 
-        <div className="refund-process-line">
-          <Check size={16} />
-          <p>Your request is sent to TindaHan.</p>
-        </div>
+        <div className="refund-next-steps-fixed">
+          <div className="refund-next-step-fixed">
+            <Check size={16} />
+            <p>Your request is sent to TindaHan.</p>
+          </div>
 
-        <div className="refund-process-line">
-          <Check size={16} />
-          <p>Our team reviews your photos and explanation.</p>
-        </div>
+          <div className="refund-next-step-fixed">
+            <Check size={16} />
+            <p>Our team reviews your photos and explanation.</p>
+          </div>
 
-        <div className="refund-process-line">
-          <Check size={16} />
-          <p>If approved, you return the item by relay point or home pickup.</p>
-        </div>
+          <div className="refund-next-step-fixed">
+            <Check size={16} />
+            <p>If approved, you return the item by relay point or home pickup.</p>
+          </div>
 
-        <div className="refund-process-line">
-          <Check size={16} />
-          <p>The refund is then sent to your TindaHan wallet.</p>
+          <div className="refund-next-step-fixed">
+            <Check size={16} />
+            <p>The refund is then sent to your TindaHan wallet.</p>
+          </div>
         </div>
       </section>
 
