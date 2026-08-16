@@ -23985,3 +23985,180 @@ body.tindahan-feed-zoom-locked button {
     font-size: 14.5px !important;
   }
 }
+/* ========================================================= */
+/* TINDAHAN - FIX MESSAGES CONVERSATIONS SCROLL              */
+/* À placer tout en bas de src/index.css                     */
+/* ========================================================= */
+
+/* Page messages : empêche la page entière de bloquer le scroll interne */
+.messages-page {
+  min-height: 100dvh !important;
+  height: 100dvh !important;
+  overflow: hidden !important;
+  background: #ffffff !important;
+}
+
+/* ========================================================= */
+/* DESKTOP / TABLETTE                                        */
+/* ========================================================= */
+
+.messages-desktop-shell,
+.messages-shell.messages-desktop-shell {
+  height: calc(100dvh - 132px) !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.messages-sidebar {
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-rows: auto minmax(0, 1fr) !important;
+}
+
+.messages-sidebar-header {
+  flex: none !important;
+}
+
+.messages-conversation-list {
+  min-height: 0 !important;
+  max-height: 100% !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+  padding-bottom: 18px !important;
+}
+
+.messages-conversation-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.messages-conversation-list::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: rgba(255, 107, 44, 0.35);
+}
+
+.messages-main {
+  min-height: 0 !important;
+  overflow: hidden !important;
+  display: grid !important;
+  grid-template-rows: auto auto minmax(0, 1fr) auto auto !important;
+}
+
+.messages-thread {
+  min-height: 0 !important;
+  overflow-y: auto !important;
+  overflow-x: hidden !important;
+  -webkit-overflow-scrolling: touch !important;
+  overscroll-behavior: contain !important;
+}
+
+/* ========================================================= */
+/* MOBILE                                                    */
+/* ========================================================= */
+
+@media (max-width: 760px) {
+  body:has(.messages-page) {
+    height: 100dvh !important;
+    overflow: hidden !important;
+    padding-bottom: 0 !important;
+    background: #ffffff !important;
+  }
+
+  .messages-page {
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 100dvh !important;
+    padding: 0 !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+  }
+
+  .messages-mobile-view {
+    width: 100% !important;
+    height: 100dvh !important;
+    min-height: 0 !important;
+    overflow: hidden !important;
+    background: #ffffff !important;
+  }
+
+  /* Vue inbox mobile : header + tabs fixes, liste scrollable */
+  .messages-mobile-view:not(.chat-open) {
+    display: grid !important;
+    grid-template-rows: auto auto minmax(0, 1fr) !important;
+  }
+
+  .messages-mobile-header,
+  .messages-mobile-tabs {
+    flex: none !important;
+  }
+
+  .messages-mobile-list {
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    padding-bottom: calc(92px + env(safe-area-inset-bottom)) !important;
+    background: #ffffff !important;
+  }
+
+  .messages-mobile-row {
+    flex: none !important;
+  }
+
+  /* Vue chat mobile : header + produit fixes, conversation scrollable */
+  .messages-mobile-view.chat-open {
+    display: grid !important;
+    grid-template-rows: auto auto minmax(0, 1fr) auto auto !important;
+  }
+
+  .messages-mobile-chat-header,
+  .messages-listing-summary,
+  .messages-safety-bar,
+  .chat-composer-wrapper {
+    flex: none !important;
+  }
+
+  .messages-mobile-view.chat-open .messages-thread {
+    min-height: 0 !important;
+    height: 100% !important;
+    max-height: 100% !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    -webkit-overflow-scrolling: touch !important;
+    overscroll-behavior: contain !important;
+    padding-bottom: 22px !important;
+  }
+
+  .chat-composer-wrapper {
+    padding-bottom: calc(10px + env(safe-area-inset-bottom)) !important;
+    background: #ffffff !important;
+  }
+
+  /* On cache le shell desktop sur mobile */
+  .messages-desktop-shell {
+    display: none !important;
+  }
+}
+
+/* ========================================================= */
+/* SAFARI / IOS FALLBACK                                     */
+/* ========================================================= */
+
+@supports (-webkit-touch-callout: none) {
+  .messages-page {
+    height: -webkit-fill-available !important;
+  }
+
+  @media (max-width: 760px) {
+    body:has(.messages-page),
+    .messages-page,
+    .messages-mobile-view {
+      height: -webkit-fill-available !important;
+    }
+  }
+}
