@@ -106,6 +106,40 @@ function getPickupPointText(order) {
   return `Your parcel is waiting at ${carrier}.`;
 }
 
+function getCleanTrackingDescription(description) {
+  if (!description) return "";
+
+  if (typeof description !== "string") {
+    return "";
+  }
+
+  const trimmedDescription = description.trim();
+
+  if (!trimmedDescription) return "";
+
+  if (
+    (trimmedDescription.startsWith("{") && trimmedDescription.endsWith("}")) ||
+    trimmedDescription.includes('"reason"') ||
+    trimmedDescription.includes('"details"')
+  ) {
+    try {
+      const parsed = JSON.parse(trimmedDescription);
+      const reason = parsed.reason || "Issue reported";
+      const details = parsed.details || "";
+
+      if (details) {
+        return `The buyer reported a problem: ${reason}. ${details}`;
+      }
+
+      return `The buyer reported a problem: ${reason}. TindaHan will review the evidence.`;
+    } catch {
+      return "The buyer reported a problem with this order. TindaHan will review the evidence.";
+    }
+  }
+
+  return description;
+}
+
 export default function ParcelTracking() {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -299,6 +333,24 @@ export default function ParcelTracking() {
 
     setOrder(savedOrder);
     setShowInstructions(false);
+  }
+
+  function renderTrackingEvent(event, index) {
+    const cleanDescription = getCleanTrackingDescription(event.description);
+
+    return (
+      <div className="parcel-timeline-item" key={event.id || index}>
+        <div className="parcel-timeline-marker">
+          <Check size={18} />
+        </div>
+
+        <div>
+          <strong>{event.title}</strong>
+          {cleanDescription && <p>{cleanDescription}</p>}
+          <span>{formatOrderDateTime(event.date)}</span>
+        </div>
+      </div>
+    );
   }
 
   function renderBuyerPendingSummaryCard() {
@@ -496,19 +548,7 @@ export default function ParcelTracking() {
           <h3>Order information</h3>
 
           <div className="parcel-timeline-list">
-            {orderedEvents.map((event, index) => (
-              <div className="parcel-timeline-item" key={event.id || index}>
-                <div className="parcel-timeline-marker">
-                  <Check size={18} />
-                </div>
-
-                <div>
-                  <strong>{event.title}</strong>
-                  {event.description && <p>{event.description}</p>}
-                  <span>{formatOrderDateTime(event.date)}</span>
-                </div>
-              </div>
-            ))}
+            {orderedEvents.map(renderTrackingEvent)}
           </div>
         </section>
 
@@ -625,19 +665,7 @@ export default function ParcelTracking() {
         <h3>{trackingAvailable ? "Tracking information" : "Order information"}</h3>
 
         <div className="parcel-timeline-list">
-          {orderedEvents.map((event, index) => (
-            <div className="parcel-timeline-item" key={event.id || index}>
-              <div className="parcel-timeline-marker">
-                <Check size={18} />
-              </div>
-
-              <div>
-                <strong>{event.title}</strong>
-                {event.description && <p>{event.description}</p>}
-                <span>{formatOrderDateTime(event.date)}</span>
-              </div>
-            </div>
-          ))}
+          {orderedEvents.map(renderTrackingEvent)}
         </div>
       </section>
 
