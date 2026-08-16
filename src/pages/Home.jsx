@@ -238,7 +238,97 @@ async function fetchListingsViaRest({
   }
 }
 
+function useMobileFeedZoomLock() {
+  useEffect(() => {
+    const isMobileViewport = () => window.innerWidth <= 760;
+
+    let lastTouchEnd = 0;
+
+    function preventGesture(event) {
+      if (isMobileViewport()) {
+        event.preventDefault();
+      }
+    }
+
+    function preventMultiTouch(event) {
+      if (!isMobileViewport()) return;
+
+      if (event.touches && event.touches.length > 1) {
+        event.preventDefault();
+      }
+    }
+
+    function preventDoubleTapZoom(event) {
+      if (!isMobileViewport()) return;
+
+      const now = Date.now();
+
+      if (now - lastTouchEnd <= 320) {
+        event.preventDefault();
+      }
+
+      lastTouchEnd = now;
+    }
+
+    function preventCtrlWheelZoom(event) {
+      if (!isMobileViewport()) return;
+
+      if (event.ctrlKey) {
+        event.preventDefault();
+      }
+    }
+
+    const html = document.documentElement;
+    const body = document.body;
+
+    const previousHtmlTouchAction = html.style.touchAction;
+    const previousBodyTouchAction = body.style.touchAction;
+    const previousHtmlOverflowX = html.style.overflowX;
+    const previousBodyOverflowX = body.style.overflowX;
+    const previousBodyUserSelect = body.style.userSelect;
+    const previousBodyWebkitUserSelect = body.style.webkitUserSelect;
+
+    html.classList.add("tindahan-feed-zoom-locked");
+    body.classList.add("tindahan-feed-zoom-locked");
+
+    html.style.touchAction = "pan-y";
+    body.style.touchAction = "pan-y";
+    html.style.overflowX = "hidden";
+    body.style.overflowX = "hidden";
+    body.style.userSelect = "none";
+    body.style.webkitUserSelect = "none";
+
+    document.addEventListener("gesturestart", preventGesture, { passive: false });
+    document.addEventListener("gesturechange", preventGesture, { passive: false });
+    document.addEventListener("gestureend", preventGesture, { passive: false });
+    document.addEventListener("touchmove", preventMultiTouch, { passive: false });
+    document.addEventListener("touchend", preventDoubleTapZoom, { passive: false });
+    document.addEventListener("wheel", preventCtrlWheelZoom, { passive: false });
+
+    return () => {
+      html.classList.remove("tindahan-feed-zoom-locked");
+      body.classList.remove("tindahan-feed-zoom-locked");
+
+      html.style.touchAction = previousHtmlTouchAction;
+      body.style.touchAction = previousBodyTouchAction;
+      html.style.overflowX = previousHtmlOverflowX;
+      body.style.overflowX = previousBodyOverflowX;
+      body.style.userSelect = previousBodyUserSelect;
+      body.style.webkitUserSelect = previousBodyWebkitUserSelect;
+
+      document.removeEventListener("gesturestart", preventGesture);
+      document.removeEventListener("gesturechange", preventGesture);
+      document.removeEventListener("gestureend", preventGesture);
+      document.removeEventListener("touchmove", preventMultiTouch);
+      document.removeEventListener("touchend", preventDoubleTapZoom);
+      document.removeEventListener("wheel", preventCtrlWheelZoom);
+    };
+  }, []);
+}
+
 export default function Home() {
+  useMobileFeedZoomLock();
+
   const { user, loadingAuth } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
 
