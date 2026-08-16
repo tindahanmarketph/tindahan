@@ -40,6 +40,33 @@ import {
 
 const MESSAGES_SAFETY_STORAGE_KEY = "tindahan_messages_safety_hidden";
 
+const LOCKED_LISTING_STATUSES = [
+  "sold",
+  "reserved",
+  "hidden",
+  "inactive",
+  "archived",
+  "deleted",
+  "completed"
+];
+
+const ORDER_MESSAGE_TYPES = [
+  "order_sold",
+  "order_confirmed",
+  "meetup_order",
+  "meetup_change_request",
+  "meetup_change_status",
+  "shipping_label_downloaded",
+  "courier_pickup_scheduled",
+  "parcel_dropped_off",
+  "parcel_in_transit",
+  "parcel_ready_for_pickup",
+  "delivery_tomorrow",
+  "parcel_delivered",
+  "order_completed",
+  "refund_requested"
+];
+
 const DROP_OFF_POINTS = [
   {
     id: "jt-makati-ave",
@@ -251,6 +278,57 @@ function getLatestPendingCounterOffer(conversation) {
 
 function getBestCheckoutOffer(conversation) {
   return getAcceptedOffer(conversation) || getLatestPendingCounterOffer(conversation);
+}
+
+function hasOrderInConversation(conversation) {
+  const messages = conversation?.messages || [];
+
+  return messages.some((message) => {
+    const messageType = message.type || message.messageType || "";
+
+    return Boolean(
+      message.orderId ||
+        message.payload?.orderId ||
+        ORDER_MESSAGE_TYPES.includes(messageType)
+    );
+  });
+}
+
+function getListingStatus(conversation) {
+  return String(
+    conversation?.listing?.status ||
+      conversation?.listingStatus ||
+      conversation?.status ||
+      ""
+  ).toLowerCase();
+}
+
+function isListingUnavailable(conversation) {
+  const status = getListingStatus(conversation);
+
+  return LOCKED_LISTING_STATUSES.includes(status);
+}
+
+function getListingUnavailableLabel(conversation, loadingMessages = false) {
+  if (loadingMessages) {
+    return "Checking item status...";
+  }
+
+  if (hasOrderInConversation(conversation)) {
+    return "Item already purchased";
+  }
+
+  const status = getListingStatus(conversation);
+
+  if (status === "reserved") {
+    return "Item reserved";
+  }
+
+  if (LOCKED_LISTING_STATUSES.includes(status)) {
+    return "Item unavailable";
+  }
+
+  return "";
 }
 
 function MeetupLocationBox({ label, spot, muted = false }) {
@@ -1071,6 +1149,40 @@ export default function Messages() {
     [activeConversation]
   );
 
+  const hasOrderForActiveConversation = useMemo(() => {
+    return hasOrderInConversation(activeConversation);
+  }, [activeConversation]);
+
+  const listingUnavailable = useMemo(() => {
+    return isListingUnavailable(activeConversation);
+  }, [activeConversation]);
+
+  const listingUnavailableLabel = useMemo(() => {
+    return getListingUnavailableLabel(activeConversation, loadingMessages);
+  }, [activeConversation, loadingMessages]);
+
+  const offerActionsLocked = useMemo(() => {
+    return Boolean(
+      loadingMessages ||
+        hasOrderForActiveConversation ||
+        listingUnavailable
+    );
+  }, [loadingMessages, hasOrderForActiveConversation, listingUnavailable]);
+
+  const shouldShowListingActions = useMemo(() => {
+    return Boolean(
+      activeConversation?.listing?.id &&
+        !loadingMessages &&
+        !hasOrderForActiveConversation &&
+        !listingUnavailable
+    );
+  }, [
+    activeConversation?.listing?.id,
+    loadingMessages,
+    hasOrderForActiveConversation,
+    listingUnavailable
+  ]);
+
   function openConversation(conversationId) {
     setActiveConversationId(conversationId);
     setMobilePanel("chat");
@@ -1121,6 +1233,11 @@ export default function Messages() {
   async function handleOfferStatus(messageId, offer, nextStatus) {
     if (!activeConversation?.id || !user?.id) return;
 
+    if (offerActionsLocked) {
+      alert("This item is no longer available for offers.");
+      return;
+    }
+
     try {
       await updateOfferStatus({
         conversationId: activeConversation.id,
@@ -1138,6 +1255,11 @@ export default function Messages() {
   }
 
   function handleBuyClick(offer = null) {
+    if (offerActionsLocked) {
+      alert("This item is no longer available for purchase.");
+      return;
+    }
+
     const listingId = activeConversation?.listing?.id || activeConversation?.listingId;
 
     if (!listingId) {
@@ -1156,6 +1278,11 @@ export default function Messages() {
   }
 
   function handleMakeOfferClick() {
+    if (offerActionsLocked) {
+      alert("This item is no longer available for offers.");
+      return;
+    }
+
     const listingId = activeConversation?.listing?.id || activeConversation?.listingId;
 
     if (!listingId) {
@@ -1167,6 +1294,11 @@ export default function Messages() {
   }
 
   function handleCounterOfferClick() {
+    if (offerActionsLocked) {
+      alert("This item is no longer available for counter-offers.");
+      return;
+    }
+
     const listingId = activeConversation?.listing?.id || activeConversation?.listingId;
 
     if (!listingId || !activeConversation?.id) {
@@ -1333,10 +1465,13 @@ export default function Messages() {
     const isBuyerOffer = offer.senderRole === "buyer_offer";
     const isSellerCounterOffer = offer.senderRole === "seller_counter_offer";
 
-    const shouldSellerAct = isCurrentUserSeller && isBuyerOffer && isPending;
+    const shouldSellerAct =
+      !offerActionsLocked && isCurrentUserSeller && isBuyerOffer && isPending;
 
     const shouldBuyerAct =
-      !isCurrentUserSeller && (isAccepted || isSellerCounterOffer);
+      !offerActionsLocked &&
+      !isCurrentUserSeller &&
+      (isAccepted || isSellerCounterOffer);
 
     return (
       <div
@@ -1425,7 +1560,7 @@ export default function Messages() {
           </div>
         )}
 
-        {!isCurrentUserSeller && isBuyerOffer && isPending && (
+        {!offerActionsLocked && !isCurrentUserSeller && isBuyerOffer && isPending && (
           <div className="offer-message-actions buyer-actions">
             <button
               type="button"
@@ -1452,9 +1587,9 @@ export default function Messages() {
     }
 
     const isAccepted = offer.status === "accepted";
-    const isDeclined = offer.status === "declined";
     const isBuyerOffer = offer.senderRole === "buyer_offer";
-    const showBuyerBuyCta = !isCurrentUserSeller && isAccepted && isBuyerOffer;
+    const showBuyerBuyCta =
+      !offerActionsLocked && !isCurrentUserSeller && isAccepted && isBuyerOffer;
 
     const title = isAccepted
       ? isCurrentUserSeller
@@ -1464,7 +1599,9 @@ export default function Messages() {
       ? "You declined the buyer’s offer"
       : "The seller declined your offer";
 
-    const description = isAccepted
+    const description = offerActionsLocked
+      ? "This item is no longer available for purchase from this conversation."
+      : isAccepted
       ? isCurrentUserSeller
         ? "The buyer can now complete the purchase from this conversation."
         : "You can now buy this item at the accepted offer price."
@@ -1550,44 +1687,48 @@ export default function Messages() {
             <strong>{activeConversation.listing?.title}</strong>
             <span>{formatPrice(activeConversation.listing?.price)}</span>
 
-            {acceptedOffer ? (
+            {listingUnavailableLabel ? (
+              <small>{listingUnavailableLabel}</small>
+            ) : acceptedOffer ? (
               <small>Accepted offer: {formatPrice(acceptedOffer.offerPrice)}</small>
             ) : (
               <small>Includes Buyer Protection</small>
             )}
           </div>
 
-          <div className="messages-listing-actions">
-            {!isCurrentUserSeller && (
-              <button
-                type="button"
-                className="messages-outline-button"
-                onClick={handleMakeOfferClick}
-              >
-                Make an offer
-              </button>
-            )}
+          {shouldShowListingActions && (
+            <div className="messages-listing-actions">
+              {!isCurrentUserSeller && (
+                <button
+                  type="button"
+                  className="messages-outline-button"
+                  onClick={handleMakeOfferClick}
+                >
+                  Make an offer
+                </button>
+              )}
 
-            {!isCurrentUserSeller && (
-              <button
-                type="button"
-                className="messages-buy-button"
-                onClick={() => handleBuyClick()}
-              >
-                Buy
-              </button>
-            )}
+              {!isCurrentUserSeller && (
+                <button
+                  type="button"
+                  className="messages-buy-button"
+                  onClick={() => handleBuyClick()}
+                >
+                  Buy
+                </button>
+              )}
 
-            {isCurrentUserSeller && (
-              <button
-                type="button"
-                className="messages-outline-button seller-counter-main"
-                onClick={handleCounterOfferClick}
-              >
-                Make counter-offer
-              </button>
-            )}
-          </div>
+              {isCurrentUserSeller && (
+                <button
+                  type="button"
+                  className="messages-outline-button seller-counter-main"
+                  onClick={handleCounterOfferClick}
+                >
+                  Make counter-offer
+                </button>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="messages-thread">
