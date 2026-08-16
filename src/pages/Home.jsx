@@ -386,7 +386,7 @@ export default function Home() {
             : "page home-page home-page-unfiltered"
         }
       >
-        <div className="container">
+        <div className="container home-feed-container">
           <div className="page-header home-page-header">
             <div>
               <h1>{pageTitle}</h1>
@@ -401,7 +401,7 @@ export default function Home() {
           </div>
 
           {loading && (
-            <div className="grid">
+            <div className="grid home-feed-grid">
               {Array.from({ length: 12 }).map((_, index) => (
                 <ListingSkeleton key={index} />
               ))}
@@ -438,7 +438,7 @@ export default function Home() {
           )}
 
           {!loading && listings.length > 0 && (
-            <div className="grid">
+            <div className="grid home-feed-grid">
               {listings.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} />
               ))}
