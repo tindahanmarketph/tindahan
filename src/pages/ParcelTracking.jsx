@@ -2,7 +2,6 @@ import {
   Check,
   ChevronLeft,
   Clock,
-  MapPin,
   MessageSquare,
   PackageCheck,
   ShieldCheck,
@@ -17,10 +16,9 @@ import {
   formatOrderDate,
   formatOrderDateTime,
   getOrderById,
-  markParcelDroppedOff,
+  markParcelDelivered,
   markParcelInTransit,
   markParcelReadyForPickup,
-  markParcelDelivered,
   notifyHomeDeliveryTomorrow
 } from "../lib/orders";
 
@@ -32,27 +30,6 @@ const TRACKING_VISIBLE_STATUSES = [
   "delivered",
   "completed",
   "refund_requested"
-];
-
-const DROP_OFF_POINTS = [
-  {
-    id: "jt-makati-ave",
-    carrier: "J&T Express",
-    name: "J&T Express - Makati Avenue",
-    address: "Makati Avenue, Makati City, Metro Manila"
-  },
-  {
-    id: "ninja-bgc",
-    carrier: "Ninja Van",
-    name: "Ninja Van Drop-Off - BGC",
-    address: "Bonifacio Global City, Taguig, Metro Manila"
-  },
-  {
-    id: "lbc-greenbelt",
-    carrier: "LBC Express",
-    name: "LBC Express - Greenbelt",
-    address: "Greenbelt, Ayala Center, Makati City"
-  }
 ];
 
 function getReadableStatus(status) {
@@ -220,27 +197,6 @@ export default function ParcelTracking() {
     const freshOrder = await getOrderById(orderId);
     setOrder(freshOrder);
     return freshOrder;
-  }
-
-  async function handleDroppedOff(point = DROP_OFF_POINTS[0]) {
-    if (!order?.id || loadingAction) return;
-
-    setLoadingAction("dropoff");
-
-    try {
-      const updatedOrder = await markParcelDroppedOff(
-        order.id,
-        point.carrier,
-        point
-      );
-
-      await refreshOrder(updatedOrder);
-    } catch (error) {
-      console.error("Drop-off update error:", error);
-      alert(error.message || "Unable to mark this parcel as dropped off.");
-    } finally {
-      setLoadingAction("");
-    }
   }
 
   async function handleInTransit() {
@@ -582,7 +538,8 @@ export default function ParcelTracking() {
               ? "For more information, check your carrier page or follow updates from your TindaHan conversation."
               : `The buyer has paid. Deposit the parcel before ${formatOrderDate(
                   order.maxShippingDate
-                )}. Tracking will start after drop-off.`}
+                )}. Tracking will start after drop-off.`
+            }
           </p>
         </section>
       )}
@@ -674,34 +631,13 @@ export default function ParcelTracking() {
           <h3>Seller actions</h3>
 
           {canSellerPrepareShipment(order) && (
-            <>
-              <button
-                type="button"
-                className="parcel-primary-button"
-                onClick={() => navigate(`/shipping-label/${order.id}`)}
-              >
-                Download shipping label
-              </button>
-
-              <div className="parcel-dropoff-quick-list">
-                <strong>Confirm drop-off at a relay point</strong>
-
-                {DROP_OFF_POINTS.map((point) => (
-                  <button
-                    key={point.id}
-                    type="button"
-                    className="parcel-outline-button"
-                    disabled={Boolean(loadingAction)}
-                    onClick={() => handleDroppedOff(point)}
-                  >
-                    <MapPin size={17} />
-                    {loadingAction === "dropoff"
-                      ? "Confirming..."
-                      : `Dropped off at ${point.carrier}`}
-                  </button>
-                ))}
-              </div>
-            </>
+            <button
+              type="button"
+              className="parcel-primary-button"
+              onClick={() => navigate(`/shipping-label/${order.id}`)}
+            >
+              Download shipping label
+            </button>
           )}
 
           {order.status === "dropped_off" && (

@@ -1,10 +1,12 @@
 import {
+  CalendarDays,
   Check,
   ChevronLeft,
   Download,
   Home,
   MapPin,
   PackageCheck,
+  Printer,
   QrCode,
   ShieldCheck,
   Store,
@@ -27,7 +29,29 @@ const TRACKING_VISIBLE_STATUSES = [
   "in_transit",
   "ready_for_pickup",
   "delivery_scheduled",
-  "completed"
+  "completed",
+  "refund_requested"
+];
+
+const CARRIERS = [
+  {
+    id: "J&T Express",
+    name: "J&T Express",
+    hours: "9:00 AM - 6:00 PM",
+    slots: ["09:00 - 12:00", "12:00 - 15:00", "15:00 - 18:00"]
+  },
+  {
+    id: "Ninja Van",
+    name: "Ninja Van",
+    hours: "10:00 AM - 7:00 PM",
+    slots: ["10:00 - 13:00", "13:00 - 16:00", "16:00 - 19:00"]
+  },
+  {
+    id: "LBC Express",
+    name: "LBC Express",
+    hours: "10:00 AM - 8:00 PM",
+    slots: ["10:00 - 13:00", "13:00 - 16:00", "16:00 - 20:00"]
+  }
 ];
 
 const DROP_OFF_POINTS = [
@@ -77,6 +101,35 @@ function canTrackParcel(order) {
   return TRACKING_VISIBLE_STATUSES.includes(order?.status);
 }
 
+function getTodayInputValue() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function getTomorrowInputValue() {
+  const date = new Date();
+  date.setDate(date.getDate() + 1);
+  return date.toISOString().slice(0, 10);
+}
+
+function getSellerAddress(order) {
+  return (
+    order?.sellerAddress ||
+    order?.seller_address ||
+    order?.pickupAddress ||
+    order?.pickup_address ||
+    {
+      fullName: order?.sellerUsername || "Seller",
+      mobileNumber: order?.sellerPhone || "",
+      street: "Seller address",
+      barangay: "",
+      city: "Makati City",
+      province: "Metro Manila",
+      region: "National Capital Region",
+      postalCode: "1210"
+    }
+  );
+}
+
 export default function ShippingLabel() {
   const { orderId } = useParams();
   const navigate = useNavigate();
@@ -85,8 +138,12 @@ export default function ShippingLabel() {
   const [loadingOrder, setLoadingOrder] = useState(true);
   const [loadingAction, setLoadingAction] = useState("");
   const [showShippingChoice, setShowShippingChoice] = useState(false);
+  const [showHomePickupForm, setShowHomePickupForm] = useState(false);
   const [showDropOffMap, setShowDropOffMap] = useState(false);
   const [selectedDropOffPoint, setSelectedDropOffPoint] = useState(DROP_OFF_POINTS[0]);
+  const [selectedCarrier, setSelectedCarrier] = useState(CARRIERS[0].id);
+  const [pickupDate, setPickupDate] = useState(getTomorrowInputValue());
+  const [pickupSlot, setPickupSlot] = useState(CARRIERS[0].slots[0]);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -124,6 +181,12 @@ export default function ShippingLabel() {
 
   const trackingAvailable = useMemo(() => canTrackParcel(order), [order]);
 
+  const selectedCarrierObject = useMemo(() => {
+    return CARRIERS.find((carrier) => carrier.id === selectedCarrier) || CARRIERS[0];
+  }, [selectedCarrier]);
+
+  const sellerAddress = useMemo(() => getSellerAddress(order), [order]);
+
   async function refreshOrder(updatedOrder = null) {
     if (updatedOrder) {
       setOrder(updatedOrder);
@@ -143,7 +206,6 @@ export default function ShippingLabel() {
     try {
       const updatedOrder = await markShippingLabelDownloaded(order.id);
       await refreshOrder(updatedOrder);
-      setShowShippingChoice(true);
     } catch (error) {
       console.error("Download label error:", error);
       alert(error.message || "Unable to download the shipping label.");
@@ -152,18 +214,54 @@ export default function ShippingLabel() {
     }
   }
 
+  function handlePrint() {
+    window.print();
+  }
+
+  function handleCarrierChange(carrierId) {
+    const carrier = CARRIERS.find((item) => item.id === carrierId) || CARRIERS[0];
+
+    setSelectedCarrier(carrier.id);
+    setPickupSlot(carrier.slots[0]);
+  }
+
+  function openShippingChoice() {
+    setShowShippingChoice(true);
+    setShowHomePickupForm(false);
+    setShowDropOffMap(false);
+  }
+
+  function openHomePickupForm() {
+    setShowShippingChoice(false);
+    setShowHomePickupForm(true);
+  }
+
+  function openDropOffMap() {
+    setShowShippingChoice(false);
+    setShowDropOffMap(true);
+  }
+
   async function handleCourierPickup() {
     if (!order?.id || loadingAction) return;
 
     setLoadingAction("pickup");
 
     try {
-      const updatedOrder = await scheduleCourierPickup(order.id);
+      const updatedOrder = await scheduleCourierPickup(order.id, {
+        carrier: selectedCarrier,
+        pickupDate,
+        pickupSlot,
+        sellerAddress
+      });
+
       await refreshOrder(updatedOrder);
 
+      setShowHomePickupForm(false);
       setShowShippingChoice(false);
       setSuccessMessage(
-        "Courier pick-up scheduled. The buyer has been notified in the conversation. Tracking will start once the parcel is collected."
+        `${selectedCarrier} pick-up scheduled on ${formatOrderDate(
+          pickupDate
+        )} between ${pickupSlot}. The buyer has been notified in the conversation.`
       );
       setShowSuccessModal(true);
     } catch (error) {
@@ -172,11 +270,6 @@ export default function ShippingLabel() {
     } finally {
       setLoadingAction("");
     }
-  }
-
-  function openDropOffMap() {
-    setShowShippingChoice(false);
-    setShowDropOffMap(true);
   }
 
   async function handleConfirmDropOff() {
@@ -205,10 +298,6 @@ export default function ShippingLabel() {
     } finally {
       setLoadingAction("");
     }
-  }
-
-  function handlePrint() {
-    window.print();
   }
 
   if (loadingOrder) {
@@ -271,9 +360,8 @@ export default function ShippingLabel() {
         <div>
           <strong>Ship before {formatOrderDate(order.maxShippingDate)}</strong>
           <p>
-            Download the label, then choose courier pick-up or drop-off at a
-            partner point. Tracking starts only after the parcel is dropped off
-            or collected.
+            Download and print the shipping label, then choose the hand-off
+            method for this parcel.
           </p>
         </div>
       </section>
@@ -286,7 +374,7 @@ export default function ShippingLabel() {
           </div>
 
           <div className="shipping-label-carrier">
-            {order.carrier || "J&T Express"}
+            {order.carrier || selectedCarrier || "J&T Express"}
           </div>
         </div>
 
@@ -319,9 +407,17 @@ export default function ShippingLabel() {
           <h2>Seller</h2>
 
           <p>
-            <strong>{order.sellerUsername || "Seller"}</strong>
+            <strong>{sellerAddress.fullName || order.sellerUsername || "Seller"}</strong>
             <br />
-            Philippines
+            {sellerAddress.mobileNumber || ""}
+            <br />
+            {sellerAddress.street || "Seller address"}
+            <br />
+            {sellerAddress.barangay ? `${sellerAddress.barangay}, ` : ""}
+            {sellerAddress.city || "Makati City"}, {sellerAddress.province || "Metro Manila"}
+            <br />
+            {sellerAddress.region || "National Capital Region"},{" "}
+            {sellerAddress.postalCode || "1210"}
           </p>
         </div>
 
@@ -355,44 +451,63 @@ export default function ShippingLabel() {
         </div>
       </section>
 
-      <section className="shipping-label-actions">
+      <section className="shipping-label-actions shipping-label-card-actions">
         <button
           type="button"
-          className="parcel-primary-button"
+          className="shipping-label-action-card"
           onClick={handleDownloadLabel}
           disabled={Boolean(loadingAction)}
         >
-          <Download size={17} />
-          {loadingAction === "label" ? "Preparing label..." : "Download shipping label"}
+          <Download size={22} />
+
+          <div>
+            <strong>
+              {loadingAction === "label" ? "Preparing label..." : "Download shipping label"}
+            </strong>
+            <span>Save the label before handing over the parcel.</span>
+          </div>
         </button>
 
         <button
           type="button"
-          className="parcel-outline-button"
+          className="shipping-label-action-card"
           onClick={handlePrint}
         >
-          Print label
+          <Printer size={22} />
+
+          <div>
+            <strong>Print shipping label</strong>
+            <span>Print the label and attach it to your parcel.</span>
+          </div>
         </button>
 
         {!trackingAvailable && (
           <button
             type="button"
-            className="parcel-outline-button"
-            onClick={openDropOffMap}
+            className="shipping-label-action-card primary"
+            onClick={openShippingChoice}
           >
-            <MapPin size={17} />
-            Find drop-off point
+            <Truck size={22} />
+
+            <div>
+              <strong>Choose drop-off method</strong>
+              <span>Courier pick-up or relay point drop-off.</span>
+            </div>
           </button>
         )}
 
         {trackingAvailable && (
           <button
             type="button"
-            className="parcel-outline-button"
+            className="shipping-label-action-card primary"
             onClick={() => navigate(`/tracking/${order.id}`)}
           >
-            <Truck size={17} />
-            Track parcel
+            <Truck size={22} />
+
+            <div>
+              <strong>Track parcel</strong>
+              <span>Follow the current shipping status.</span>
+            </div>
           </button>
         )}
       </section>
@@ -419,8 +534,7 @@ export default function ShippingLabel() {
             <button
               type="button"
               className="shipping-choice-card"
-              onClick={handleCourierPickup}
-              disabled={Boolean(loadingAction)}
+              onClick={openHomePickupForm}
             >
               <Home size={24} />
 
@@ -446,8 +560,125 @@ export default function ShippingLabel() {
         </div>
       )}
 
+      {showHomePickupForm && (
+        <div className="parcel-modal-overlay">
+          <section className="parcel-bottom-sheet shipping-home-pickup-sheet">
+            <button
+              type="button"
+              className="parcel-sheet-close"
+              onClick={() => setShowHomePickupForm(false)}
+              aria-label="Close"
+            >
+              <X size={24} />
+            </button>
+
+            <h2>Schedule courier pick-up</h2>
+
+            <p>
+              Check your seller details, choose a carrier, then select an
+              available date and time slot.
+            </p>
+
+            <div className="shipping-pickup-address-card">
+              <strong>Seller details</strong>
+
+              <p>
+                <b>{sellerAddress.fullName || order.sellerUsername || "Seller"}</b>
+                <br />
+                {sellerAddress.mobileNumber || "No phone number provided"}
+                <br />
+                {sellerAddress.street || "Seller address"}
+                <br />
+                {sellerAddress.barangay ? `${sellerAddress.barangay}, ` : ""}
+                {sellerAddress.city || "Makati City"}, {sellerAddress.province || "Metro Manila"}
+                <br />
+                {sellerAddress.region || "National Capital Region"},{" "}
+                {sellerAddress.postalCode || "1210"}
+              </p>
+            </div>
+
+            <div className="shipping-pickup-field">
+              <label>Carrier</label>
+
+              <div className="shipping-carrier-grid">
+                {CARRIERS.map((carrier) => (
+                  <button
+                    key={carrier.id}
+                    type="button"
+                    className={
+                      selectedCarrier === carrier.id
+                        ? "shipping-carrier-card active"
+                        : "shipping-carrier-card"
+                    }
+                    onClick={() => handleCarrierChange(carrier.id)}
+                  >
+                    <Truck size={18} />
+
+                    <div>
+                      <strong>{carrier.name}</strong>
+                      <span>{carrier.hours}</span>
+                    </div>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="shipping-pickup-field">
+              <label htmlFor="pickup-date">Pick-up date</label>
+
+              <div className="shipping-input-with-icon">
+                <CalendarDays size={18} />
+                <input
+                  id="pickup-date"
+                  type="date"
+                  min={getTodayInputValue()}
+                  value={pickupDate}
+                  onChange={(event) => setPickupDate(event.target.value)}
+                />
+              </div>
+            </div>
+
+            <div className="shipping-pickup-field">
+              <label htmlFor="pickup-slot">Available time slot</label>
+
+              <select
+                id="pickup-slot"
+                value={pickupSlot}
+                onChange={(event) => setPickupSlot(event.target.value)}
+              >
+                {selectedCarrierObject.slots.map((slot) => (
+                  <option key={slot} value={slot}>
+                    {slot}
+                  </option>
+                ))}
+              </select>
+
+              <small>
+                Available hours for {selectedCarrierObject.name}:{" "}
+                {selectedCarrierObject.hours}
+              </small>
+            </div>
+
+            <button
+              type="button"
+              className="dropoff-confirm-button"
+              onClick={handleCourierPickup}
+              disabled={Boolean(loadingAction) || !pickupDate || !pickupSlot}
+            >
+              {loadingAction === "pickup"
+                ? "Scheduling pick-up..."
+                : "Confirm courier pick-up"}
+            </button>
+          </section>
+        </div>
+      )}
+
       {showDropOffMap && (
-        <div className="dropoff-modal-overlay" role="presentation" onClick={() => setShowDropOffMap(false)}>
+        <div
+          className="dropoff-modal-overlay"
+          role="presentation"
+          onClick={() => setShowDropOffMap(false)}
+        >
           <section
             className="dropoff-modal"
             role="dialog"
@@ -457,14 +688,18 @@ export default function ShippingLabel() {
           >
             <header className="dropoff-modal-header">
               <div>
-                <h2>Find a drop-off point</h2>
+                <h2>Find a relay point</h2>
                 <p>
-                  Choose where you will deposit the parcel. Tracking will become
-                  available after you confirm the drop-off.
+                  Choose the relay point where you will deposit the parcel.
+                  Tracking becomes available after validation.
                 </p>
               </div>
 
-              <button type="button" onClick={() => setShowDropOffMap(false)} aria-label="Close">
+              <button
+                type="button"
+                onClick={() => setShowDropOffMap(false)}
+                aria-label="Close"
+              >
                 <X size={22} />
               </button>
             </header>
@@ -477,7 +712,7 @@ export default function ShippingLabel() {
 
               <div className="dropoff-map-label">
                 <MapPin size={15} />
-                <span>Nearby drop-off points</span>
+                <span>Nearby relay points</span>
               </div>
 
               {DROP_OFF_POINTS.map((point) => (
@@ -543,7 +778,7 @@ export default function ShippingLabel() {
             >
               {loadingAction === "dropoff"
                 ? "Confirming..."
-                : "Confirm parcel dropped off"}
+                : "Validate selected relay point"}
             </button>
           </section>
         </div>

@@ -405,28 +405,51 @@ export async function markShippingLabelDownloaded(orderId) {
   return getOrderById(orderId);
 }
 
-export async function scheduleCourierPickup(orderId) {
-  const pickupDate = addDays(new Date().toISOString(), 1);
+export async function scheduleCourierPickup(orderId, pickupDetails = {}) {
+  const pickupDateValue =
+    pickupDetails.pickupDate || addDays(new Date().toISOString(), 1);
+
+  const pickupDate = new Date(pickupDateValue).toISOString();
+  const carrier = pickupDetails.carrier || "J&T Express";
+  const pickupSlot = pickupDetails.pickupSlot || "09:00 - 12:00";
+  const sellerAddress = pickupDetails.sellerAddress || null;
 
   const updatedOrder = await updateOrder(orderId, {
     seller_shipping_choice: "courier_pickup",
     pickup_scheduled_at: pickupDate,
+    carrier,
     status: "courier_pickup_scheduled"
   });
 
+  const sellerAddressText = sellerAddress
+    ? [
+        sellerAddress.fullName,
+        sellerAddress.mobileNumber,
+        sellerAddress.street,
+        sellerAddress.barangay,
+        sellerAddress.city,
+        sellerAddress.province,
+        sellerAddress.region,
+        sellerAddress.postalCode
+      ]
+        .filter(Boolean)
+        .join(", ")
+    : "the seller address";
+
   await addOrderTrackingEvent(orderId, {
     title: "Courier pick-up scheduled",
-    description:
-      "A J&T Express courier will pick up the parcel from the seller.",
+    description: `${carrier} will pick up the parcel on ${formatOrderDate(
+      pickupDate
+    )} between ${pickupSlot} at ${sellerAddressText}.`,
     completed: true
   });
 
   await sendOrderConversationUpdate(
     updatedOrder,
     "courier_pickup_scheduled",
-    `The seller scheduled a courier pick-up. The parcel should be collected on ${formatOrderDate(
+    `The seller scheduled a courier pick-up with ${carrier} on ${formatOrderDate(
       pickupDate
-    )}.`
+    )} between ${pickupSlot}.`
   );
 
   return getOrderById(orderId);
