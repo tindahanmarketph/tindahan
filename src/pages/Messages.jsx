@@ -10,7 +10,6 @@ import {
   Plus,
   Send,
   ShieldCheck,
-  Store,
   Truck,
   Users,
   X
@@ -34,7 +33,6 @@ import {
   completeOrder,
   formatTindaHanPrice,
   getOrderById,
-  markParcelDroppedOff,
   updateMeetupChangeStatus
 } from "../lib/orders";
 
@@ -65,49 +63,6 @@ const ORDER_MESSAGE_TYPES = [
   "parcel_delivered",
   "order_completed",
   "refund_requested"
-];
-
-const DROP_OFF_POINTS = [
-  {
-    id: "jt-makati-ave",
-    carrier: "J&T Express",
-    name: "J&T Express - Makati Avenue",
-    address: "Makati Avenue, Makati City, Metro Manila",
-    openingHours: "Open today · 9:00 AM - 6:00 PM",
-    distance: "0.8 km",
-    mapX: 34,
-    mapY: 55
-  },
-  {
-    id: "ninja-bgc",
-    carrier: "Ninja Van",
-    name: "Ninja Van Drop-Off - BGC",
-    address: "Bonifacio Global City, Taguig, Metro Manila",
-    openingHours: "Open today · 10:00 AM - 7:00 PM",
-    distance: "2.1 km",
-    mapX: 68,
-    mapY: 42
-  },
-  {
-    id: "lbc-greenbelt",
-    carrier: "LBC Express",
-    name: "LBC Express - Greenbelt",
-    address: "Greenbelt, Ayala Center, Makati City",
-    openingHours: "Open today · 10:00 AM - 8:00 PM",
-    distance: "1.4 km",
-    mapX: 48,
-    mapY: 66
-  },
-  {
-    id: "jt-ortigas",
-    carrier: "J&T Express",
-    name: "J&T Express - Ortigas Center",
-    address: "Ortigas Center, Pasig, Metro Manila",
-    openingHours: "Open today · 9:00 AM - 6:00 PM",
-    distance: "3.7 km",
-    mapX: 78,
-    mapY: 28
-  }
 ];
 
 function getInitialSafetyVisibility() {
@@ -345,121 +300,6 @@ function MeetupLocationBox({ label, spot, muted = false }) {
   );
 }
 
-function DropOffPointModal({
-  order,
-  selectedPoint,
-  onSelectPoint,
-  onClose,
-  onConfirm,
-  loading
-}) {
-  return (
-    <div className="dropoff-modal-overlay" role="presentation" onClick={onClose}>
-      <section
-        className="dropoff-modal"
-        role="dialog"
-        aria-modal="true"
-        aria-label="Find drop-off point"
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="dropoff-modal-header">
-          <div>
-            <h2>Find a drop-off point</h2>
-            <p>
-              Choose where you will deposit the parcel. Tracking will become
-              available for the buyer after you confirm the drop-off.
-            </p>
-          </div>
-
-          <button type="button" onClick={onClose} aria-label="Close">
-            <X size={22} />
-          </button>
-        </header>
-
-        <div className="dropoff-map-card">
-          <div className="dropoff-map-grid" />
-          <div className="dropoff-map-road road-one" />
-          <div className="dropoff-map-road road-two" />
-          <div className="dropoff-map-road road-three" />
-
-          <div className="dropoff-map-label">
-            <MapPin size={15} />
-            <span>Nearby drop-off points</span>
-          </div>
-
-          {DROP_OFF_POINTS.map((point) => (
-            <button
-              key={point.id}
-              type="button"
-              className={
-                selectedPoint?.id === point.id
-                  ? "dropoff-map-pin active"
-                  : "dropoff-map-pin"
-              }
-              style={{
-                "--dropoff-x": `${point.mapX}%`,
-                "--dropoff-y": `${point.mapY}%`
-              }}
-              onClick={() => onSelectPoint(point)}
-              aria-label={point.name}
-            >
-              <Store size={15} />
-            </button>
-          ))}
-        </div>
-
-        <div className="dropoff-point-list">
-          {DROP_OFF_POINTS.map((point) => (
-            <button
-              key={point.id}
-              type="button"
-              className={
-                selectedPoint?.id === point.id
-                  ? "dropoff-point-card active"
-                  : "dropoff-point-card"
-              }
-              onClick={() => onSelectPoint(point)}
-            >
-              <div className="dropoff-point-icon">
-                <Store size={20} />
-              </div>
-
-              <div>
-                <strong>{point.name}</strong>
-                <span>{point.carrier}</span>
-                <p>{point.address}</p>
-                <small>
-                  {point.distance} · {point.openingHours}
-                </small>
-              </div>
-
-              {selectedPoint?.id === point.id && (
-                <div className="dropoff-point-check">
-                  <Check size={15} />
-                </div>
-              )}
-            </button>
-          ))}
-        </div>
-
-        <div className="dropoff-modal-order">
-          <span>Parcel</span>
-          <strong>{order?.listingTitle}</strong>
-        </div>
-
-        <button
-          type="button"
-          className="dropoff-confirm-button"
-          onClick={onConfirm}
-          disabled={!selectedPoint || loading}
-        >
-          {loading ? "Confirming..." : "Confirm parcel dropped off"}
-        </button>
-      </section>
-    </div>
-  );
-}
-
 function getReviewDeadline(order) {
   const baseDate =
     order?.status === "ready_for_pickup" || order?.status === "delivery_scheduled"
@@ -621,9 +461,7 @@ function MessageOrderCard({
 }) {
   const [order, setOrder] = useState(null);
   const [loadingAction, setLoadingAction] = useState("");
-  const [showDropOffModal, setShowDropOffModal] = useState(false);
   const [showAcceptanceModal, setShowAcceptanceModal] = useState(false);
-  const [selectedDropOffPoint, setSelectedDropOffPoint] = useState(DROP_OFF_POINTS[0]);
 
   useEffect(() => {
     let mounted = true;
@@ -682,29 +520,6 @@ function MessageOrderCard({
     } catch (error) {
       console.error("Meet-Up status update error:", error);
       alert(error.message || "Unable to update this Meet-Up request.");
-    } finally {
-      setLoadingAction("");
-    }
-  }
-
-  async function handleConfirmDropOff() {
-    if (!order?.id || !selectedDropOffPoint || loadingAction) return;
-
-    setLoadingAction("dropoff");
-
-    try {
-      const updatedOrder = await markParcelDroppedOff(
-        order.id,
-        selectedDropOffPoint.carrier,
-        selectedDropOffPoint
-      );
-
-      setOrder(updatedOrder);
-      setShowDropOffModal(false);
-      await onOrderUpdated?.();
-    } catch (error) {
-      console.error("Drop-off update error:", error);
-      alert(error.message || "Unable to confirm parcel drop-off.");
     } finally {
       setLoadingAction("");
     }
@@ -880,25 +695,14 @@ function MessageOrderCard({
             {isSellerOrder &&
               order.deliveryMethod !== "meetup" &&
               canSellerPrepareShipment(order) && (
-                <>
-                  <button
-                    type="button"
-                    className="parcel-outline-button"
-                    onClick={() => navigate(`/shipping-label/${order.id}`)}
-                  >
-                    <Download size={15} />
-                    Shipping label
-                  </button>
-
-                  <button
-                    type="button"
-                    className="parcel-primary-button"
-                    onClick={() => setShowDropOffModal(true)}
-                  >
-                    <MapPin size={15} />
-                    Find drop-off point
-                  </button>
-                </>
+                <button
+                  type="button"
+                  className="parcel-outline-button"
+                  onClick={() => navigate(`/shipping-label/${order.id}`)}
+                >
+                  <Download size={15} />
+                  Shipping label
+                </button>
               )}
 
             {!isSellerOrder && buyerCopy.showTrack && (
@@ -945,17 +749,6 @@ function MessageOrderCard({
           </div>
         </div>
       </div>
-
-      {showDropOffModal && (
-        <DropOffPointModal
-          order={order}
-          selectedPoint={selectedDropOffPoint}
-          onSelectPoint={setSelectedDropOffPoint}
-          onClose={() => setShowDropOffModal(false)}
-          onConfirm={handleConfirmDropOff}
-          loading={loadingAction === "dropoff"}
-        />
-      )}
 
       {showAcceptanceModal && (
         <OrderAcceptanceModal
