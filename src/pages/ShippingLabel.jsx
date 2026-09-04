@@ -484,7 +484,7 @@ export default function ShippingLabel() {
             onClick={openShippingChoice}
           >
             <Truck size={17} />
-            Moyen de drop-off
+            Choose drop-off method
           </button>
         )}
 
