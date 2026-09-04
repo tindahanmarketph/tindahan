@@ -231,13 +231,19 @@ export default function ShippingLabel() {
     setShowDropOffMap(false);
   }
 
+  function closeShippingChoice() {
+    setShowShippingChoice(false);
+  }
+
   function openHomePickupForm() {
     setShowShippingChoice(false);
     setShowHomePickupForm(true);
+    setShowDropOffMap(false);
   }
 
   function openDropOffMap() {
     setShowShippingChoice(false);
+    setShowHomePickupForm(false);
     setShowDropOffMap(true);
   }
 
@@ -360,8 +366,8 @@ export default function ShippingLabel() {
         <div>
           <strong>Ship before {formatOrderDate(order.maxShippingDate)}</strong>
           <p>
-            Download and print the shipping label, then choose the hand-off
-            method for this parcel.
+            Download and print the shipping label, then choose how you want to
+            hand over the parcel.
           </p>
         </div>
       </section>
@@ -454,60 +460,42 @@ export default function ShippingLabel() {
       <section className="shipping-label-actions shipping-label-card-actions">
         <button
           type="button"
-          className="shipping-label-action-card"
+          className="parcel-primary-button"
           onClick={handleDownloadLabel}
           disabled={Boolean(loadingAction)}
         >
-          <Download size={22} />
-
-          <div>
-            <strong>
-              {loadingAction === "label" ? "Preparing label..." : "Download shipping label"}
-            </strong>
-            <span>Save the label before handing over the parcel.</span>
-          </div>
+          <Download size={17} />
+          {loadingAction === "label" ? "Preparing label..." : "Download shipping label"}
         </button>
 
         <button
           type="button"
-          className="shipping-label-action-card"
+          className="parcel-outline-button"
           onClick={handlePrint}
         >
-          <Printer size={22} />
-
-          <div>
-            <strong>Print shipping label</strong>
-            <span>Print the label and attach it to your parcel.</span>
-          </div>
+          <Printer size={17} />
+          Print label
         </button>
 
         {!trackingAvailable && (
           <button
             type="button"
-            className="shipping-label-action-card primary"
+            className="parcel-outline-button"
             onClick={openShippingChoice}
           >
-            <Truck size={22} />
-
-            <div>
-              <strong>Choose drop-off method</strong>
-              <span>Courier pick-up or relay point drop-off.</span>
-            </div>
+            <Truck size={17} />
+            Moyen de drop-off
           </button>
         )}
 
         {trackingAvailable && (
           <button
             type="button"
-            className="shipping-label-action-card primary"
+            className="parcel-outline-button"
             onClick={() => navigate(`/tracking/${order.id}`)}
           >
-            <Truck size={22} />
-
-            <div>
-              <strong>Track parcel</strong>
-              <span>Follow the current shipping status.</span>
-            </div>
+            <Truck size={17} />
+            Track parcel
           </button>
         )}
       </section>
@@ -518,7 +506,7 @@ export default function ShippingLabel() {
             <button
               type="button"
               className="parcel-sheet-close"
-              onClick={() => setShowShippingChoice(false)}
+              onClick={closeShippingChoice}
               aria-label="Close"
             >
               <X size={24} />
@@ -683,7 +671,7 @@ export default function ShippingLabel() {
             className="dropoff-modal"
             role="dialog"
             aria-modal="true"
-            aria-label="Find drop-off point"
+            aria-label="Find relay point"
             onClick={(event) => event.stopPropagation()}
           >
             <header className="dropoff-modal-header">
