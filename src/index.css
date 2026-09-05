@@ -24429,3 +24429,42 @@ body.tindahan-feed-zoom-locked button {
     grid-template-columns: 1fr !important;
   }
 }
+.shipping-preparation-notice {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 42px minmax(0, 1fr) !important;
+  gap: 12px !important;
+  align-items: start !important;
+  padding: 15px !important;
+  border-radius: 18px !important;
+  background: linear-gradient(135deg, #ff6b2c 0%, #ff7a3f 100%) !important;
+  color: #ffffff !important;
+  box-shadow: 0 16px 30px rgba(255, 107, 44, 0.22) !important;
+}
+
+.shipping-preparation-icon {
+  width: 42px !important;
+  height: 42px !important;
+  border-radius: 14px !important;
+  display: grid !important;
+  place-items: center !important;
+  background: rgba(255, 255, 255, 0.18) !important;
+  color: #ffffff !important;
+}
+
+.shipping-preparation-notice strong {
+  display: block !important;
+  margin-bottom: 5px !important;
+  color: #ffffff !important;
+  font-size: 15px !important;
+  line-height: 1.2 !important;
+  font-weight: 950 !important;
+}
+
+.shipping-preparation-notice p {
+  margin: 0 !important;
+  color: rgba(255, 255, 255, 0.92) !important;
+  font-size: 13px !important;
+  line-height: 1.38 !important;
+  font-weight: 700 !important;
+}

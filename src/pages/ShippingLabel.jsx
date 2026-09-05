@@ -34,6 +34,17 @@ const TRACKING_VISIBLE_STATUSES = [
   "refund_requested"
 ];
 
+const SHIPPING_METHOD_CHOSEN_STATUSES = [
+  "courier_pickup_scheduled",
+  "dropped_off",
+  "in_transit",
+  "ready_for_pickup",
+  "delivery_scheduled",
+  "delivered",
+  "completed",
+  "refund_requested"
+];
+
 const CARRIERS = [
   {
     id: "J&T Express",
@@ -102,6 +113,18 @@ function canTrackParcel(order) {
   return TRACKING_VISIBLE_STATUSES.includes(order?.status);
 }
 
+function hasShippingMethodChosen(order) {
+  const sellerShippingChoice =
+    order?.sellerShippingChoice ||
+    order?.seller_shipping_choice ||
+    "";
+
+  return Boolean(
+    sellerShippingChoice ||
+      SHIPPING_METHOD_CHOSEN_STATUSES.includes(order?.status)
+  );
+}
+
 function getTodayInputValue() {
   return new Date().toISOString().slice(0, 10);
 }
@@ -153,7 +176,14 @@ function getSellerAddress(order) {
 }
 
 function hasMissingSellerDetails(details) {
-  return !details.fullName || !details.mobileNumber || !details.street || !details.city || !details.province || !details.postalCode;
+  return (
+    !details.fullName ||
+    !details.mobileNumber ||
+    !details.street ||
+    !details.city ||
+    !details.province ||
+    !details.postalCode
+  );
 }
 
 export default function ShippingLabel() {
@@ -218,6 +248,17 @@ export default function ShippingLabel() {
   }, [orderId]);
 
   const trackingAvailable = useMemo(() => canTrackParcel(order), [order]);
+
+  const shippingMethodChosen = useMemo(() => {
+    return hasShippingMethodChosen(order);
+  }, [order]);
+
+  const showPreparationNotice = useMemo(() => {
+    return Boolean(
+      shippingMethodChosen &&
+        !["completed", "refund_requested"].includes(order?.status)
+    );
+  }, [shippingMethodChosen, order?.status]);
 
   const selectedCarrierObject = useMemo(() => {
     return CARRIERS.find((carrier) => carrier.id === selectedCarrier) || CARRIERS[0];
@@ -322,7 +363,7 @@ export default function ShippingLabel() {
       setSuccessMessage(
         `${selectedCarrier} pick-up scheduled on ${formatOrderDate(
           pickupDate
-        )} between ${pickupSlot}. The buyer has been notified in the conversation.`
+        )} between ${pickupSlot}. Please prepare the parcel and attach the shipping label clearly.`
       );
       setShowSuccessModal(true);
     } catch (error) {
@@ -350,7 +391,7 @@ export default function ShippingLabel() {
       setShowDropOffMap(false);
       setShowShippingChoice(false);
       setSuccessMessage(
-        `Parcel marked as dropped off at ${selectedDropOffPoint.name}. The buyer has been notified and tracking is now available.`
+        `Relay point selected: ${selectedDropOffPoint.name}. Please prepare the parcel and attach the shipping label clearly before handing it over.`
       );
       setShowSuccessModal(true);
     } catch (error) {
@@ -532,7 +573,7 @@ export default function ShippingLabel() {
           Print label
         </button>
 
-        {!trackingAvailable && (
+        {!trackingAvailable && !shippingMethodChosen && (
           <button
             type="button"
             className="parcel-outline-button"
@@ -541,6 +582,23 @@ export default function ShippingLabel() {
             <Truck size={17} />
             Choose drop-off method
           </button>
+        )}
+
+        {showPreparationNotice && (
+          <div className="shipping-preparation-notice">
+            <div className="shipping-preparation-icon">
+              <PackageCheck size={22} />
+            </div>
+
+            <div>
+              <strong>Prepare your parcel</strong>
+              <p>
+                Your drop-off method has been selected. Carefully pack the item,
+                close the parcel securely, and attach the shipping label on the
+                outside of the package in a clearly visible position.
+              </p>
+            </div>
+          </div>
         )}
 
         {trackingAvailable && (
