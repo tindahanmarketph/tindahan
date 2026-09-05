@@ -10,6 +10,7 @@ import {
   Plus,
   Send,
   ShieldCheck,
+  Trash2,
   Truck,
   Users,
   X
@@ -22,6 +23,7 @@ import {
   fetchMessagesForConversation,
   formatRealtimePrice,
   getOrCreateConversationFromListingId,
+  hideConversationForUser,
   removeRealtimeChannel,
   sendTextMessage,
   subscribeToConversationMessages,
@@ -988,6 +990,31 @@ export default function Messages() {
     setSelectedPhotos([]);
   }
 
+  async function handleDeleteConversation(conversationId, event = null) {
+    event?.stopPropagation?.();
+
+    if (!conversationId || !user?.id) return;
+
+    const confirmed = window.confirm(
+      "Delete this conversation from your inbox? It will only be hidden for you."
+    );
+
+    if (!confirmed) return;
+
+    hideConversationForUser(conversationId, user.id);
+
+    const remainingConversations = conversations.filter(
+      (conversation) => String(conversation.id) !== String(conversationId)
+    );
+
+    setConversations(remainingConversations);
+
+    if (String(activeConversationId) === String(conversationId)) {
+      setActiveConversationId(remainingConversations[0]?.id || "");
+      setMobilePanel("inbox");
+    }
+  }
+
   function closeSafetyMessage() {
     setShowSafety(false);
 
@@ -1204,32 +1231,42 @@ export default function Messages() {
     return (
       <div className="messages-mobile-list">
         {conversations.map((conversation) => (
-          <button
-            key={conversation.id}
-            type="button"
-            className="messages-mobile-row"
-            onClick={() => openConversation(conversation.id)}
-          >
-            <div className="messages-mobile-avatar">
-              {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
-            </div>
-
-            <div className="messages-mobile-main">
-              <div className="messages-mobile-row-top">
-                <strong>{conversation.sellerName}</strong>
-                <span>{formatConversationDate(conversation.updatedAt)}</span>
+          <div key={conversation.id} className="messages-mobile-row-wrap">
+            <button
+              type="button"
+              className="messages-mobile-row"
+              onClick={() => openConversation(conversation.id)}
+            >
+              <div className="messages-mobile-avatar">
+                {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
               </div>
 
-              <p>{getLastMessage(conversation)}</p>
+              <div className="messages-mobile-main">
+                <div className="messages-mobile-row-top">
+                  <strong>{conversation.sellerName}</strong>
+                  <span>{formatConversationDate(conversation.updatedAt)}</span>
+                </div>
 
-              {conversation.listing?.photo && (
-                <img
-                  src={conversation.listing.photo}
-                  alt={conversation.listing.title}
-                />
-              )}
-            </div>
-          </button>
+                <p>{getLastMessage(conversation)}</p>
+
+                {conversation.listing?.photo && (
+                  <img
+                    src={conversation.listing.photo}
+                    alt={conversation.listing.title}
+                  />
+                )}
+              </div>
+            </button>
+
+            <button
+              type="button"
+              className="messages-delete-row-button"
+              onClick={(event) => handleDeleteConversation(conversation.id, event)}
+              aria-label="Delete conversation"
+            >
+              <Trash2 size={18} />
+            </button>
+          </div>
         ))}
       </div>
     );
@@ -1456,9 +1493,20 @@ export default function Messages() {
 
           <strong>{activeConversation.sellerName}</strong>
 
-          <button type="button" aria-label="Conversation information">
-            <Info size={21} />
-          </button>
+          <div className="messages-chat-header-actions">
+            <button
+              type="button"
+              className="messages-delete-chat-button"
+              onClick={(event) => handleDeleteConversation(activeConversation.id, event)}
+              aria-label="Delete conversation"
+            >
+              <Trash2 size={20} />
+            </button>
+
+            <button type="button" aria-label="Conversation information">
+              <Info size={21} />
+            </button>
+          </div>
         </header>
 
         <div className="messages-listing-summary">
@@ -1777,23 +1825,36 @@ export default function Messages() {
           ) : (
             <div className="messages-conversation-list">
               {conversations.map((conversation) => (
-                <button
+                <div
                   key={conversation.id}
-                  type="button"
-                  className={`messages-conversation-item ${
+                  className={`messages-conversation-item-wrap ${
                     conversation.id === activeConversation?.id ? "active" : ""
                   }`}
-                  onClick={() => setActiveConversationId(conversation.id)}
                 >
-                  <div className="messages-avatar">
-                    {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
-                  </div>
+                  <button
+                    type="button"
+                    className="messages-conversation-item"
+                    onClick={() => setActiveConversationId(conversation.id)}
+                  >
+                    <div className="messages-avatar">
+                      {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
+                    </div>
 
-                  <div>
-                    <strong>{conversation.sellerName}</strong>
-                    <p>{getLastMessage(conversation)}</p>
-                  </div>
-                </button>
+                    <div>
+                      <strong>{conversation.sellerName}</strong>
+                      <p>{getLastMessage(conversation)}</p>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    className="messages-delete-row-button desktop"
+                    onClick={(event) => handleDeleteConversation(conversation.id, event)}
+                    aria-label="Delete conversation"
+                  >
+                    <Trash2 size={17} />
+                  </button>
+                </div>
               ))}
             </div>
           )}

@@ -68,6 +68,62 @@ function mapConversationRow(row) {
   };
 }
 
+const HIDDEN_CONVERSATIONS_STORAGE_KEY = "tindahan_hidden_conversations_by_user";
+
+function getHiddenConversationsByUser() {
+  if (typeof window === "undefined") return {};
+
+  try {
+    const stored = window.localStorage.getItem(HIDDEN_CONVERSATIONS_STORAGE_KEY);
+    return stored ? JSON.parse(stored) : {};
+  } catch {
+    return {};
+  }
+}
+
+function getHiddenConversationIds(userId) {
+  if (!userId) return [];
+
+  const hiddenByUser = getHiddenConversationsByUser();
+  return hiddenByUser[userId] || [];
+}
+
+function isConversationHiddenForUser(conversationId, userId) {
+  return getHiddenConversationIds(userId).includes(String(conversationId));
+}
+
+export function hideConversationForUser(conversationId, userId) {
+  if (!conversationId || !userId || typeof window === "undefined") return;
+
+  const hiddenByUser = getHiddenConversationsByUser();
+  const currentHiddenIds = hiddenByUser[userId] || [];
+
+  hiddenByUser[userId] = Array.from(
+    new Set([...currentHiddenIds, String(conversationId)])
+  );
+
+  window.localStorage.setItem(
+    HIDDEN_CONVERSATIONS_STORAGE_KEY,
+    JSON.stringify(hiddenByUser)
+  );
+}
+
+export function restoreConversationForUser(conversationId, userId) {
+  if (!conversationId || !userId || typeof window === "undefined") return;
+
+  const hiddenByUser = getHiddenConversationsByUser();
+  const currentHiddenIds = hiddenByUser[userId] || [];
+
+  hiddenByUser[userId] = currentHiddenIds.filter(
+    (id) => String(id) !== String(conversationId)
+  );
+
+  window.localStorage.setItem(
+    HIDDEN_CONVERSATIONS_STORAGE_KEY,
+    JSON.stringify(hiddenByUser)
+  );
+}
+
 function mapMessageRow(row, currentUserId) {
   if (!row) return null;
 
@@ -195,6 +251,7 @@ export async function getOrCreateConversation({
   }
 
   if (existing) {
+    restoreConversationForUser(existing.id, buyer.id);
     return mapConversationRow(existing);
   }
 
@@ -275,7 +332,10 @@ export async function fetchConversationsForUser(userId) {
     throw error;
   }
 
-  return (data || []).map(mapConversationRow).filter(Boolean);
+  return (data || [])
+    .map(mapConversationRow)
+    .filter(Boolean)
+    .filter((conversation) => !isConversationHiddenForUser(conversation.id, userId));
 }
 
 export async function fetchMessagesForConversation(conversationId, currentUserId) {

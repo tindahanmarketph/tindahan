@@ -24468,3 +24468,77 @@ body.tindahan-feed-zoom-locked button {
   line-height: 1.38 !important;
   font-weight: 700 !important;
 }
+/* ========================================================= */
+/* TINDAHAN - DELETE CONVERSATION                            */
+/* ========================================================= */
+
+.messages-mobile-row-wrap {
+  position: relative !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 52px !important;
+  align-items: stretch !important;
+  border-bottom: 1px solid #edf0f0 !important;
+  background: #ffffff !important;
+}
+
+.messages-mobile-row-wrap .messages-mobile-row {
+  border-bottom: none !important;
+}
+
+.messages-delete-row-button {
+  width: 52px !important;
+  min-height: 100% !important;
+  display: grid !important;
+  place-items: center !important;
+  border: none !important;
+  border-left: 1px solid rgba(255, 107, 44, 0.12) !important;
+  background: #fff7f3 !important;
+  color: #ff6b2c !important;
+  cursor: pointer !important;
+}
+
+.messages-delete-row-button:hover {
+  background: #ff6b2c !important;
+  color: #ffffff !important;
+}
+
+.messages-chat-header-actions {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+}
+
+.messages-delete-chat-button {
+  width: 36px !important;
+  height: 36px !important;
+  display: grid !important;
+  place-items: center !important;
+  border: none !important;
+  border-radius: 999px !important;
+  background: #fff1eb !important;
+  color: #ff6b2c !important;
+  cursor: pointer !important;
+}
+
+.messages-delete-chat-button:hover {
+  background: #ff6b2c !important;
+  color: #ffffff !important;
+}
+
+.messages-conversation-item-wrap {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 46px !important;
+  align-items: stretch !important;
+}
+
+.messages-conversation-item-wrap.active {
+  background: #fff1eb !important;
+}
+
+.messages-conversation-item-wrap .messages-conversation-item {
+  width: 100% !important;
+}
+
+.messages-delete-row-button.desktop {
+  width: 46px !important;
+}
