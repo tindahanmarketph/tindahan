@@ -11,6 +11,7 @@ import {
   ShieldCheck,
   Store,
   Truck,
+  User,
   X
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -112,22 +113,47 @@ function getTomorrowInputValue() {
 }
 
 function getSellerAddress(order) {
-  return (
+  const rawAddress =
     order?.sellerAddress ||
     order?.seller_address ||
     order?.pickupAddress ||
     order?.pickup_address ||
-    {
-      fullName: order?.sellerUsername || "Seller",
-      mobileNumber: order?.sellerPhone || "",
-      street: "Seller address",
-      barangay: "",
-      city: "Makati City",
-      province: "Metro Manila",
-      region: "National Capital Region",
-      postalCode: "1210"
-    }
-  );
+    order?.sellerPickupAddress ||
+    order?.seller_pickup_address ||
+    null;
+
+  return {
+    fullName:
+      rawAddress?.fullName ||
+      rawAddress?.full_name ||
+      order?.sellerFullName ||
+      order?.seller_full_name ||
+      order?.sellerUsername ||
+      "",
+    mobileNumber:
+      rawAddress?.mobileNumber ||
+      rawAddress?.mobile_number ||
+      order?.sellerPhone ||
+      order?.seller_phone ||
+      "",
+    street:
+      rawAddress?.street ||
+      rawAddress?.addressLine1 ||
+      rawAddress?.address_line_1 ||
+      "",
+    barangay: rawAddress?.barangay || "",
+    city: rawAddress?.city || "",
+    province: rawAddress?.province || "",
+    region: rawAddress?.region || "",
+    postalCode:
+      rawAddress?.postalCode ||
+      rawAddress?.postal_code ||
+      ""
+  };
+}
+
+function hasMissingSellerDetails(details) {
+  return !details.fullName || !details.mobileNumber || !details.street || !details.city || !details.province || !details.postalCode;
 }
 
 export default function ShippingLabel() {
@@ -144,6 +170,17 @@ export default function ShippingLabel() {
   const [selectedCarrier, setSelectedCarrier] = useState(CARRIERS[0].id);
   const [pickupDate, setPickupDate] = useState(getTomorrowInputValue());
   const [pickupSlot, setPickupSlot] = useState(CARRIERS[0].slots[0]);
+  const [sellerDetails, setSellerDetails] = useState({
+    fullName: "",
+    mobileNumber: "",
+    street: "",
+    barangay: "",
+    city: "",
+    province: "",
+    region: "",
+    postalCode: ""
+  });
+  const [sellerDetailsTouched, setSellerDetailsTouched] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
 
@@ -158,6 +195,7 @@ export default function ShippingLabel() {
 
         if (mounted) {
           setOrder(loadedOrder);
+          setSellerDetails(getSellerAddress(loadedOrder));
         }
       } catch (error) {
         console.error("Shipping label loading error:", error);
@@ -185,7 +223,9 @@ export default function ShippingLabel() {
     return CARRIERS.find((carrier) => carrier.id === selectedCarrier) || CARRIERS[0];
   }, [selectedCarrier]);
 
-  const sellerAddress = useMemo(() => getSellerAddress(order), [order]);
+  const missingSellerDetails = useMemo(() => {
+    return hasMissingSellerDetails(sellerDetails);
+  }, [sellerDetails]);
 
   async function refreshOrder(updatedOrder = null) {
     if (updatedOrder) {
@@ -196,6 +236,15 @@ export default function ShippingLabel() {
     const freshOrder = await getOrderById(orderId);
     setOrder(freshOrder);
     return freshOrder;
+  }
+
+  function updateSellerDetail(field, value) {
+    setSellerDetailsTouched(true);
+
+    setSellerDetails((current) => ({
+      ...current,
+      [field]: value
+    }));
   }
 
   async function handleDownloadLabel() {
@@ -250,6 +299,12 @@ export default function ShippingLabel() {
   async function handleCourierPickup() {
     if (!order?.id || loadingAction) return;
 
+    if (missingSellerDetails) {
+      setSellerDetailsTouched(true);
+      alert("Please complete the seller details before scheduling the courier pick-up.");
+      return;
+    }
+
     setLoadingAction("pickup");
 
     try {
@@ -257,7 +312,7 @@ export default function ShippingLabel() {
         carrier: selectedCarrier,
         pickupDate,
         pickupSlot,
-        sellerAddress
+        sellerAddress: sellerDetails
       });
 
       await refreshOrder(updatedOrder);
@@ -413,17 +468,17 @@ export default function ShippingLabel() {
           <h2>Seller</h2>
 
           <p>
-            <strong>{sellerAddress.fullName || order.sellerUsername || "Seller"}</strong>
+            <strong>{sellerDetails.fullName || order.sellerUsername || "Seller"}</strong>
             <br />
-            {sellerAddress.mobileNumber || ""}
+            {sellerDetails.mobileNumber || "Phone number missing"}
             <br />
-            {sellerAddress.street || "Seller address"}
+            {sellerDetails.street || "Seller address missing"}
             <br />
-            {sellerAddress.barangay ? `${sellerAddress.barangay}, ` : ""}
-            {sellerAddress.city || "Makati City"}, {sellerAddress.province || "Metro Manila"}
+            {sellerDetails.barangay ? `${sellerDetails.barangay}, ` : ""}
+            {sellerDetails.city || "City missing"}, {sellerDetails.province || "Province missing"}
             <br />
-            {sellerAddress.region || "National Capital Region"},{" "}
-            {sellerAddress.postalCode || "1210"}
+            {sellerDetails.region || "Region missing"},{" "}
+            {sellerDetails.postalCode || "Postal code missing"}
           </p>
         </div>
 
@@ -563,26 +618,113 @@ export default function ShippingLabel() {
             <h2>Schedule courier pick-up</h2>
 
             <p>
-              Check your seller details, choose a carrier, then select an
-              available date and time slot.
+              Confirm your seller details. Missing information must be completed
+              before scheduling the courier.
             </p>
 
-            <div className="shipping-pickup-address-card">
-              <strong>Seller details</strong>
+            <div className="shipping-pickup-warning">
+              <User size={18} />
+              <span>
+                {missingSellerDetails
+                  ? "Some seller details are missing. Please complete the form below."
+                  : "Seller details are already filled. You can update them if needed."}
+              </span>
+            </div>
 
-              <p>
-                <b>{sellerAddress.fullName || order.sellerUsername || "Seller"}</b>
-                <br />
-                {sellerAddress.mobileNumber || "No phone number provided"}
-                <br />
-                {sellerAddress.street || "Seller address"}
-                <br />
-                {sellerAddress.barangay ? `${sellerAddress.barangay}, ` : ""}
-                {sellerAddress.city || "Makati City"}, {sellerAddress.province || "Metro Manila"}
-                <br />
-                {sellerAddress.region || "National Capital Region"},{" "}
-                {sellerAddress.postalCode || "1210"}
-              </p>
+            <div className="shipping-seller-form-grid">
+              <div className="shipping-form-field">
+                <label htmlFor="seller-full-name">Full name *</label>
+                <input
+                  id="seller-full-name"
+                  type="text"
+                  value={sellerDetails.fullName}
+                  onChange={(event) => updateSellerDetail("fullName", event.target.value)}
+                  placeholder="Seller full name"
+                  className={sellerDetailsTouched && !sellerDetails.fullName ? "field-error" : ""}
+                />
+              </div>
+
+              <div className="shipping-form-field">
+                <label htmlFor="seller-mobile-number">Mobile number *</label>
+                <input
+                  id="seller-mobile-number"
+                  type="tel"
+                  value={sellerDetails.mobileNumber}
+                  onChange={(event) => updateSellerDetail("mobileNumber", event.target.value)}
+                  placeholder="+63 9XX XXX XXXX"
+                  className={sellerDetailsTouched && !sellerDetails.mobileNumber ? "field-error" : ""}
+                />
+              </div>
+
+              <div className="shipping-form-field full">
+                <label htmlFor="seller-street">Street, building, house number *</label>
+                <input
+                  id="seller-street"
+                  type="text"
+                  value={sellerDetails.street}
+                  onChange={(event) => updateSellerDetail("street", event.target.value)}
+                  placeholder="Street name, building, house number"
+                  className={sellerDetailsTouched && !sellerDetails.street ? "field-error" : ""}
+                />
+              </div>
+
+              <div className="shipping-form-field">
+                <label htmlFor="seller-barangay">Barangay</label>
+                <input
+                  id="seller-barangay"
+                  type="text"
+                  value={sellerDetails.barangay}
+                  onChange={(event) => updateSellerDetail("barangay", event.target.value)}
+                  placeholder="Barangay"
+                />
+              </div>
+
+              <div className="shipping-form-field">
+                <label htmlFor="seller-city">City *</label>
+                <input
+                  id="seller-city"
+                  type="text"
+                  value={sellerDetails.city}
+                  onChange={(event) => updateSellerDetail("city", event.target.value)}
+                  placeholder="City"
+                  className={sellerDetailsTouched && !sellerDetails.city ? "field-error" : ""}
+                />
+              </div>
+
+              <div className="shipping-form-field">
+                <label htmlFor="seller-province">Province *</label>
+                <input
+                  id="seller-province"
+                  type="text"
+                  value={sellerDetails.province}
+                  onChange={(event) => updateSellerDetail("province", event.target.value)}
+                  placeholder="Province"
+                  className={sellerDetailsTouched && !sellerDetails.province ? "field-error" : ""}
+                />
+              </div>
+
+              <div className="shipping-form-field">
+                <label htmlFor="seller-region">Region</label>
+                <input
+                  id="seller-region"
+                  type="text"
+                  value={sellerDetails.region}
+                  onChange={(event) => updateSellerDetail("region", event.target.value)}
+                  placeholder="Region"
+                />
+              </div>
+
+              <div className="shipping-form-field">
+                <label htmlFor="seller-postal-code">Postal code *</label>
+                <input
+                  id="seller-postal-code"
+                  type="text"
+                  value={sellerDetails.postalCode}
+                  onChange={(event) => updateSellerDetail("postalCode", event.target.value)}
+                  placeholder="Postal code"
+                  className={sellerDetailsTouched && !sellerDetails.postalCode ? "field-error" : ""}
+                />
+              </div>
             </div>
 
             <div className="shipping-pickup-field">

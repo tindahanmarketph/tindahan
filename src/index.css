@@ -24362,3 +24362,70 @@ body.tindahan-feed-zoom-locked button {
     padding: 22px 18px calc(24px + env(safe-area-inset-bottom)) !important;
   }
 }
+.shipping-pickup-warning {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 24px minmax(0, 1fr) !important;
+  gap: 10px !important;
+  align-items: start !important;
+  padding: 12px 13px !important;
+  border-radius: 14px !important;
+  background: #fff3ed !important;
+  color: var(--orange) !important;
+  font-size: 13px !important;
+  line-height: 1.35 !important;
+  font-weight: 850 !important;
+  text-align: left !important;
+}
+
+.shipping-seller-form-grid {
+  width: 100% !important;
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+}
+
+.shipping-form-field {
+  display: grid !important;
+  gap: 6px !important;
+  text-align: left !important;
+}
+
+.shipping-form-field.full {
+  grid-column: 1 / -1 !important;
+}
+
+.shipping-form-field label {
+  color: #111111 !important;
+  font-size: 12.5px !important;
+  font-weight: 950 !important;
+}
+
+.shipping-form-field input {
+  width: 100% !important;
+  min-height: 44px !important;
+  border: 1px solid #e4e8e8 !important;
+  border-radius: 13px !important;
+  background: #ffffff !important;
+  padding: 0 12px !important;
+  color: #111111 !important;
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  outline: none !important;
+}
+
+.shipping-form-field input:focus {
+  border-color: var(--orange) !important;
+  box-shadow: 0 0 0 3px rgba(255, 107, 44, 0.12) !important;
+}
+
+.shipping-form-field input.field-error {
+  border-color: #ef4444 !important;
+  background: #fff5f5 !important;
+}
+
+@media (max-width: 520px) {
+  .shipping-seller-form-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
