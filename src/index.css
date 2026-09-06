@@ -25033,3 +25033,117 @@ body.tindahan-feed-zoom-locked button {
   line-height: 1.25 !important;
   font-weight: 750 !important;
 }
+.checkout-page .checkout-section {
+  padding-left: 20px !important;
+  padding-right: 20px !important;
+}
+
+.checkout-page .checkout-row-button {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  border-radius: 10px !important;
+  overflow: hidden !important;
+}
+
+.checkout-page .checkout-row-button span {
+  min-width: 0 !important;
+  max-width: calc(100% - 34px) !important;
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+  line-height: 1.25 !important;
+}
+
+.checkout-pickup-summary {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  margin-top: 12px !important;
+  padding: 14px 16px !important;
+  border-radius: 14px !important;
+}
+
+.checkout-pickup-summary > div {
+  min-width: 0 !important;
+}
+
+.checkout-pickup-summary strong,
+.checkout-pickup-summary p,
+.checkout-pickup-summary small {
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+.pickup-point-sheet {
+  width: min(100% - 24px, 430px) !important;
+  max-height: 88vh !important;
+  margin-left: auto !important;
+  margin-right: auto !important;
+  border-radius: 22px 22px 0 0 !important;
+  overflow: hidden !important;
+}
+
+.pickup-point-sheet header {
+  padding-left: 18px !important;
+  padding-right: 18px !important;
+}
+
+.pickup-point-list {
+  padding: 12px 12px 14px !important;
+  box-sizing: border-box !important;
+}
+
+.pickup-point-option {
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 14px 16px !important;
+  border-radius: 14px !important;
+}
+
+.pickup-point-option > div {
+  min-width: 0 !important;
+}
+
+.pickup-point-option strong,
+.pickup-point-option p,
+.pickup-point-option small {
+  overflow-wrap: anywhere !important;
+  word-break: normal !important;
+}
+
+.pickup-point-confirm-button {
+  width: calc(100% - 24px) !important;
+  margin: 0 12px 12px !important;
+  box-sizing: border-box !important;
+}
+
+@media (max-width: 430px) {
+  .checkout-page .checkout-section {
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+
+  .checkout-page .checkout-row-button {
+    padding-left: 14px !important;
+    padding-right: 14px !important;
+  }
+
+  .checkout-pickup-summary {
+    padding: 13px 14px !important;
+  }
+
+  .pickup-point-sheet {
+    width: calc(100% - 16px) !important;
+  }
+
+  .pickup-point-list {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  .pickup-point-confirm-button {
+    width: calc(100% - 20px) !important;
+    margin-left: 10px !important;
+    margin-right: 10px !important;
+  }
+}
