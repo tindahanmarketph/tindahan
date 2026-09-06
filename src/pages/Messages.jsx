@@ -316,13 +316,64 @@ function getReviewDeadline(order) {
   return date.toISOString();
 }
 
+function getRelayPointDetails(order) {
+  const address = order?.address || {};
+
+  const point =
+    address?.pickupPoint ||
+    address?.pickup_point ||
+    address?.relayPoint ||
+    address?.relay_point ||
+    address?.dropOffPoint ||
+    address?.drop_off_point ||
+    order?.pickupPoint ||
+    order?.pickup_point ||
+    order?.relayPoint ||
+    order?.relay_point ||
+    order?.dropOffPoint ||
+    order?.drop_off_point ||
+    null;
+
+  if (typeof point === "string") {
+    return {
+      name: "Selected pick-up point",
+      address: point,
+      carrier: order?.carrier || "",
+      openingHours: ""
+    };
+  }
+
+  return {
+    name:
+      point?.name ||
+      point?.label ||
+      point?.title ||
+      point?.branchName ||
+      point?.branch_name ||
+      "Selected pick-up point",
+    address:
+      point?.address ||
+      point?.fullAddress ||
+      point?.full_address ||
+      point?.street ||
+      address?.pickupPointAddress ||
+      address?.pickup_point_address ||
+      address?.relayPointAddress ||
+      address?.relay_point_address ||
+      address?.dropOffPointAddress ||
+      address?.drop_off_point_address ||
+      "The selected pick-up point address will be shown here.",
+    carrier: point?.carrier || order?.carrier || "",
+    openingHours:
+      point?.openingHours ||
+      point?.opening_hours ||
+      point?.hours ||
+      ""
+  };
+}
+
 function getRelayAddress(order) {
-  return (
-    order?.address?.pickupPoint?.address ||
-    order?.address?.relayPoint?.address ||
-    order?.address?.dropOffPoint?.address ||
-    "the selected pick-up point"
-  );
+  return getRelayPointDetails(order).address;
 }
 
 function canBuyerReviewOrder(order) {
@@ -353,7 +404,8 @@ function getBuyerOrderCopy(order) {
   if (order?.status === "ready_for_pickup") {
     return {
       title: "Your parcel has arrived!",
-      text: `It is waiting at the following address: ${getRelayAddress(order)}.`,
+      text:
+        "Your parcel is waiting at the selected pick-up point. Please check the pick-up point details below before going there.",
       showTrack: true,
       showReviewActions: true
     };
@@ -511,6 +563,9 @@ function MessageOrderCard({
   const meetupPending = hasMeetupSuggestion && meetupStatus === "pending";
   const trackingAvailable = canTrackParcel(order);
   const buyerCopy = getBuyerOrderCopy(order);
+  const relayPointDetails = getRelayPointDetails(order);
+  const shouldShowRelayPointDetails =
+    !isSellerOrder && order?.status === "ready_for_pickup";
 
   async function handleMeetupDecision(nextStatus) {
     if (!order?.id || loadingAction) return;
@@ -671,6 +726,28 @@ function MessageOrderCard({
           <strong>{orderTitle}</strong>
 
           <p>{orderMessage}</p>
+
+          {shouldShowRelayPointDetails && (
+            <div className="conversation-relay-point-card">
+              <div className="conversation-relay-point-icon">
+                <MapPin size={18} />
+              </div>
+
+              <div>
+                <span>Pick-up point</span>
+                <strong>{relayPointDetails.name}</strong>
+                <p>{relayPointDetails.address}</p>
+
+                {(relayPointDetails.carrier || relayPointDetails.openingHours) && (
+                  <small>
+                    {[relayPointDetails.carrier, relayPointDetails.openingHours]
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </small>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="conversation-order-product">
             {order.listingPhoto && (
