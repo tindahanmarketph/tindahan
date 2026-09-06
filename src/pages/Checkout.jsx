@@ -82,6 +82,37 @@ const paymentMethods = [
   }
 ];
 
+const pickupPoints = [
+  {
+    id: "jt-makati-ave",
+    carrier: "J&T Express",
+    name: "J&T Express - Makati Avenue",
+    address: "Makati Avenue, Makati City, Metro Manila",
+    openingHours: "Open today · 9:00 AM - 6:00 PM"
+  },
+  {
+    id: "jt-greenbelt",
+    carrier: "J&T Express",
+    name: "J&T Express - Greenbelt",
+    address: "Greenbelt, Ayala Center, Makati City",
+    openingHours: "Open today · 9:00 AM - 6:00 PM"
+  },
+  {
+    id: "ninja-bgc",
+    carrier: "Ninja Van",
+    name: "Ninja Van Drop-Off - BGC",
+    address: "Bonifacio Global City, Taguig, Metro Manila",
+    openingHours: "Open today · 10:00 AM - 7:00 PM"
+  },
+  {
+    id: "lbc-greenbelt",
+    carrier: "LBC Express",
+    name: "LBC Express - Greenbelt",
+    address: "Greenbelt, Ayala Center, Makati City",
+    openingHours: "Open today · 10:00 AM - 8:00 PM"
+  }
+];
+
 const defaultAddress = {
   fullName: "Gian Capino",
   mobileNumber: "+63 9XX XXX XXXX",
@@ -142,6 +173,8 @@ export default function Checkout() {
   const [selectedPayment, setSelectedPayment] = useState("gcash");
   const [showAddressEditor, setShowAddressEditor] = useState(false);
   const [showPaymentSheet, setShowPaymentSheet] = useState(false);
+  const [showPickupPointSheet, setShowPickupPointSheet] = useState(false);
+  const [selectedPickupPoint, setSelectedPickupPoint] = useState(pickupPoints[0]);
   const [address, setAddress] = useState(defaultAddress);
   const [draftAddress, setDraftAddress] = useState(defaultAddress);
   const [isPaying, setIsPaying] = useState(false);
@@ -232,6 +265,22 @@ export default function Checkout() {
     );
   }, [selectedPayment]);
 
+  const checkoutAddress = useMemo(() => {
+    if (selectedDelivery !== "pickup") {
+      return address;
+    }
+
+    return {
+      ...address,
+      pickupPoint: selectedPickupPoint,
+      pickup_point: selectedPickupPoint,
+      relayPoint: selectedPickupPoint,
+      relay_point: selectedPickupPoint,
+      dropOffPoint: selectedPickupPoint,
+      drop_off_point: selectedPickupPoint
+    };
+  }, [address, selectedDelivery, selectedPickupPoint]);
+
   const total = itemPrice + buyerProtection + delivery.price;
   const firstPhoto = listing?.photos?.[0];
 
@@ -282,7 +331,7 @@ export default function Checkout() {
     }
 
     if (selectedDelivery === "pickup") {
-      alert("J&T Express pick-up point selection will be available in the next prototype step.");
+      setShowPickupPointSheet(true);
       return;
     }
 
@@ -326,6 +375,11 @@ export default function Checkout() {
       return;
     }
 
+    if (selectedDelivery === "pickup" && !selectedPickupPoint?.id) {
+      setShowPickupPointSheet(true);
+      return;
+    }
+
     setIsPaying(true);
 
     try {
@@ -342,7 +396,7 @@ export default function Checkout() {
         total,
         deliveryMethod: selectedDelivery,
         paymentMethod: selectedPayment,
-        address,
+        address: checkoutAddress,
         meetup: selectedDelivery === "meetup" ? meetupPlan : null,
         sellerMeetupSpot,
         buyerSuggestedMeetupSpot: buyerSuggestedDifferentMeetup
@@ -437,7 +491,11 @@ export default function Checkout() {
 
       {selectedDelivery !== "meetup" && (
         <section className="checkout-section">
-          <h2>Delivery address</h2>
+          <h2>
+            {selectedDelivery === "pickup"
+              ? "Buyer information"
+              : "Delivery address"}
+          </h2>
 
           <button
             type="button"
@@ -543,7 +601,7 @@ export default function Checkout() {
                 ? "Accept or suggest another Meet-Up point"
                 : "Meet-Up is not available for this item"
               : selectedDelivery === "pickup"
-              ? "Choose a J&T Express pick-up point"
+              ? `${selectedPickupPoint.name} · ${selectedPickupPoint.address}`
               : selectedDelivery === "door"
               ? "Add delivery instructions"
               : "Confirm courier delivery"}
@@ -551,6 +609,20 @@ export default function Checkout() {
 
           <strong>{selectedDelivery === "meetup" && meetupPlan ? "›" : "+"}</strong>
         </button>
+
+        {selectedDelivery === "pickup" && selectedPickupPoint && (
+          <div className="checkout-pickup-summary">
+            <MapPin size={19} />
+
+            <div>
+              <strong>{selectedPickupPoint.name}</strong>
+              <p>{selectedPickupPoint.address}</p>
+              <small>
+                {selectedPickupPoint.carrier} · {selectedPickupPoint.openingHours}
+              </small>
+            </div>
+          </div>
+        )}
 
         {selectedDelivery === "meetup" && meetupPlan && (
           <div
@@ -655,6 +727,8 @@ export default function Checkout() {
         >
           {selectedDelivery === "meetup" && !meetupPlan
             ? "Choose a meeting point"
+            : selectedDelivery === "pickup" && !selectedPickupPoint?.id
+            ? "Choose a pick-up point"
             : isPaying
             ? "Processing..."
             : payment.buttonLabel}
@@ -795,6 +869,77 @@ export default function Checkout() {
               Save address
             </button>
           </div>
+        </div>
+      )}
+
+      {showPickupPointSheet && (
+        <div
+          className="checkout-payment-overlay"
+          role="presentation"
+          onClick={() => setShowPickupPointSheet(false)}
+        >
+          <section
+            className="checkout-payment-sheet pickup-point-sheet"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Pick-up points"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="checkout-payment-handle" />
+
+            <header>
+              <span />
+              <h2>Pick-up point</h2>
+
+              <button
+                type="button"
+                onClick={() => setShowPickupPointSheet(false)}
+                aria-label="Close"
+              >
+                <X size={25} />
+              </button>
+            </header>
+
+            <div className="pickup-point-list">
+              {pickupPoints.map((point) => {
+                const isActive = selectedPickupPoint?.id === point.id;
+
+                return (
+                  <button
+                    key={point.id}
+                    type="button"
+                    className={
+                      isActive
+                        ? "pickup-point-option active"
+                        : "pickup-point-option"
+                    }
+                    onClick={() => setSelectedPickupPoint(point)}
+                  >
+                    <MapPin size={21} />
+
+                    <div>
+                      <strong>{point.name}</strong>
+                      <span>{point.carrier}</span>
+                      <p>{point.address}</p>
+                      <small>{point.openingHours}</small>
+                    </div>
+
+                    <span className="pickup-point-check">
+                      {isActive && "✓"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <button
+              type="button"
+              className="pickup-point-confirm-button"
+              onClick={() => setShowPickupPointSheet(false)}
+            >
+              Confirm pick-up point
+            </button>
+          </section>
         </div>
       )}
 

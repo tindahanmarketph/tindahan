@@ -251,6 +251,38 @@ async function sendOrderConversationUpdate(order, type, text) {
   });
 }
 
+function normalizeCheckoutAddress(address, deliveryMethod) {
+  const normalizedAddress = {
+    ...(address || {})
+  };
+
+  if (deliveryMethod !== "pickup") {
+    return normalizedAddress;
+  }
+
+  const selectedPoint =
+    address?.pickupPoint ||
+    address?.pickup_point ||
+    address?.relayPoint ||
+    address?.relay_point ||
+    address?.dropOffPoint ||
+    address?.drop_off_point ||
+    null;
+
+  if (!selectedPoint) {
+    return normalizedAddress;
+  }
+
+  normalizedAddress.pickupPoint = selectedPoint;
+  normalizedAddress.pickup_point = selectedPoint;
+  normalizedAddress.relayPoint = selectedPoint;
+  normalizedAddress.relay_point = selectedPoint;
+  normalizedAddress.dropOffPoint = selectedPoint;
+  normalizedAddress.drop_off_point = selectedPoint;
+
+  return normalizedAddress;
+}
+
 export async function createOrderFromCheckout({
   listing,
   seller,
@@ -284,6 +316,8 @@ export async function createOrderFromCheckout({
     throw new Error("Missing seller.");
   }
 
+  const normalizedAddress = normalizeCheckoutAddress(address, deliveryMethod);
+
   const now = new Date().toISOString();
   const maxShippingDate = addDays(now, 7);
   const trackingNumber = createTrackingNumber();
@@ -295,7 +329,19 @@ export async function createOrderFromCheckout({
   const status =
     deliveryMethod === "meetup" ? "meetup_request_sent" : "paid_waiting_seller";
 
-  const carrier = deliveryMethod === "meetup" ? "Safe Meet-Up" : "J&T Express";
+  const pickupPoint =
+    normalizedAddress.pickupPoint ||
+    normalizedAddress.pickup_point ||
+    normalizedAddress.relayPoint ||
+    normalizedAddress.relay_point ||
+    normalizedAddress.dropOffPoint ||
+    normalizedAddress.drop_off_point ||
+    null;
+
+  const carrier =
+    deliveryMethod === "meetup"
+      ? "Safe Meet-Up"
+      : pickupPoint?.carrier || "J&T Express";
 
   const { data: orderRow, error } = await supabase
     .from("orders")
@@ -314,7 +360,7 @@ export async function createOrderFromCheckout({
       total,
       delivery_method: deliveryMethod,
       payment_method: paymentMethod,
-      address,
+      address: normalizedAddress,
       meetup: deliveryMethod === "meetup" ? meetup : null,
       seller_meetup_spot: sellerMeetupSpot || listing.seller_meetup_spot || null,
       buyer_suggested_meetup_spot: buyerSuggestedMeetupSpot || null,
@@ -347,6 +393,8 @@ export async function createOrderFromCheckout({
         ? hasMeetupSuggestion
           ? "The buyer suggested another Safe Meet-Up point. The seller can accept or decline it after purchase."
           : "The buyer accepted the seller's preferred meeting point."
+        : pickupPoint?.name && pickupPoint?.address
+        ? `The seller has been notified and must ship the parcel within 7 days. Pick-up point selected: ${pickupPoint.name}, ${pickupPoint.address}.`
         : "The seller has been notified and must ship the parcel within 7 days.",
     completed: true
   });
@@ -463,9 +511,21 @@ export async function markParcelDroppedOff(
   const pointName = dropOffPoint?.name || carrier;
   const pointAddress = dropOffPoint?.address || "";
 
+  const currentOrder = await getOrderById(orderId);
+  const currentAddress = currentOrder?.address || {};
+
+  const normalizedAddress = dropOffPoint
+    ? {
+        ...currentAddress,
+        sellerDropOffPoint: dropOffPoint,
+        seller_drop_off_point: dropOffPoint
+      }
+    : currentAddress;
+
   const updatedOrder = await updateOrder(orderId, {
     seller_shipping_choice: "dropoff",
     carrier,
+    address: normalizedAddress,
     status: "dropped_off"
   });
 
@@ -509,20 +569,36 @@ export async function markParcelInTransit(orderId) {
 }
 
 export async function markParcelReadyForPickup(orderId) {
+  const currentOrder = await getOrderById(orderId);
+
+  const pickupPoint =
+    currentOrder?.address?.pickupPoint ||
+    currentOrder?.address?.pickup_point ||
+    currentOrder?.address?.relayPoint ||
+    currentOrder?.address?.relay_point ||
+    currentOrder?.address?.dropOffPoint ||
+    currentOrder?.address?.drop_off_point ||
+    null;
+
   const updatedOrder = await updateOrder(orderId, {
     status: "ready_for_pickup"
   });
 
   await addOrderTrackingEvent(orderId, {
     title: "Parcel ready for pick-up",
-    description: "Your parcel is available at the selected pick-up point.",
+    description:
+      pickupPoint?.name && pickupPoint?.address
+        ? `Your parcel is available at ${pickupPoint.name}, ${pickupPoint.address}.`
+        : "Your parcel is available at the selected pick-up point.",
     completed: true
   });
 
   await sendOrderConversationUpdate(
     updatedOrder,
     "parcel_ready_for_pickup",
-    "Your parcel has arrived at the pick-up point. Check your order before confirming it."
+    pickupPoint?.name && pickupPoint?.address
+      ? `Your parcel has arrived at ${pickupPoint.name}. Pick-up address: ${pickupPoint.address}. Check your order before confirming it.`
+      : "Your parcel has arrived at the pick-up point. Check your order before confirming it."
   );
 
   return getOrderById(orderId);
