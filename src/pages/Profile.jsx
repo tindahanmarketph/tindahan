@@ -21,6 +21,7 @@ import {
   ShieldCheck,
   Shirt,
   SlidersHorizontal,
+  Star,
   Truck,
   Wallet,
   WalletCards
@@ -28,6 +29,7 @@ import {
 import { useAuth } from "../context/AuthContext";
 import ListingCard from "../components/ListingCard";
 import { supabase } from "../lib/supabase";
+import { formatReviewDate, getReviewsForUser } from "../lib/reviews";
 
 function getInitial(username) {
   return username?.trim()?.charAt(0)?.toUpperCase() || "U";
@@ -61,6 +63,46 @@ function getProfileLocation(profile) {
   }
 
   return profile.country || profile.location || "Philippines";
+}
+
+function getReviewAverage(reviews) {
+  if (!reviews || reviews.length === 0) return 0;
+
+  const total = reviews.reduce((sum, review) => {
+    return sum + Number(review.rating || 0);
+  }, 0);
+
+  return total / reviews.length;
+}
+
+function getReviewSummaryLabel(reviews) {
+  if (!reviews || reviews.length === 0) {
+    return "No reviews yet";
+  }
+
+  const average = getReviewAverage(reviews);
+
+  return `${average.toFixed(1)} · ${reviews.length} review${
+    reviews.length > 1 ? "s" : ""
+  }`;
+}
+
+function getReviewerName(review) {
+  return (
+    review?.reviewer?.username ||
+    review?.reviewer_username ||
+    review?.reviewerName ||
+    "TindaHan member"
+  );
+}
+
+function getReviewerAvatar(review) {
+  return (
+    review?.reviewer?.avatar_url ||
+    review?.reviewer_avatar_url ||
+    review?.reviewerAvatar ||
+    ""
+  );
 }
 
 async function fetchUserListings(profileId, isOwnProfile = false) {
@@ -174,8 +216,11 @@ function MobileProfileDashboard({
   displayedUsername,
   displayedAvatar,
   holidayModeEnabled,
+  reviews,
   onLogout
 }) {
+  const reviewLabel = getReviewSummaryLabel(reviews);
+
   return (
     <section className="mobile-profile-dashboard">
       <header className="mobile-profile-header">
@@ -197,7 +242,7 @@ function MobileProfileDashboard({
 
           <div>
             <strong>{displayedUsername}</strong>
-            <span>View my listings</span>
+            <span>{reviewLabel}</span>
           </div>
         </Link>
 
@@ -342,6 +387,88 @@ function MobileProfileDashboard({
   );
 }
 
+function ReviewStars({ rating }) {
+  const cleanRating = Number(rating || 0);
+
+  return (
+    <div className="profile-review-stars" aria-label={`${cleanRating} out of 5`}>
+      {[1, 2, 3, 4, 5].map((star) => (
+        <span key={star} className={star <= cleanRating ? "active" : ""}>
+          ★
+        </span>
+      ))}
+    </div>
+  );
+}
+
+function ProfileReviewsSection({ reviews }) {
+  const average = getReviewAverage(reviews);
+  const hasReviews = reviews.length > 0;
+
+  return (
+    <section className="profile-reviews-section" id="profile-reviews">
+      <header className="profile-reviews-header">
+        <div>
+          <h2>Reviews</h2>
+          <p>
+            Reviews left by buyers and sellers after completed TindaHan orders.
+          </p>
+        </div>
+
+        <div className="profile-reviews-score">
+          <strong>{hasReviews ? average.toFixed(1) : "—"}</strong>
+          <span>
+            {reviews.length} review{reviews.length > 1 ? "s" : ""}
+          </span>
+        </div>
+      </header>
+
+      {hasReviews ? (
+        <div className="profile-review-list">
+          {reviews.map((review) => {
+            const reviewerName = getReviewerName(review);
+            const reviewerAvatar = getReviewerAvatar(review);
+
+            return (
+              <article className="profile-review-card" key={review.id}>
+                <div className="profile-review-avatar">
+                  {reviewerAvatar ? (
+                    <img src={reviewerAvatar} alt={`${reviewerName} profile`} />
+                  ) : (
+                    getInitial(reviewerName)
+                  )}
+                </div>
+
+                <div>
+                  <div className="profile-review-topline">
+                    <strong>{reviewerName}</strong>
+                    <span>{formatReviewDate(review.createdAt)}</span>
+                  </div>
+
+                  <ReviewStars rating={review.rating} />
+
+                  <p>
+                    {review.comment ||
+                      "This member completed the order successfully."}
+                  </p>
+                </div>
+              </article>
+            );
+          })}
+        </div>
+      ) : (
+        <div className="profile-reviews-empty">
+          <strong>No reviews yet</strong>
+          <p>
+            Reviews will appear here after completed orders with other TindaHan
+            members.
+          </p>
+        </div>
+      )}
+    </section>
+  );
+}
+
 export default function Profile() {
   const navigate = useNavigate();
   const { username } = useParams();
@@ -349,6 +476,7 @@ export default function Profile() {
 
   const [profile, setProfile] = useState(null);
   const [listings, setListings] = useState([]);
+  const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
 
   const isOwnProfile = useMemo(() => {
@@ -389,6 +517,7 @@ export default function Profile() {
         console.error("Profile loading error:", profileError?.message);
         setProfile(null);
         setListings([]);
+        setReviews([]);
         setLoading(false);
         return;
       }
@@ -397,8 +526,16 @@ export default function Profile() {
 
       setProfile(profileData);
 
-      const userListings = await fetchUserListings(profileData.id, ownProfile);
+      const [userListings, userReviews] = await Promise.all([
+        fetchUserListings(profileData.id, ownProfile),
+        getReviewsForUser(profileData.id).catch((error) => {
+          console.warn("Profile reviews loading skipped:", error.message);
+          return [];
+        })
+      ]);
+
       setListings(userListings);
+      setReviews(userReviews);
 
       setLoading(false);
     }
@@ -448,6 +585,8 @@ export default function Profile() {
   const displayedAvatar = profile.avatar_url || "";
   const displayedLocation = getProfileLocation(profile);
   const holidayModeEnabled = Boolean(profile?.holiday_mode);
+  const reviewSummaryLabel = getReviewSummaryLabel(reviews);
+  const reviewAverage = getReviewAverage(reviews);
 
   return (
     <main className={isOwnProfile ? "profile-page own-profile-page" : "profile-page"}>
@@ -456,6 +595,7 @@ export default function Profile() {
           displayedUsername={displayedUsername}
           displayedAvatar={displayedAvatar}
           holidayModeEnabled={holidayModeEnabled}
+          reviews={reviews}
           onLogout={handleLogout}
         />
       )}
@@ -480,7 +620,20 @@ export default function Profile() {
             <div className="profile-name-row">
               <div>
                 <h1>{displayedUsername}</h1>
-                <p>No reviews yet</p>
+
+                <div className="profile-rating-line">
+                  <Star size={17} />
+                  {reviews.length > 0 ? (
+                    <>
+                      <strong>{reviewAverage.toFixed(1)}</strong>
+                      <span>
+                        {reviews.length} review{reviews.length > 1 ? "s" : ""}
+                      </span>
+                    </>
+                  ) : (
+                    <span>{reviewSummaryLabel}</span>
+                  )}
+                </div>
 
                 {holidayModeEnabled && isOwnProfile && (
                   <p className="profile-holiday-status">
@@ -546,14 +699,16 @@ export default function Profile() {
         </section>
 
         <section className="profile-tabs">
-          <button type="button" className="profile-tab active">
+          <a href="#profile-listings" className="profile-tab profile-tab-link active">
             Listings
-          </button>
+          </a>
 
-          <button type="button" className="profile-tab">
+          <a href="#profile-reviews" className="profile-tab profile-tab-link">
             Reviews
-          </button>
+          </a>
         </section>
+
+        <ProfileReviewsSection reviews={reviews} />
 
         <section className="profile-badges">
           <article className="profile-badge-card">
