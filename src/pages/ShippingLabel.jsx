@@ -34,17 +34,6 @@ const TRACKING_VISIBLE_STATUSES = [
   "refund_requested"
 ];
 
-const SHIPPING_METHOD_CHOSEN_STATUSES = [
-  "courier_pickup_scheduled",
-  "dropped_off",
-  "in_transit",
-  "ready_for_pickup",
-  "delivery_scheduled",
-  "delivered",
-  "completed",
-  "refund_requested"
-];
-
 const CARRIERS = [
   {
     id: "J&T Express",
@@ -113,16 +102,67 @@ function canTrackParcel(order) {
   return TRACKING_VISIBLE_STATUSES.includes(order?.status);
 }
 
-function hasShippingMethodChosen(order) {
+function getSelectedDropOffMethod(order) {
   const sellerShippingChoice =
     order?.sellerShippingChoice ||
     order?.seller_shipping_choice ||
     "";
 
-  return Boolean(
-    sellerShippingChoice ||
-      SHIPPING_METHOD_CHOSEN_STATUSES.includes(order?.status)
-  );
+  if (sellerShippingChoice === "courier_pickup") {
+    return "courier_pickup";
+  }
+
+  if (sellerShippingChoice === "dropoff") {
+    return "relay_point";
+  }
+
+  if (order?.status === "courier_pickup_scheduled") {
+    return "courier_pickup";
+  }
+
+  if (
+    [
+      "dropped_off",
+      "in_transit",
+      "ready_for_pickup",
+      "delivery_scheduled",
+      "delivered"
+    ].includes(order?.status)
+  ) {
+    return "relay_point";
+  }
+
+  return "";
+}
+
+function hasShippingMethodChosen(order) {
+  return Boolean(getSelectedDropOffMethod(order));
+}
+
+function getPreparationNoticeCopy(order) {
+  const selectedMethod = getSelectedDropOffMethod(order);
+
+  if (selectedMethod === "courier_pickup") {
+    return {
+      title: "Prepare your parcel for courier pick-up",
+      text:
+        "Your courier pick-up has been scheduled. Carefully pack the item, close the parcel securely, and attach the shipping label on the outside of the package in a clearly visible position. Then hand the parcel to the courier when they arrive."
+    };
+  }
+
+  if (selectedMethod === "relay_point") {
+    return {
+      title: "Prepare your parcel for relay point drop-off",
+      text:
+        "Your relay point drop-off method has been selected. Carefully pack the item, close the parcel securely, and attach the shipping label on the outside of the package in a clearly visible position. Then deposit the parcel at the selected relay point."
+    };
+  }
+
+  return {
+    title: "Prepare your parcel",
+    text:
+      "Carefully pack the item, close the parcel securely, and attach the shipping label on the outside of the package in a clearly visible position."
+  };
 }
 
 function getTodayInputValue() {
@@ -251,6 +291,10 @@ export default function ShippingLabel() {
 
   const shippingMethodChosen = useMemo(() => {
     return hasShippingMethodChosen(order);
+  }, [order]);
+
+  const preparationNoticeCopy = useMemo(() => {
+    return getPreparationNoticeCopy(order);
   }, [order]);
 
   const showPreparationNotice = useMemo(() => {
@@ -391,7 +435,7 @@ export default function ShippingLabel() {
       setShowDropOffMap(false);
       setShowShippingChoice(false);
       setSuccessMessage(
-        `Relay point selected: ${selectedDropOffPoint.name}. Please prepare the parcel and attach the shipping label clearly before handing it over.`
+        `Relay point selected: ${selectedDropOffPoint.name}. Please prepare the parcel and attach the shipping label clearly before depositing it.`
       );
       setShowSuccessModal(true);
     } catch (error) {
@@ -573,7 +617,7 @@ export default function ShippingLabel() {
           Print label
         </button>
 
-        {!trackingAvailable && !shippingMethodChosen && (
+        {!shippingMethodChosen && (
           <button
             type="button"
             className="parcel-outline-button"
@@ -591,12 +635,8 @@ export default function ShippingLabel() {
             </div>
 
             <div>
-              <strong>Prepare your parcel</strong>
-              <p>
-                Your drop-off method has been selected. Carefully pack the item,
-                close the parcel securely, and attach the shipping label on the
-                outside of the package in a clearly visible position.
-              </p>
+              <strong>{preparationNoticeCopy.title}</strong>
+              <p>{preparationNoticeCopy.text}</p>
             </div>
           </div>
         )}
