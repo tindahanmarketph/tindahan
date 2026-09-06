@@ -25147,3 +25147,10 @@ body.tindahan-feed-zoom-locked button {
     margin-right: 10px !important;
   }
 }
+.pickup-point-check {
+  display: none !important;
+}
+
+.pickup-point-option {
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+}
