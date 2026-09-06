@@ -10,7 +10,6 @@ import {
   Plus,
   Send,
   ShieldCheck,
-  Trash2,
   Truck,
   Users,
   X
@@ -66,6 +65,9 @@ const ORDER_MESSAGE_TYPES = [
   "order_completed",
   "refund_requested"
 ];
+
+const SWIPE_DELETE_WIDTH = 92;
+const SWIPE_OPEN_THRESHOLD = 44;
 
 function getInitialSafetyVisibility() {
   if (typeof window === "undefined") return true;
@@ -768,6 +770,12 @@ export default function Messages() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   const photoInputRef = useRef(null);
+  const swipeStartRef = useRef({
+    conversationId: "",
+    startX: 0,
+    startY: 0,
+    isDragging: false
+  });
 
   const [conversations, setConversations] = useState([]);
   const [activeConversationId, setActiveConversationId] = useState("");
@@ -780,6 +788,11 @@ export default function Messages() {
   const [activeTab, setActiveTab] = useState("messages");
   const [mobilePanel, setMobilePanel] = useState("inbox");
   const [errorMessage, setErrorMessage] = useState("");
+  const [swipeState, setSwipeState] = useState({
+    conversationId: "",
+    offset: 0,
+    dragging: false
+  });
 
   useEffect(() => {
     const isChatOpen = mobilePanel === "chat";
@@ -979,6 +992,11 @@ export default function Messages() {
   ]);
 
   function openConversation(conversationId) {
+    if (swipeState.conversationId === conversationId && swipeState.offset < 0) {
+      closeSwipe();
+      return;
+    }
+
     setActiveConversationId(conversationId);
     setMobilePanel("chat");
     setActiveTab("messages");
@@ -990,6 +1008,87 @@ export default function Messages() {
     setSelectedPhotos([]);
   }
 
+  function closeSwipe() {
+    setSwipeState({
+      conversationId: "",
+      offset: 0,
+      dragging: false
+    });
+  }
+
+  function handleSwipeStart(conversationId, event) {
+    const touch = event.touches?.[0];
+    if (!touch) return;
+
+    swipeStartRef.current = {
+      conversationId,
+      startX: touch.clientX,
+      startY: touch.clientY,
+      isDragging: true
+    };
+
+    setSwipeState((current) => ({
+      conversationId,
+      offset:
+        current.conversationId === conversationId && current.offset < 0
+          ? current.offset
+          : 0,
+      dragging: true
+    }));
+  }
+
+  function handleSwipeMove(conversationId, event) {
+    const touch = event.touches?.[0];
+    const swipeStart = swipeStartRef.current;
+
+    if (!touch || !swipeStart.isDragging || swipeStart.conversationId !== conversationId) {
+      return;
+    }
+
+    const diffX = touch.clientX - swipeStart.startX;
+    const diffY = touch.clientY - swipeStart.startY;
+
+    if (Math.abs(diffY) > Math.abs(diffX) && Math.abs(diffY) > 12) {
+      return;
+    }
+
+    if (Math.abs(diffX) > 8) {
+      event.preventDefault();
+    }
+
+    const offset = Math.max(-SWIPE_DELETE_WIDTH, Math.min(0, diffX));
+
+    setSwipeState({
+      conversationId,
+      offset,
+      dragging: true
+    });
+  }
+
+  function handleSwipeEnd(conversationId) {
+    const shouldOpen =
+      swipeState.conversationId === conversationId &&
+      Math.abs(swipeState.offset) >= SWIPE_OPEN_THRESHOLD;
+
+    swipeStartRef.current = {
+      conversationId: "",
+      startX: 0,
+      startY: 0,
+      isDragging: false
+    };
+
+    setSwipeState({
+      conversationId: shouldOpen ? conversationId : "",
+      offset: shouldOpen ? -SWIPE_DELETE_WIDTH : 0,
+      dragging: false
+    });
+  }
+
+  function getSwipeOffset(conversationId) {
+    if (swipeState.conversationId !== conversationId) return 0;
+    return swipeState.offset;
+  }
+
   async function handleDeleteConversation(conversationId, event = null) {
     event?.stopPropagation?.();
 
@@ -999,7 +1098,10 @@ export default function Messages() {
       "Delete this conversation from your inbox? It will only be hidden for you."
     );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      closeSwipe();
+      return;
+    }
 
     hideConversationForUser(conversationId, user.id);
 
@@ -1008,6 +1110,7 @@ export default function Messages() {
     );
 
     setConversations(remainingConversations);
+    closeSwipe();
 
     if (String(activeConversationId) === String(conversationId)) {
       setActiveConversationId(remainingConversations[0]?.id || "");
@@ -1230,44 +1333,62 @@ export default function Messages() {
 
     return (
       <div className="messages-mobile-list">
-        {conversations.map((conversation) => (
-          <div key={conversation.id} className="messages-mobile-row-wrap">
-            <button
-              type="button"
-              className="messages-mobile-row"
-              onClick={() => openConversation(conversation.id)}
-            >
-              <div className="messages-mobile-avatar">
-                {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
-              </div>
+        {conversations.map((conversation) => {
+          const swipeOffset = getSwipeOffset(conversation.id);
 
-              <div className="messages-mobile-main">
-                <div className="messages-mobile-row-top">
-                  <strong>{conversation.sellerName}</strong>
-                  <span>{formatConversationDate(conversation.updatedAt)}</span>
+          return (
+            <div
+              key={conversation.id}
+              className={
+                swipeOffset < 0
+                  ? "messages-mobile-swipe-row is-open"
+                  : "messages-mobile-swipe-row"
+              }
+            >
+              <button
+                type="button"
+                className="messages-mobile-delete-action"
+                onClick={(event) => handleDeleteConversation(conversation.id, event)}
+              >
+                Delete
+              </button>
+
+              <button
+                type="button"
+                className="messages-mobile-row messages-mobile-swipe-content"
+                style={{
+                  transform: `translateX(${swipeOffset}px)`,
+                  transition: swipeState.dragging ? "none" : "transform 0.18s ease"
+                }}
+                onTouchStart={(event) => handleSwipeStart(conversation.id, event)}
+                onTouchMove={(event) => handleSwipeMove(conversation.id, event)}
+                onTouchEnd={() => handleSwipeEnd(conversation.id)}
+                onTouchCancel={() => handleSwipeEnd(conversation.id)}
+                onClick={() => openConversation(conversation.id)}
+              >
+                <div className="messages-mobile-avatar">
+                  {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
                 </div>
 
-                <p>{getLastMessage(conversation)}</p>
+                <div className="messages-mobile-main">
+                  <div className="messages-mobile-row-top">
+                    <strong>{conversation.sellerName}</strong>
+                    <span>{formatConversationDate(conversation.updatedAt)}</span>
+                  </div>
 
-                {conversation.listing?.photo && (
-                  <img
-                    src={conversation.listing.photo}
-                    alt={conversation.listing.title}
-                  />
-                )}
-              </div>
-            </button>
+                  <p>{getLastMessage(conversation)}</p>
 
-            <button
-              type="button"
-              className="messages-delete-row-button"
-              onClick={(event) => handleDeleteConversation(conversation.id, event)}
-              aria-label="Delete conversation"
-            >
-              <Trash2 size={18} />
-            </button>
-          </div>
-        ))}
+                  {conversation.listing?.photo && (
+                    <img
+                      src={conversation.listing.photo}
+                      alt={conversation.listing.title}
+                    />
+                  )}
+                </div>
+              </button>
+            </div>
+          );
+        })}
       </div>
     );
   }
@@ -1493,20 +1614,9 @@ export default function Messages() {
 
           <strong>{activeConversation.sellerName}</strong>
 
-          <div className="messages-chat-header-actions">
-            <button
-              type="button"
-              className="messages-delete-chat-button"
-              onClick={(event) => handleDeleteConversation(activeConversation.id, event)}
-              aria-label="Delete conversation"
-            >
-              <Trash2 size={20} />
-            </button>
-
-            <button type="button" aria-label="Conversation information">
-              <Info size={21} />
-            </button>
-          </div>
+          <button type="button" aria-label="Conversation information">
+            <Info size={21} />
+          </button>
         </header>
 
         <div className="messages-listing-summary">
@@ -1764,6 +1874,11 @@ export default function Messages() {
       className={`messages-page messages-tabbed-page ${
         showSafety ? "messages-safety-visible" : "messages-safety-hidden"
       }`}
+      onClick={() => {
+        if (swipeState.offset < 0) {
+          closeSwipe();
+        }
+      }}
     >
       <section
         className={
@@ -1825,36 +1940,23 @@ export default function Messages() {
           ) : (
             <div className="messages-conversation-list">
               {conversations.map((conversation) => (
-                <div
+                <button
                   key={conversation.id}
-                  className={`messages-conversation-item-wrap ${
+                  type="button"
+                  className={`messages-conversation-item ${
                     conversation.id === activeConversation?.id ? "active" : ""
                   }`}
+                  onClick={() => setActiveConversationId(conversation.id)}
                 >
-                  <button
-                    type="button"
-                    className="messages-conversation-item"
-                    onClick={() => setActiveConversationId(conversation.id)}
-                  >
-                    <div className="messages-avatar">
-                      {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
-                    </div>
+                  <div className="messages-avatar">
+                    {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
+                  </div>
 
-                    <div>
-                      <strong>{conversation.sellerName}</strong>
-                      <p>{getLastMessage(conversation)}</p>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    className="messages-delete-row-button desktop"
-                    onClick={(event) => handleDeleteConversation(conversation.id, event)}
-                    aria-label="Delete conversation"
-                  >
-                    <Trash2 size={17} />
-                  </button>
-                </div>
+                  <div>
+                    <strong>{conversation.sellerName}</strong>
+                    <p>{getLastMessage(conversation)}</p>
+                  </div>
+                </button>
               ))}
             </div>
           )}
