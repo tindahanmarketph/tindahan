@@ -316,59 +316,135 @@ function getReviewDeadline(order) {
   return date.toISOString();
 }
 
-function getRelayPointDetails(order) {
-  const address = order?.address || {};
-
-  const point =
-    address?.pickupPoint ||
-    address?.pickup_point ||
-    address?.relayPoint ||
-    address?.relay_point ||
-    address?.dropOffPoint ||
-    address?.drop_off_point ||
-    order?.pickupPoint ||
-    order?.pickup_point ||
-    order?.relayPoint ||
-    order?.relay_point ||
-    order?.dropOffPoint ||
-    order?.drop_off_point ||
-    null;
+function normalizeRelayPoint(point, order = null) {
+  if (!point) return null;
 
   if (typeof point === "string") {
     return {
-      name: "Selected pick-up point",
+      name: order?.carrier || "Pick-up point",
       address: point,
       carrier: order?.carrier || "",
       openingHours: ""
     };
   }
 
+  const name =
+    point.name ||
+    point.label ||
+    point.title ||
+    point.branchName ||
+    point.branch_name ||
+    point.pointName ||
+    point.point_name ||
+    point.pickupPointName ||
+    point.pickup_point_name ||
+    point.relayPointName ||
+    point.relay_point_name ||
+    "";
+
+  const address =
+    point.address ||
+    point.fullAddress ||
+    point.full_address ||
+    point.formattedAddress ||
+    point.formatted_address ||
+    point.streetAddress ||
+    point.street_address ||
+    point.pickupPointAddress ||
+    point.pickup_point_address ||
+    point.relayPointAddress ||
+    point.relay_point_address ||
+    "";
+
+  const carrier =
+    point.carrier ||
+    point.provider ||
+    point.network ||
+    order?.carrier ||
+    "";
+
+  const openingHours =
+    point.openingHours ||
+    point.opening_hours ||
+    point.hours ||
+    point.schedule ||
+    "";
+
+  if (!name && !address) return null;
+
   return {
-    name:
-      point?.name ||
-      point?.label ||
-      point?.title ||
-      point?.branchName ||
-      point?.branch_name ||
-      "Selected pick-up point",
-    address:
-      point?.address ||
-      point?.fullAddress ||
-      point?.full_address ||
-      point?.street ||
-      address?.pickupPointAddress ||
-      address?.pickup_point_address ||
-      address?.relayPointAddress ||
-      address?.relay_point_address ||
-      address?.dropOffPointAddress ||
-      address?.drop_off_point_address ||
-      "The selected pick-up point address will be shown here.",
-    carrier: point?.carrier || order?.carrier || "",
-    openingHours:
-      point?.openingHours ||
-      point?.opening_hours ||
-      point?.hours ||
-      ""
+    name: name || carrier || "Pick-up point",
+    address: address || "Pick-up point address unavailable.",
+    carrier,
+    openingHours
+  };
+}
+
+function getRelayPointDetails(order) {
+  const address = order?.address || {};
+
+  const candidates = [
+    address.pickupPoint,
+    address.pickup_point,
+    address.relayPoint,
+    address.relay_point,
+    address.dropOffPoint,
+    address.drop_off_point,
+    address.selectedPickupPoint,
+    address.selected_pickup_point,
+    address.selectedRelayPoint,
+    address.selected_relay_point,
+    order?.pickupPoint,
+    order?.pickup_point,
+    order?.relayPoint,
+    order?.relay_point,
+    order?.dropOffPoint,
+    order?.drop_off_point,
+    order?.selectedPickupPoint,
+    order?.selected_pickup_point
+  ];
+
+  for (const candidate of candidates) {
+    const normalized = normalizeRelayPoint(candidate, order);
+
+    if (normalized?.name || normalized?.address) {
+      return normalized;
+    }
+  }
+
+  const fallbackName =
+    address.pickupPointName ||
+    address.pickup_point_name ||
+    address.relayPointName ||
+    address.relay_point_name ||
+    address.dropOffPointName ||
+    address.drop_off_point_name ||
+    order?.carrier ||
+    "Pick-up point";
+
+  const fallbackAddress =
+    address.pickupPointAddress ||
+    address.pickup_point_address ||
+    address.relayPointAddress ||
+    address.relay_point_address ||
+    address.dropOffPointAddress ||
+    address.drop_off_point_address ||
+    "";
+
+  if (fallbackName || fallbackAddress) {
+    return {
+      name: fallbackName,
+      address: fallbackAddress || "Pick-up point address unavailable.",
+      carrier: order?.carrier || "",
+      openingHours: ""
+    };
+  }
+
+  return {
+    name: order?.carrier || "Pick-up point",
+    address: "Pick-up point address unavailable.",
+    carrier: order?.carrier || "",
+    openingHours: ""
   };
 }
 
