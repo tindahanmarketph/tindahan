@@ -36,6 +36,7 @@ import {
   getOrderById,
   updateMeetupChangeStatus
 } from "../lib/orders";
+import { createReview, getReviewForOrder } from "../lib/reviews";
 
 const MESSAGES_SAFETY_STORAGE_KEY = "tindahan_messages_safety_hidden";
 
@@ -585,6 +586,91 @@ function OrderAcceptanceModal({ loading, onClose, onConfirm }) {
   );
 }
 
+function ReviewRatingModal({
+  title,
+  description,
+  submitLabel,
+  loading,
+  onClose,
+  onSubmit
+}) {
+  const [rating, setRating] = useState(5);
+  const [comment, setComment] = useState("");
+
+  async function handleSubmit() {
+    await onSubmit({
+      rating,
+      comment
+    });
+  }
+
+  return (
+    <div className="parcel-modal-overlay">
+      <section className="parcel-bottom-sheet review-rating-sheet">
+        <button
+          type="button"
+          className="parcel-sheet-close"
+          onClick={onClose}
+          aria-label="Close"
+        >
+          <X size={22} />
+        </button>
+
+        <div className="review-rating-brand-icon">
+          <PackageCheck size={28} />
+        </div>
+
+        <h2>{title}</h2>
+        <p>{description}</p>
+
+        <div className="review-stars-row" aria-label="Rating">
+          {[1, 2, 3, 4, 5].map((star) => (
+            <button
+              key={star}
+              type="button"
+              className={
+                star <= rating ? "review-star-button active" : "review-star-button"
+              }
+              onClick={() => setRating(star)}
+              aria-label={`${star} star${star > 1 ? "s" : ""}`}
+            >
+              ★
+            </button>
+          ))}
+        </div>
+
+        <label className="review-comment-field">
+          <span>Leave a review</span>
+
+          <textarea
+            value={comment}
+            onChange={(event) => setComment(event.target.value)}
+            placeholder="Share your experience with this member..."
+          />
+        </label>
+
+        <button
+          type="button"
+          className="review-submit-button"
+          disabled={loading || rating < 1}
+          onClick={handleSubmit}
+        >
+          {loading ? "Submitting..." : submitLabel}
+        </button>
+
+        <button
+          type="button"
+          className="review-skip-button"
+          disabled={loading}
+          onClick={onClose}
+        >
+          Maybe later
+        </button>
+      </section>
+    </div>
+  );
+}
+
 function MessageOrderCard({
   item,
   userId,
@@ -594,6 +680,8 @@ function MessageOrderCard({
   const [order, setOrder] = useState(null);
   const [loadingAction, setLoadingAction] = useState("");
   const [showAcceptanceModal, setShowAcceptanceModal] = useState(false);
+  const [showReviewModal, setShowReviewModal] = useState(false);
+  const [existingReview, setExistingReview] = useState(null);
 
   useEffect(() => {
     let mounted = true;
@@ -617,6 +705,53 @@ function MessageOrderCard({
     };
   }, [item.orderId, item.payload?.orderId]);
 
+  const isSellerOrder = Boolean(
+    userId && order?.sellerId && String(userId) === String(order.sellerId)
+  );
+
+  const isBuyerOrder = Boolean(
+    userId && order?.buyerId && String(userId) === String(order.buyerId)
+  );
+
+  const reviewedUserId = isSellerOrder ? order?.buyerId : order?.sellerId;
+  const reviewerRole = isSellerOrder ? "seller" : "buyer";
+  const reviewTargetLabel = isSellerOrder ? "buyer" : "seller";
+
+  useEffect(() => {
+    let mounted = true;
+
+    async function loadExistingReview() {
+      if (!order?.id || !userId || !reviewedUserId) {
+        setExistingReview(null);
+        return;
+      }
+
+      try {
+        const review = await getReviewForOrder({
+          orderId: order.id,
+          reviewerId: userId,
+          reviewedUserId
+        });
+
+        if (mounted) {
+          setExistingReview(review);
+        }
+      } catch (error) {
+        console.warn("Review loading skipped:", error.message);
+
+        if (mounted) {
+          setExistingReview(null);
+        }
+      }
+    }
+
+    loadExistingReview();
+
+    return () => {
+      mounted = false;
+    };
+  }, [order?.id, userId, reviewedUserId]);
+
   if (!order) {
     return (
       <div className="message-bubble">
@@ -624,10 +759,6 @@ function MessageOrderCard({
       </div>
     );
   }
-
-  const isSellerOrder = Boolean(
-    userId && order.sellerId && String(userId) === String(order.sellerId)
-  );
 
   const isMeetupOrder = order.deliveryMethod === "meetup";
 
@@ -642,6 +773,14 @@ function MessageOrderCard({
   const relayPointDetails = getRelayPointDetails(order);
   const shouldShowRelayPointDetails =
     !isSellerOrder && order?.status === "ready_for_pickup";
+
+  const orderCompleted = order?.status === "completed";
+  const canReviewThisOrder = Boolean(
+    orderCompleted &&
+      userId &&
+      reviewedUserId &&
+      (isBuyerOrder || isSellerOrder)
+  );
 
   async function handleMeetupDecision(nextStatus) {
     if (!order?.id || loadingAction) return;
@@ -669,10 +808,37 @@ function MessageOrderCard({
       const updatedOrder = await completeOrder(order.id);
       setOrder(updatedOrder);
       setShowAcceptanceModal(false);
+      setShowReviewModal(true);
       await onOrderUpdated?.();
     } catch (error) {
       console.error("Complete order error:", error);
       alert(error.message || "Unable to complete this order.");
+    } finally {
+      setLoadingAction("");
+    }
+  }
+
+  async function handleSubmitReview({ rating, comment }) {
+    if (!order?.id || !userId || !reviewedUserId || loadingAction) return;
+
+    setLoadingAction("review");
+
+    try {
+      const review = await createReview({
+        orderId: order.id,
+        reviewerId: userId,
+        reviewedUserId,
+        reviewerRole,
+        rating,
+        comment
+      });
+
+      setExistingReview(review);
+      setShowReviewModal(false);
+      await onOrderUpdated?.();
+    } catch (error) {
+      console.error("Review submit error:", error);
+      alert(error.message || "Unable to submit this review.");
     } finally {
       setLoadingAction("");
     }
@@ -903,6 +1069,22 @@ function MessageOrderCard({
                 Track parcel
               </button>
             )}
+
+            {canReviewThisOrder && !existingReview && (
+              <button
+                type="button"
+                className="order-review-cta"
+                onClick={() => setShowReviewModal(true)}
+              >
+                ★ Rate {reviewTargetLabel}
+              </button>
+            )}
+
+            {canReviewThisOrder && existingReview && (
+              <div className="order-review-done">
+                Review submitted · {existingReview.rating}/5
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -912,6 +1094,21 @@ function MessageOrderCard({
           loading={loadingAction === "complete"}
           onClose={() => setShowAcceptanceModal(false)}
           onConfirm={handleConfirmReceived}
+        />
+      )}
+
+      {showReviewModal && (
+        <ReviewRatingModal
+          title={`Rate your ${reviewTargetLabel}`}
+          description={
+            isSellerOrder
+              ? "Share your experience with this buyer. Your review will appear on their profile."
+              : "Share your experience with this seller. Your review will appear on their profile."
+          }
+          submitLabel="Submit review"
+          loading={loadingAction === "review"}
+          onClose={() => setShowReviewModal(false)}
+          onSubmit={handleSubmitReview}
         />
       )}
     </>
