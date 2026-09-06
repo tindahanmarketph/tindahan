@@ -25154,3 +25154,32 @@ body.tindahan-feed-zoom-locked button {
 .pickup-point-option {
   grid-template-columns: 28px minmax(0, 1fr) !important;
 }
+.pickup-point-option .pickup-point-check,
+.pickup-point-option > .pickup-point-check,
+.pickup-point-check,
+.pickup-point-check::before,
+.pickup-point-check::after {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  width: 0 !important;
+  height: 0 !important;
+  min-width: 0 !important;
+  max-width: 0 !important;
+  padding: 0 !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  pointer-events: none !important;
+}
+
+.pickup-point-option {
+  grid-template-columns: 28px minmax(0, 1fr) !important;
+}
+
+.pickup-point-option::before,
+.pickup-point-option::after {
+  display: none !important;
+  content: none !important;
+}
