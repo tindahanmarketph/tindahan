@@ -160,6 +160,21 @@ function getTodayLabel() {
   });
 }
 
+function createDefaultMeetupPlan(sellerMeetupSpot) {
+  if (!sellerMeetupSpot) return null;
+
+  return {
+    spot: sellerMeetupSpot,
+    sellerSpot: sellerMeetupSpot,
+    time: sellerMeetupSpot.time || "3:00 PM",
+    date: getTodayLabel(),
+    buyerSuggestedAlternative: false,
+    status: "accepted_seller_point",
+    selectedAt: new Date().toISOString(),
+    selectedBy: "buyer"
+  };
+}
+
 export default function Checkout() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -226,10 +241,22 @@ export default function Checkout() {
 
         if (savedMeetup || searchParams.get("delivery") === "meetup") {
           setSelectedDelivery("meetup");
+
+          if (!savedMeetup && data?.seller_meetup_spot) {
+            const defaultPlan = createDefaultMeetupPlan(data.seller_meetup_spot);
+            localStorage.setItem(getMeetupStorageKey(id), JSON.stringify(defaultPlan));
+            setMeetupPlan(defaultPlan);
+          }
         }
       } catch {
         if (searchParams.get("delivery") === "meetup") {
           setSelectedDelivery("meetup");
+
+          if (data?.seller_meetup_spot) {
+            const defaultPlan = createDefaultMeetupPlan(data.seller_meetup_spot);
+            localStorage.setItem(getMeetupStorageKey(id), JSON.stringify(defaultPlan));
+            setMeetupPlan(defaultPlan);
+          }
         }
       }
 
@@ -295,11 +322,18 @@ export default function Checkout() {
       return;
     }
 
-    setSelectedDelivery(optionId);
+    if (optionId === "meetup") {
+      if (!meetupPlan && sellerMeetupSpot) {
+        const defaultPlan = createDefaultMeetupPlan(sellerMeetupSpot);
+        localStorage.setItem(getMeetupStorageKey(id), JSON.stringify(defaultPlan));
+        setMeetupPlan(defaultPlan);
+      }
 
-    if (optionId === "meetup" && !meetupPlan && sellerMeetupSpot) {
-      acceptSellerMeetupPoint();
+      setSelectedDelivery("meetup");
+      return;
     }
+
+    setSelectedDelivery(optionId);
   }
 
   function openAddressEditor() {
@@ -341,25 +375,6 @@ export default function Checkout() {
     }
 
     alert("Same-city courier details will be available in the next prototype step.");
-  }
-
-  function acceptSellerMeetupPoint() {
-    if (!sellerMeetupSpot) return;
-
-    const plan = {
-      spot: sellerMeetupSpot,
-      sellerSpot: sellerMeetupSpot,
-      time: sellerMeetupSpot.time || "3:00 PM",
-      date: getTodayLabel(),
-      buyerSuggestedAlternative: false,
-      status: "accepted_seller_point",
-      selectedAt: new Date().toISOString(),
-      selectedBy: "buyer"
-    };
-
-    localStorage.setItem(getMeetupStorageKey(id), JSON.stringify(plan));
-    setMeetupPlan(plan);
-    setSelectedDelivery("meetup");
   }
 
   async function handlePay() {
@@ -560,23 +575,6 @@ export default function Checkout() {
         </div>
       </section>
 
-      {selectedDelivery === "meetup" && sellerMeetupSpot && (
-        <section className="checkout-section">
-          <h2>Seller Meet-Up point</h2>
-
-          <div className="checkout-seller-meetup-card">
-            <span>Chosen by seller</span>
-            <strong>{sellerMeetupSpot.name}</strong>
-            <p>{sellerMeetupSpot.address}</p>
-            <p>Safety Score {sellerMeetupSpot.score}/100</p>
-
-            <button type="button" onClick={acceptSellerMeetupPoint}>
-              Accept seller point
-            </button>
-          </div>
-        </section>
-      )}
-
       <section className="checkout-section">
         <h2>
           {selectedDelivery === "meetup"
@@ -597,9 +595,7 @@ export default function Checkout() {
             {selectedDelivery === "meetup"
               ? meetupPlan
                 ? `${meetupPlan.spot.name} · ${meetupPlan.time}`
-                : sellerMeetupSpot
-                ? "Accept or suggest another Meet-Up point"
-                : "Meet-Up is not available for this item"
+                : "View Meet-Up route and details"
               : selectedDelivery === "pickup"
               ? `${selectedPickupPoint.name} · ${selectedPickupPoint.address}`
               : selectedDelivery === "door"
@@ -640,6 +636,15 @@ export default function Checkout() {
                 Safety Score {meetupPlan.spot.score}/100 · {meetupPlan.date} at{" "}
                 {meetupPlan.time}
               </p>
+
+              {meetupPlan.distanceLabel && (
+                <small>
+                  {meetupPlan.distanceLabel} from your address
+                  {meetupPlan.transportLabel && meetupPlan.transportTime
+                    ? ` · ${meetupPlan.transportLabel} ${meetupPlan.transportTime}`
+                    : ""}
+                </small>
+              )}
 
               {buyerSuggestedDifferentMeetup && (
                 <small>
@@ -923,10 +928,6 @@ export default function Checkout() {
                       <p>{point.address}</p>
                       <small>{point.openingHours}</small>
                     </div>
-
-                    <span className="pickup-point-check">
-                      {isActive && "✓"}
-                    </span>
                   </button>
                 );
               })}
