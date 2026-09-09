@@ -26104,3 +26104,165 @@ body.tindahan-feed-zoom-locked button {
     padding-right: 12px !important;
   }
 }
+/* ========================================================= */
+/* TINDAHAN - SAFE MEET-UP ADDRESS + TRANSPORT FIX           */
+/* ========================================================= */
+
+.safe-route-svg {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 2 !important;
+  width: 100% !important;
+  height: 100% !important;
+  pointer-events: none !important;
+}
+
+.safe-route-svg line {
+  stroke: var(--orange) !important;
+  stroke-width: 2.8 !important;
+  stroke-linecap: round !important;
+  stroke-dasharray: 5 4 !important;
+  filter: drop-shadow(0 2px 4px rgba(255, 107, 44, 0.22)) !important;
+}
+
+.safe-map-buyer-marker {
+  opacity: 0.75 !important;
+}
+
+.safe-map-buyer-marker.active {
+  opacity: 1 !important;
+}
+
+.safe-meetup-inline-address {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) auto !important;
+  gap: 10px !important;
+  align-items: end !important;
+  margin: 12px 0 !important;
+  padding: 12px !important;
+  border-radius: 16px !important;
+  background: #f7f8f8 !important;
+}
+
+.safe-meetup-inline-address label {
+  min-width: 0 !important;
+  display: grid !important;
+  gap: 6px !important;
+}
+
+.safe-meetup-inline-address label span {
+  color: #111111 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+.safe-meetup-inline-address input {
+  width: 100% !important;
+  min-height: 44px !important;
+  border: 1.5px solid #dfe5e5 !important;
+  border-radius: 14px !important;
+  padding: 0 12px !important;
+  background: #ffffff !important;
+  color: #111111 !important;
+  font-size: 14px !important;
+  outline: none !important;
+}
+
+.safe-meetup-inline-address input:focus {
+  border-color: var(--orange) !important;
+  box-shadow: 0 0 0 3px rgba(255, 107, 44, 0.1) !important;
+}
+
+.safe-meetup-inline-address button {
+  min-width: 112px !important;
+  min-height: 44px !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 7px !important;
+  border: none !important;
+  border-radius: 999px !important;
+  background: var(--orange) !important;
+  color: #ffffff !important;
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  white-space: nowrap !important;
+}
+
+.safe-meetup-summary-transport-grid {
+  display: grid !important;
+  grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+  gap: 8px !important;
+  margin: 12px 0 !important;
+}
+
+.safe-meetup-summary-transport {
+  min-width: 0 !important;
+  display: grid !important;
+  justify-items: center !important;
+  gap: 4px !important;
+  padding: 10px 6px !important;
+  border: 1.5px solid #e5e5e5 !important;
+  border-radius: 16px !important;
+  background: #ffffff !important;
+  color: #5f6f75 !important;
+  text-align: center !important;
+}
+
+.safe-meetup-summary-transport svg {
+  color: var(--orange) !important;
+}
+
+.safe-meetup-summary-transport strong {
+  color: #111111 !important;
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+  font-weight: 950 !important;
+}
+
+.safe-meetup-summary-transport span {
+  color: #5f6f75 !important;
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+  font-weight: 850 !important;
+}
+
+.safe-meetup-summary-transport.active {
+  border-color: var(--orange) !important;
+  background: var(--orange-soft) !important;
+  color: var(--orange) !important;
+}
+
+.safe-meetup-summary-transport.active span {
+  color: var(--orange) !important;
+}
+
+.safe-meetup-confirm-button:disabled {
+  background: #ffb08d !important;
+  opacity: 1 !important;
+}
+
+@media (max-width: 520px) {
+  .safe-meetup-inline-address {
+    grid-template-columns: 1fr !important;
+  }
+
+  .safe-meetup-inline-address button {
+    width: 100% !important;
+  }
+
+  .safe-meetup-summary-transport-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr)) !important;
+    gap: 7px !important;
+  }
+
+  .safe-meetup-summary-transport {
+    padding: 9px 4px !important;
+    border-radius: 14px !important;
+  }
+
+  .safe-meetup-summary-transport strong,
+  .safe-meetup-summary-transport span {
+    font-size: 10px !important;
+  }
+}

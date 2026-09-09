@@ -5,6 +5,7 @@ import {
   ChevronLeft,
   Clock,
   Coffee,
+  Footprints,
   Landmark,
   MapPin,
   Navigation,
@@ -13,7 +14,6 @@ import {
   ShoppingBag,
   Store,
   TramFront,
-  Users,
   Utensils
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
@@ -206,7 +206,7 @@ function getTravelOptions(distanceKm) {
       {
         id: "walk",
         label: "Walk",
-        icon: Users,
+        icon: Footprints,
         time: "—",
         description: "Available when the point is close enough."
       }
@@ -243,7 +243,7 @@ function getTravelOptions(distanceKm) {
     {
       id: "walk",
       label: "Walk",
-      icon: Users,
+      icon: Footprints,
       time: `${walkMinutes} min`,
       description:
         distance > 4
@@ -280,7 +280,6 @@ export default function SafeMeetUp() {
   const [saving, setSaving] = useState(false);
   const [buyerAddress, setBuyerAddress] = useState("");
   const [buyerCoords, setBuyerCoords] = useState(null);
-  const [buyerIsInSector, setBuyerIsInSector] = useState(true);
   const [activeTransport, setActiveTransport] = useState("jeep");
 
   useEffect(() => {
@@ -429,7 +428,6 @@ export default function SafeMeetUp() {
     }
 
     setBuyerCoords(getBuyerPseudoCoordinates(cleanAddress));
-    setBuyerIsInSector(true);
   }
 
   function saveBuyerMeetupPoint() {
@@ -437,11 +435,6 @@ export default function SafeMeetUp() {
 
     if (!buyerAddress.trim()) {
       alert("Please enter your address to check the route first.");
-      return;
-    }
-
-    if (!buyerIsInSector) {
-      alert("Meet-Up is only available if you are in the same sector.");
       return;
     }
 
@@ -557,34 +550,6 @@ export default function SafeMeetUp() {
           </section>
         )}
 
-        <section className="safe-meetup-address-card">
-          <div>
-            <strong>Your starting address</strong>
-            <p>
-              This helps TindaHan estimate the route to the selected Meet-Up
-              point. You can adjust it anytime.
-            </p>
-          </div>
-
-          <form onSubmit={handleAddressSubmit}>
-            <label>
-              <span>Home address</span>
-
-              <input
-                type="text"
-                value={buyerAddress}
-                onChange={(event) => setBuyerAddress(event.target.value)}
-                placeholder="Enter your barangay, street or city"
-              />
-            </label>
-
-            <button type="submit">
-              <Navigation size={17} />
-              Show route
-            </button>
-          </form>
-        </section>
-
         <section className="safe-meetup-map-card">
           <div className="safe-meetup-map-heading">
             <div>
@@ -605,18 +570,19 @@ export default function SafeMeetUp() {
           <div className="safe-meetup-route-map">
             <div className="safe-map-grid" />
 
-            <div
-              className="safe-route-line"
-              style={{
-                "--buyer-left": `${buyerMapPosition.left}%`,
-                "--buyer-top": `${buyerMapPosition.top}%`,
-                "--meetup-left": `${meetupMapPosition.left}%`,
-                "--meetup-top": `${meetupMapPosition.top}%`
-              }}
-            />
+            {buyerPoint && displayedSelectedSpot && (
+              <svg className="safe-route-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <line
+                  x1={buyerMapPosition.left}
+                  y1={buyerMapPosition.top}
+                  x2={meetupMapPosition.left}
+                  y2={meetupMapPosition.top}
+                />
+              </svg>
+            )}
 
             <div
-              className="safe-map-buyer-marker"
+              className={buyerPoint ? "safe-map-buyer-marker active" : "safe-map-buyer-marker"}
               style={{
                 left: `${buyerMapPosition.left}%`,
                 top: `${buyerMapPosition.top}%`
@@ -641,46 +607,9 @@ export default function SafeMeetUp() {
           </div>
 
           <p className="safe-meetup-map-note">
-            Route estimates are preview values. The map area allows pinch zoom;
-            the rest of the page keeps a fixed mobile layout.
+            The map area allows pinch zoom. Enter your address to trace the
+            distance between your home and the Meet-Up point.
           </p>
-        </section>
-
-        <section className="safe-meetup-transport-section">
-          <div className="safe-meetup-section-title">
-            <strong>Ways to get there</strong>
-            <p>Compare estimated travel time from your address.</p>
-          </div>
-
-          <div className="safe-meetup-transport-grid">
-            {travelOptions.map((option) => {
-              const Icon = option.icon;
-              const isActive = activeTransport === option.id;
-
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={
-                    isActive
-                      ? "safe-meetup-transport-card active"
-                      : "safe-meetup-transport-card"
-                  }
-                  onClick={() => setActiveTransport(option.id)}
-                >
-                  <span>
-                    <Icon size={22} />
-                  </span>
-
-                  <strong>{option.label}</strong>
-
-                  <em>{option.time}</em>
-
-                  <p>{option.description}</p>
-                </button>
-              );
-            })}
-          </div>
         </section>
 
         <section className="safe-meetup-filters safe-meetup-route-filters">
@@ -767,6 +696,48 @@ export default function SafeMeetUp() {
                 </p>
                 <em>Safety Score: {displayedSelectedSpot.score}/100</em>
               </div>
+            </div>
+
+            <form className="safe-meetup-inline-address" onSubmit={handleAddressSubmit}>
+              <label>
+                <span>Your address</span>
+
+                <input
+                  type="text"
+                  value={buyerAddress}
+                  onChange={(event) => setBuyerAddress(event.target.value)}
+                  placeholder="Enter your barangay, street or city"
+                />
+              </label>
+
+              <button type="submit">
+                <Navigation size={17} />
+                Show route
+              </button>
+            </form>
+
+            <div className="safe-meetup-summary-transport-grid">
+              {travelOptions.map((option) => {
+                const Icon = option.icon;
+                const isActive = activeTransport === option.id;
+
+                return (
+                  <button
+                    key={option.id}
+                    type="button"
+                    className={
+                      isActive
+                        ? "safe-meetup-summary-transport active"
+                        : "safe-meetup-summary-transport"
+                    }
+                    onClick={() => setActiveTransport(option.id)}
+                  >
+                    <Icon size={20} />
+                    <strong>{option.label}</strong>
+                    <span>{option.time}</span>
+                  </button>
+                );
+              })}
             </div>
 
             <div className="safe-meetup-route-choice">
