@@ -351,7 +351,7 @@ export default function ListingDetail() {
 
   function handleMeetupBuy() {
     if (!listing?.id) return;
-    navigate(`/checkout/${listing.id}?delivery=meetup`);
+    navigate(`/safe-meetup/${listing.id}?returnTo=product`);
   }
 
   function handleMakeOffer() {
