@@ -19,6 +19,7 @@ import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { checkIsFavorite, toggleFavorite } from "../lib/favorites";
 import ListingRecommendations from "../components/ListingRecommendations";
+import "../styles/listingStatus.css";
 
 const conditionLabels = {
   new: "New with tags",
@@ -67,6 +68,37 @@ function getInitials(name) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
+}
+
+function getListingStatus(status) {
+  const normalizedStatus = String(status || "active").toLowerCase();
+
+  if (normalizedStatus === "reserved") {
+    return {
+      key: "reserved",
+      label: "Reserved",
+      message:
+        "This item is currently reserved for another buyer."
+    };
+  }
+
+  if (
+    normalizedStatus === "sold" ||
+    normalizedStatus === "completed"
+  ) {
+    return {
+      key: "sold",
+      label: "Sold",
+      message:
+        "This item has already been sold and is no longer available for purchase."
+    };
+  }
+
+  return {
+    key: "available",
+    label: "Available",
+    message: "This item is available for purchase."
+  };
 }
 
 export default function ListingDetail() {
@@ -204,6 +236,7 @@ export default function ListingDetail() {
 
   const photos = useMemo(() => {
     if (!listing?.photos || !Array.isArray(listing.photos)) return [];
+
     return listing.photos.filter(Boolean);
   }, [listing]);
 
@@ -212,6 +245,11 @@ export default function ListingDetail() {
       listing?.seller_id &&
       String(user.id) === String(listing.seller_id)
   );
+
+  const listingStatus = getListingStatus(listing?.status);
+  const isAvailable = listingStatus.key === "available";
+  const isReserved = listingStatus.key === "reserved";
+  const isSold = listingStatus.key === "sold";
 
   const price = Number(listing?.price || 0);
   const protection = price * 0.08;
@@ -235,7 +273,9 @@ export default function ListingDetail() {
     ? getChildCategoryLabel(listing.child_category)
     : "";
 
-  const description = listing?.description?.trim() || "No description provided.";
+  const description =
+    listing?.description?.trim() || "No description provided.";
+
   const shouldShowDescriptionToggle = description.length > 150;
 
   const displayedDescription =
@@ -244,7 +284,10 @@ export default function ListingDetail() {
       : `${description.slice(0, 150).trim()}...`;
 
   const sellerMeetupSpot = listing?.seller_meetup_spot || null;
-  const hasSellerMeetup = Boolean(listing?.meetup_enabled && sellerMeetupSpot);
+
+  const hasSellerMeetup = Boolean(
+    listing?.meetup_enabled && sellerMeetupSpot
+  );
 
   const characteristics = [
     listing?.brand ? ["Brand", listing.brand] : null,
@@ -269,13 +312,17 @@ export default function ListingDetail() {
   function prevPhoto() {
     if (photos.length <= 1) return;
 
-    setPhotoIndex((prev) => (prev === 0 ? photos.length - 1 : prev - 1));
+    setPhotoIndex((prev) =>
+      prev === 0 ? photos.length - 1 : prev - 1
+    );
   }
 
   function nextPhoto() {
     if (photos.length <= 1) return;
 
-    setPhotoIndex((prev) => (prev === photos.length - 1 ? 0 : prev + 1));
+    setPhotoIndex((prev) =>
+      prev === photos.length - 1 ? 0 : prev + 1
+    );
   }
 
   function handlePhotoTouchStart(event) {
@@ -320,6 +367,17 @@ export default function ListingDetail() {
     prevPhoto();
   }
 
+  function handleUnavailableAction() {
+    if (isReserved) {
+      alert("This item is currently reserved.");
+      return;
+    }
+
+    if (isSold) {
+      alert("This item has already been sold.");
+    }
+  }
+
   function handleChatWithSeller() {
     if (!listing) return;
 
@@ -346,16 +404,34 @@ export default function ListingDetail() {
 
   function handleBuyNow() {
     if (!listing?.id) return;
+
+    if (!isAvailable) {
+      handleUnavailableAction();
+      return;
+    }
+
     navigate(`/checkout/${listing.id}`);
   }
 
   function handleMeetupBuy() {
     if (!listing?.id) return;
+
+    if (!isAvailable) {
+      handleUnavailableAction();
+      return;
+    }
+
     navigate(`/safe-meetup/${listing.id}?returnTo=product`);
   }
 
   function handleMakeOffer() {
     if (!listing?.id) return;
+
+    if (!isAvailable) {
+      handleUnavailableAction();
+      return;
+    }
+
     navigate(`/offer/${listing.id}`);
   }
 
@@ -377,7 +453,11 @@ export default function ListingDetail() {
     setFavoriteLoading(true);
 
     try {
-      await toggleFavorite(user.id, listing.id, previousValue);
+      await toggleFavorite(
+        user.id,
+        listing.id,
+        previousValue
+      );
     } catch (error) {
       console.error("Favorite update error:", error);
       setIsFavorite(previousValue);
@@ -395,7 +475,9 @@ export default function ListingDetail() {
     try {
       const { error } = await supabase
         .from("listings")
-        .update({ status: nextStatus })
+        .update({
+          status: nextStatus
+        })
         .eq("id", listing.id)
         .eq("seller_id", user.id);
 
@@ -409,7 +491,11 @@ export default function ListingDetail() {
       setShowOwnerActions(false);
     } catch (error) {
       console.error("Listing status update error:", error);
-      alert(error.message || "Unable to update this listing.");
+
+      alert(
+        error.message ||
+          "Unable to update this listing."
+      );
     } finally {
       setOwnerActionLoading(false);
     }
@@ -439,7 +525,11 @@ export default function ListingDetail() {
       navigate("/");
     } catch (error) {
       console.error("Listing delete error:", error);
-      alert(error.message || "Unable to delete this listing.");
+
+      alert(
+        error.message ||
+          "Unable to delete this listing."
+      );
     } finally {
       setOwnerActionLoading(false);
     }
@@ -480,8 +570,14 @@ export default function ListingDetail() {
         <div className="container">
           <div className="empty-state">
             <h1>Item not found</h1>
-            <p>{errorMessage || "This listing may have been removed."}</p>
-            <p className="debug-id">Listing ID: {id}</p>
+            <p>
+              {errorMessage ||
+                "This listing may have been removed."}
+            </p>
+
+            <p className="debug-id">
+              Listing ID: {id}
+            </p>
           </div>
         </div>
       </main>
@@ -493,7 +589,7 @@ export default function ListingDetail() {
       <div className="container detail-layout product-vinted-layout">
         <section className="photo-panel product-gallery-panel">
           <div
-            className="main-photo product-main-photo swipeable-photo"
+            className={`main-photo product-main-photo swipeable-photo product-image-status-${listingStatus.key}`}
             onTouchStart={handlePhotoTouchStart}
             onTouchEnd={handlePhotoTouchEnd}
           >
@@ -506,8 +602,16 @@ export default function ListingDetail() {
                 draggable="false"
               />
             ) : (
-              <div className="image-placeholder">No photo</div>
+              <div className="image-placeholder">
+                No photo
+              </div>
             )}
+
+            <span
+              className={`product-status-badge product-status-${listingStatus.key}`}
+            >
+              {listingStatus.label}
+            </span>
 
             <button
               className="mobile-gallery-back"
@@ -536,12 +640,19 @@ export default function ListingDetail() {
                   : "mobile-gallery-heart"
               }
               type="button"
-              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+              aria-label={
+                isFavorite
+                  ? "Remove from favorites"
+                  : "Add to favorites"
+              }
               aria-pressed={isFavorite}
               disabled={favoriteLoading}
               onClick={handleFavoriteClick}
             >
-              <Heart size={22} fill={isFavorite ? "currentColor" : "none"} />
+              <Heart
+                size={22}
+                fill={isFavorite ? "currentColor" : "none"}
+              />
             </button>
 
             {photos.length > 1 && (
@@ -569,7 +680,11 @@ export default function ListingDetail() {
                     <button
                       key={`${photo}-${index}`}
                       type="button"
-                      className={index === photoIndex ? "active" : ""}
+                      className={
+                        index === photoIndex
+                          ? "active"
+                          : ""
+                      }
                       onClick={() => setPhotoIndex(index)}
                       aria-label={`Show photo ${index + 1}`}
                     />
@@ -584,7 +699,11 @@ export default function ListingDetail() {
               {photos.map((photo, index) => (
                 <button
                   key={`${photo}-${index}`}
-                  className={index === photoIndex ? "thumb active" : "thumb"}
+                  className={
+                    index === photoIndex
+                      ? "thumb active"
+                      : "thumb"
+                  }
                   onClick={() => setPhotoIndex(index)}
                   type="button"
                   aria-label={`Show photo ${index + 1}`}
@@ -608,24 +727,33 @@ export default function ListingDetail() {
                     : "product-favorite-button"
                 }
                 type="button"
-                aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+                aria-label={
+                  isFavorite
+                    ? "Remove from favorites"
+                    : "Add to favorites"
+                }
                 aria-pressed={isFavorite}
                 disabled={favoriteLoading}
                 onClick={handleFavoriteClick}
               >
-                <Heart size={24} fill={isFavorite ? "currentColor" : "none"} />
+                <Heart
+                  size={24}
+                  fill={isFavorite ? "currentColor" : "none"}
+                />
               </button>
             </div>
 
             <p className="product-meta-line">
               {listing.size && `${listing.size} · `}
               {conditionLabel}
+
               {listing.brand && (
                 <>
                   {" · "}
                   <span>{listing.brand}</span>
                 </>
               )}
+
               {" · "}
               Added {relativeCreatedAt}
             </p>
@@ -635,36 +763,119 @@ export default function ListingDetail() {
             </p>
 
             <p className="buyer-protection-small product-protection-line">
-              ₱{(price + protection).toLocaleString("en-PH")} incl. Buyer
-              Protection <ShieldCheck size={15} />
+              ₱{(price + protection).toLocaleString("en-PH")} incl.
+              Buyer Protection <ShieldCheck size={15} />
             </p>
           </section>
 
-          <section className="mobile-demand-box">
-            <span>🔥</span>
-            <p>In demand! Buyers recently viewed or saved similar items.</p>
-          </section>
+          {isOwner && (
+            <section className="product-owner-status-manager">
+              <div className="product-owner-status-heading">
+                <span>Listing status</span>
+                <strong>{listingStatus.label}</strong>
+              </div>
+
+              <div className="product-owner-status-options">
+                <button
+                  type="button"
+                  className={
+                    isAvailable
+                      ? "product-owner-status-button available active"
+                      : "product-owner-status-button available"
+                  }
+                  disabled={
+                    ownerActionLoading ||
+                    isAvailable
+                  }
+                  onClick={() => updateListingStatus("active")}
+                >
+                  Available
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    isReserved
+                      ? "product-owner-status-button reserved active"
+                      : "product-owner-status-button reserved"
+                  }
+                  disabled={
+                    ownerActionLoading ||
+                    isReserved
+                  }
+                  onClick={() => updateListingStatus("reserved")}
+                >
+                  Reserved
+                </button>
+
+                <button
+                  type="button"
+                  className={
+                    isSold
+                      ? "product-owner-status-button sold active"
+                      : "product-owner-status-button sold"
+                  }
+                  disabled={
+                    ownerActionLoading ||
+                    isSold
+                  }
+                  onClick={() => updateListingStatus("sold")}
+                >
+                  Sold
+                </button>
+              </div>
+            </section>
+          )}
+
+          {!isAvailable && (
+            <section
+              className={`product-status-information product-status-information-${listingStatus.key}`}
+            >
+              <strong>{listingStatus.label}</strong>
+              <p>{listingStatus.message}</p>
+            </section>
+          )}
+
+          {isAvailable && (
+            <section className="mobile-demand-box">
+              <span>🔥</span>
+
+              <p>
+                In demand! Buyers recently viewed or saved
+                similar items.
+              </p>
+            </section>
+          )}
 
           <section className="product-description-card">
             <h2>Description</h2>
 
-            <p className="product-description-text">{displayedDescription}</p>
+            <p className="product-description-text">
+              {displayedDescription}
+            </p>
 
             {shouldShowDescriptionToggle && (
               <button
                 className="product-see-more-button"
                 type="button"
                 onClick={() =>
-                  setDescriptionExpanded((currentValue) => !currentValue)
+                  setDescriptionExpanded(
+                    (currentValue) => !currentValue
+                  )
                 }
               >
-                {descriptionExpanded ? "See less" : "See more"}
+                {descriptionExpanded
+                  ? "See less"
+                  : "See more"}
               </button>
             )}
 
             <div className="product-characteristics-clean">
               {characteristics.map(([label, value]) => (
-                <div className="product-characteristic-clean-row" key={label}>
+                <div
+                  className="product-characteristic-clean-row"
+                  key={label}
+                >
                   <span>{label}</span>
                   <strong>{value}</strong>
                 </div>
@@ -674,10 +885,16 @@ export default function ListingDetail() {
 
           {seller && (
             <section className="product-seller-card-vinted">
-              <Link to={`/profile/${seller.username}`} className="product-seller-main">
+              <Link
+                to={`/profile/${seller.username}`}
+                className="product-seller-main"
+              >
                 <div className="avatar-large">
                   {seller.avatar_url ? (
-                    <img src={seller.avatar_url} alt={seller.username} />
+                    <img
+                      src={seller.avatar_url}
+                      alt={seller.username}
+                    />
                   ) : (
                     getInitials(seller.username)
                   )}
@@ -687,15 +904,21 @@ export default function ListingDetail() {
                   <strong>{seller.username}</strong>
 
                   <p>
-                    <Star size={15} fill="currentColor" /> {seller.rating || 5} ·{" "}
+                    <Star size={15} fill="currentColor" />{" "}
+                    {seller.rating || 5} ·{" "}
                     {seller.total_sales || 0} sales
                   </p>
 
-                  <span className="product-seller-active">Active seller</span>
+                  <span className="product-seller-active">
+                    Active seller
+                  </span>
                 </div>
               </Link>
 
-              <button type="button" onClick={handleChatWithSeller}>
+              <button
+                type="button"
+                onClick={handleChatWithSeller}
+              >
                 Message
               </button>
             </section>
@@ -716,19 +939,38 @@ export default function ListingDetail() {
                 </div>
 
                 <div>
-                  <span>Seller preferred Meet-Up point</span>
-                  <strong>{sellerMeetupSpot.name}</strong>
-                  <p>{sellerMeetupSpot.address}</p>
+                  <span>
+                    Seller preferred Meet-Up point
+                  </span>
+
+                  <strong>
+                    {sellerMeetupSpot.name}
+                  </strong>
+
+                  <p>
+                    {sellerMeetupSpot.address}
+                  </p>
                 </div>
               </div>
 
               <div className="product-seller-meetup-meta">
-                <span>Safety Score {sellerMeetupSpot.score}/100</span>
-                <span>{sellerMeetupSpot.type}</span>
+                <span>
+                  Safety Score {sellerMeetupSpot.score}/100
+                </span>
+
+                <span>
+                  {sellerMeetupSpot.type}
+                </span>
               </div>
 
-              <button type="button" onClick={handleMeetupBuy}>
-                View Meet-Up option
+              <button
+                type="button"
+                onClick={handleMeetupBuy}
+                disabled={!isAvailable}
+              >
+                {isAvailable
+                  ? "View Meet-Up option"
+                  : listingStatus.label}
               </button>
             </section>
           )}
@@ -740,45 +982,57 @@ export default function ListingDetail() {
 
             <div>
               <strong>Buyer Protection</strong>
+
               <p>
-                Your payment is secured by TindaHan until the item is delivered.
-                If there is an issue with your order, our protection helps
-                support a fair resolution.
+                Your payment is secured by TindaHan until the item
+                is delivered. If there is an issue with your order,
+                our protection helps support a fair resolution.
               </p>
             </div>
           </section>
 
           <section className="product-shipping-row">
             <strong>Shipping fees</strong>
-            <span>from ₱{shipping.toLocaleString("en-PH")}</span>
+            <span>
+              from ₱{shipping.toLocaleString("en-PH")}
+            </span>
           </section>
 
           <section className="product-legal-note">
             <p>
-              Buyer Protection includes secure payment support and issue
-              handling if the item is not delivered as expected.
+              Buyer Protection includes secure payment support
+              and issue handling if the item is not delivered
+              as expected.
             </p>
           </section>
 
           <section className="price-table product-price-table">
             <div>
               <span>Item</span>
-              <strong>₱{price.toLocaleString("en-PH")}</strong>
+              <strong>
+                ₱{price.toLocaleString("en-PH")}
+              </strong>
             </div>
 
             <div>
               <span>Buyer Protection 8%</span>
-              <strong>₱{protection.toLocaleString("en-PH")}</strong>
+              <strong>
+                ₱{protection.toLocaleString("en-PH")}
+              </strong>
             </div>
 
             <div>
               <span>Estimated J&T delivery</span>
-              <strong>₱{shipping.toLocaleString("en-PH")}</strong>
+              <strong>
+                ₱{shipping.toLocaleString("en-PH")}
+              </strong>
             </div>
 
             <div className="total-row">
               <span>Total</span>
-              <strong>₱{total.toLocaleString("en-PH")}</strong>
+              <strong>
+                ₱{total.toLocaleString("en-PH")}
+              </strong>
             </div>
           </section>
 
@@ -787,16 +1041,22 @@ export default function ListingDetail() {
               className="detail-action-btn detail-offer-btn"
               type="button"
               onClick={handleMakeOffer}
+              disabled={!isAvailable}
             >
-              Make an offer
+              {isAvailable
+                ? "Make an offer"
+                : listingStatus.label}
             </button>
 
             <button
               className="detail-action-btn detail-buy-btn"
               type="button"
               onClick={handleBuyNow}
+              disabled={!isAvailable}
             >
-              Buy
+              {isAvailable
+                ? "Buy"
+                : listingStatus.label}
             </button>
 
             <button
@@ -810,7 +1070,9 @@ export default function ListingDetail() {
         </aside>
 
         <section className="detail-recommendations-slot product-recommendations-section">
-          <ListingRecommendations listing={recommendationListing} />
+          <ListingRecommendations
+            listing={recommendationListing}
+          />
         </section>
       </div>
 
@@ -827,26 +1089,48 @@ export default function ListingDetail() {
             aria-label="Listing owner actions"
             onClick={(event) => event.stopPropagation()}
           >
-            <button
-              type="button"
-              disabled={ownerActionLoading}
-              onClick={() => updateListingStatus("sold")}
-            >
-              Mark as sold
-            </button>
+            {!isAvailable && (
+              <button
+                type="button"
+                disabled={ownerActionLoading}
+                onClick={() =>
+                  updateListingStatus("active")
+                }
+              >
+                Mark as available
+              </button>
+            )}
+
+            {!isSold && (
+              <button
+                type="button"
+                disabled={ownerActionLoading}
+                onClick={() =>
+                  updateListingStatus("sold")
+                }
+              >
+                Mark as sold
+              </button>
+            )}
+
+            {!isReserved && (
+              <button
+                type="button"
+                disabled={ownerActionLoading}
+                onClick={() =>
+                  updateListingStatus("reserved")
+                }
+              >
+                Mark as reserved
+              </button>
+            )}
 
             <button
               type="button"
               disabled={ownerActionLoading}
-              onClick={() => updateListingStatus("reserved")}
-            >
-              Mark as reserved
-            </button>
-
-            <button
-              type="button"
-              disabled={ownerActionLoading}
-              onClick={() => updateListingStatus("hidden")}
+              onClick={() =>
+                updateListingStatus("hidden")
+              }
             >
               Hide
             </button>
@@ -876,7 +1160,9 @@ export default function ListingDetail() {
             <button
               type="button"
               disabled={ownerActionLoading}
-              onClick={() => setShowOwnerActions(false)}
+              onClick={() =>
+                setShowOwnerActions(false)
+              }
             >
               Close
             </button>
@@ -889,16 +1175,22 @@ export default function ListingDetail() {
           className="mobile-product-offer-button"
           type="button"
           onClick={handleMakeOffer}
+          disabled={!isAvailable}
         >
-          Make an offer
+          {isAvailable
+            ? "Make an offer"
+            : listingStatus.label}
         </button>
 
         <button
           className="mobile-product-buy-button"
           type="button"
           onClick={handleBuyNow}
+          disabled={!isAvailable}
         >
-          Buy
+          {isAvailable
+            ? "Buy"
+            : listingStatus.label}
         </button>
       </div>
     </main>

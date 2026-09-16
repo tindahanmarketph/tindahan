@@ -1,0 +1,441 @@
+/* ========================================================= */
+/* TINDAHAN - LISTING STATUS SYSTEM                          */
+/* AVAILABLE / RESERVED / SOLD                               */
+/* ========================================================= */
+
+/* ========================= */
+/* FEED CARD STATUS */
+/* ========================= */
+
+.listing-status-badge {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 8;
+
+  min-height: 28px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 11px;
+
+  border-radius: 999px;
+
+  font-size: 11px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: 0.25px;
+
+  text-transform: uppercase;
+
+  box-shadow:
+    0 4px 14px rgba(0, 0, 0, 0.12);
+
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+
+  pointer-events: none;
+}
+
+/* Available */
+
+.listing-status-available {
+  background: #e8f8ef;
+  color: #08794f;
+  border: 1px solid rgba(15, 138, 95, 0.18);
+}
+
+/* Reserved */
+
+.listing-status-reserved {
+  background: var(--orange);
+  color: #ffffff;
+  border: 1px solid var(--orange);
+}
+
+/* Sold */
+
+.listing-status-sold {
+  background: rgba(33, 39, 42, 0.92);
+  color: #ffffff;
+  border: 1px solid rgba(33, 39, 42, 0.92);
+}
+
+/* ========================= */
+/* FEED PHOTO VISUAL STATE */
+/* ========================= */
+
+.listing-image-status-reserved .listing-image,
+.listing-image-status-reserved .image-placeholder {
+  opacity: 0.82;
+}
+
+.listing-image-status-sold .listing-image,
+.listing-image-status-sold .image-placeholder {
+  opacity: 0.58;
+  filter: grayscale(0.28);
+}
+
+.listing-card-status-reserved .listing-info,
+.listing-card-status-reserved .seller-mini {
+  opacity: 0.9;
+}
+
+.listing-card-status-sold .listing-info,
+.listing-card-status-sold .seller-mini {
+  opacity: 0.76;
+}
+
+/* Keep favorite clearly visible */
+
+.listing-image-status-reserved .heart-floating,
+.listing-image-status-sold .heart-floating {
+  opacity: 1;
+}
+
+/* ========================= */
+/* PRODUCT PAGE STATUS */
+/* ========================= */
+
+.product-status-badge {
+  position: absolute;
+  top: 18px;
+  left: 18px;
+  z-index: 14;
+
+  min-height: 34px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 14px;
+
+  border-radius: 999px;
+
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: 0.35px;
+
+  text-transform: uppercase;
+
+  box-shadow:
+    0 7px 20px rgba(0, 0, 0, 0.16);
+
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+
+  pointer-events: none;
+}
+
+/* Available */
+
+.product-status-available {
+  background: #e8f8ef;
+  color: #08794f;
+  border: 1px solid rgba(15, 138, 95, 0.2);
+}
+
+/* Reserved */
+
+.product-status-reserved {
+  background: var(--orange);
+  color: #ffffff;
+  border: 1px solid var(--orange);
+}
+
+/* Sold */
+
+.product-status-sold {
+  background: rgba(33, 39, 42, 0.94);
+  color: #ffffff;
+  border: 1px solid rgba(33, 39, 42, 0.94);
+}
+
+/* ========================= */
+/* PRODUCT PHOTO */
+/* ========================= */
+
+.product-image-status-reserved .swipeable-photo-image {
+  opacity: 0.84;
+}
+
+.product-image-status-sold .swipeable-photo-image {
+  opacity: 0.58;
+  filter: grayscale(0.3);
+}
+
+/* ========================= */
+/* STATUS INFORMATION */
+/* ========================= */
+
+.product-status-information {
+  width: 100%;
+
+  display: grid;
+  gap: 4px;
+
+  padding: 14px 16px;
+
+  border-radius: 14px;
+}
+
+.product-status-information strong {
+  display: block;
+
+  font-size: 15px;
+  line-height: 1.2;
+  font-weight: 950;
+}
+
+.product-status-information p {
+  margin: 0;
+
+  font-size: 13px;
+  line-height: 1.4;
+  font-weight: 650;
+}
+
+.product-status-information-reserved {
+  background: #fff4ee;
+  border: 1px solid rgba(255, 107, 44, 0.28);
+}
+
+.product-status-information-reserved strong {
+  color: var(--orange);
+}
+
+.product-status-information-reserved p {
+  color: #5f6f75;
+}
+
+.product-status-information-sold {
+  background: #f1f3f3;
+  border: 1px solid #d9dddd;
+}
+
+.product-status-information-sold strong {
+  color: #222222;
+}
+
+.product-status-information-sold p {
+  color: #5f6f75;
+}
+
+/* ========================= */
+/* SELLER STATUS MANAGER */
+/* ========================= */
+
+.product-owner-status-manager {
+  width: 100%;
+
+  display: grid;
+  gap: 12px;
+
+  padding: 15px;
+
+  border: 1px solid #e5e5e5;
+  border-radius: 16px;
+
+  background: #ffffff;
+}
+
+.product-owner-status-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+}
+
+.product-owner-status-heading span {
+  color: #5f6f75;
+
+  font-size: 13px;
+  font-weight: 750;
+}
+
+.product-owner-status-heading strong {
+  color: #111111;
+
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.product-owner-status-options {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+
+  gap: 8px;
+}
+
+.product-owner-status-button {
+  width: 100%;
+  min-width: 0;
+  min-height: 40px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0 8px;
+
+  border: 1.5px solid #dfe3e3;
+  border-radius: 999px;
+
+  background: #ffffff;
+  color: #5f6f75;
+
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 900;
+
+  transition:
+    background 0.16s ease,
+    color 0.16s ease,
+    border-color 0.16s ease;
+}
+
+.product-owner-status-button.available:hover:not(:disabled) {
+  border-color: #0f8a5f;
+  color: #0f8a5f;
+  background: #e8f8ef;
+}
+
+.product-owner-status-button.reserved:hover:not(:disabled) {
+  border-color: var(--orange);
+  color: var(--orange);
+  background: var(--orange-soft);
+}
+
+.product-owner-status-button.sold:hover:not(:disabled) {
+  border-color: #343a3d;
+  color: #343a3d;
+  background: #f2f3f3;
+}
+
+.product-owner-status-button.available.active {
+  border-color: #0f8a5f;
+  background: #e8f8ef;
+  color: #08794f;
+}
+
+.product-owner-status-button.reserved.active {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.product-owner-status-button.sold.active {
+  border-color: #343a3d;
+  background: #343a3d;
+  color: #ffffff;
+}
+
+.product-owner-status-button:disabled {
+  cursor: default;
+}
+
+/* ========================= */
+/* DISABLED BUYING CTA */
+/* ========================= */
+
+.detail-action-btn:disabled,
+.mobile-product-offer-button:disabled,
+.mobile-product-buy-button:disabled,
+.product-seller-meetup-card button:disabled {
+  cursor: not-allowed !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+.detail-offer-btn:disabled {
+  border-color: #cfd5d5 !important;
+  background: #ffffff !important;
+  color: #8c969a !important;
+}
+
+.detail-buy-btn:disabled {
+  border-color: #cfd5d5 !important;
+  background: #dfe3e3 !important;
+  color: #737d81 !important;
+}
+
+.mobile-product-offer-button:disabled {
+  border-color: #cfd5d5 !important;
+  background: #ffffff !important;
+  color: #8c969a !important;
+}
+
+.mobile-product-buy-button:disabled {
+  border-color: #cfd5d5 !important;
+  background: #dfe3e3 !important;
+  color: #737d81 !important;
+}
+
+.product-seller-meetup-card button:disabled {
+  background: #dfe3e3 !important;
+  color: #737d81 !important;
+  opacity: 1 !important;
+}
+
+/* ========================= */
+/* MOBILE */
+/* ========================= */
+
+@media (max-width: 720px) {
+  .listing-status-badge {
+    top: 9px;
+    left: 9px;
+
+    min-height: 26px;
+
+    padding: 0 9px;
+
+    font-size: 10px;
+  }
+
+  /*
+   * On the product page the back button already occupies
+   * the left corner, so the status starts after it.
+   */
+  .product-status-badge {
+    top: 14px;
+    left: 62px;
+
+    min-height: 32px;
+
+    padding: 0 12px;
+
+    font-size: 11px;
+  }
+
+  .product-owner-status-manager {
+    padding: 14px;
+  }
+
+  .product-owner-status-options {
+    gap: 6px;
+  }
+
+  .product-owner-status-button {
+    min-height: 38px;
+
+    padding: 0 5px;
+
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 380px) {
+  .product-owner-status-options {
+    grid-template-columns: 1fr;
+  }
+
+  .product-owner-status-button {
+    min-height: 42px;
+  }
+}

@@ -17,6 +17,7 @@ import {
 } from "../lib/categories";
 import { useAuth } from "../context/AuthContext";
 import { checkIsFavorite, toggleFavorite } from "../lib/favorites";
+import "../styles/listingStatus.css";
 
 const conditionLabels = {
   new: "New with tags",
@@ -32,6 +33,32 @@ function formatPrice(value) {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   });
+}
+
+function getListingStatus(status) {
+  const normalizedStatus = String(status || "active").toLowerCase();
+
+  if (normalizedStatus === "reserved") {
+    return {
+      key: "reserved",
+      label: "Reserved"
+    };
+  }
+
+  if (
+    normalizedStatus === "sold" ||
+    normalizedStatus === "completed"
+  ) {
+    return {
+      key: "sold",
+      label: "Sold"
+    };
+  }
+
+  return {
+    key: "available",
+    label: "Available"
+  };
 }
 
 export default function ListingCard({ listing }) {
@@ -74,6 +101,8 @@ export default function ListingCard({ listing }) {
   const itemPrice = Number(listing.price || 0);
   const buyerProtection = itemPrice * 0.08;
   const protectedPrice = itemPrice + buyerProtection;
+
+  const listingStatus = getListingStatus(listing.status);
 
   async function handleFavoriteClick(event) {
     event.preventDefault();
@@ -136,23 +165,43 @@ export default function ListingCard({ listing }) {
 
   return (
     <>
-      <article className="listing-card">
-        <Link to={`/item/${listing.id}`} className="listing-image-wrap">
+      <article
+        className={`listing-card listing-card-status-${listingStatus.key}`}
+      >
+        <Link
+          to={`/item/${listing.id}`}
+          className={`listing-image-wrap listing-image-status-${listingStatus.key}`}
+        >
           {firstPhoto ? (
-            <img src={firstPhoto} alt={listing.title} className="listing-image" />
+            <img
+              src={firstPhoto}
+              alt={listing.title}
+              className="listing-image"
+            />
           ) : (
             <div className="image-placeholder">No photo</div>
           )}
 
+          <span
+            className={`listing-status-badge listing-status-${listingStatus.key}`}
+          >
+            {listingStatus.label}
+          </span>
+
           <button
             className={isFavorite ? "heart-floating favorited" : "heart-floating"}
             type="button"
-            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            aria-label={
+              isFavorite ? "Remove from favorites" : "Add to favorites"
+            }
             aria-pressed={isFavorite}
             disabled={favoriteLoading}
             onClick={handleFavoriteClick}
           >
-            <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
+            <Heart
+              size={18}
+              fill={isFavorite ? "currentColor" : "none"}
+            />
           </button>
         </Link>
 
@@ -192,10 +241,16 @@ export default function ListingCard({ listing }) {
         </Link>
 
         {seller && (
-          <Link to={`/profile/${seller.username}`} className="seller-mini">
+          <Link
+            to={`/profile/${seller.username}`}
+            className="seller-mini"
+          >
             <div className="avatar-small">
               {seller.avatar_url ? (
-                <img src={seller.avatar_url} alt={seller.username} />
+                <img
+                  src={seller.avatar_url}
+                  alt={seller.username}
+                />
               ) : (
                 seller.username?.slice(0, 1)?.toUpperCase()
               )}
@@ -221,9 +276,14 @@ export default function ListingCard({ listing }) {
           >
             <header className="price-details-header">
               <span />
+
               <h2>Price details</h2>
 
-              <button type="button" onClick={closePriceDetails} aria-label="Close">
+              <button
+                type="button"
+                onClick={closePriceDetails}
+                aria-label="Close"
+              >
                 <X size={26} />
               </button>
             </header>
@@ -232,7 +292,10 @@ export default function ListingCard({ listing }) {
               <div className="price-details-product">
                 <div className="price-details-product-image">
                   {firstPhoto ? (
-                    <img src={firstPhoto} alt={listing.title} />
+                    <img
+                      src={firstPhoto}
+                      alt={listing.title}
+                    />
                   ) : (
                     <Package size={22} />
                   )}
@@ -252,6 +315,7 @@ export default function ListingCard({ listing }) {
                 <div>
                   <strong className="price-details-title-with-info">
                     Buyer Protection fees
+
                     <button
                       type="button"
                       className="price-details-info-button"
@@ -278,14 +342,17 @@ export default function ListingCard({ listing }) {
                 <div>
                   <strong>Shipping fees</strong>
                   <span>from ₱80.00</span>
-                  <small>Depending on the selected delivery method</small>
+                  <small>
+                    Depending on the selected delivery method
+                  </small>
                 </div>
               </div>
 
               <p className="price-details-note">
                 Buyer Protection fees are mandatory when you buy an item on
-                TindaHan. These fees are added every time a purchase is validated.
-                The item price is set by the seller and can be negotiated.
+                TindaHan. These fees are added every time a purchase is
+                validated. The item price is set by the seller and can be
+                negotiated.
               </p>
             </div>
           </section>
@@ -321,14 +388,18 @@ export default function ListingCard({ listing }) {
               </button>
 
               <p className="buyer-protection-info-intro">
-                For every purchase made on TindaHan, we help protect your order.
+                For every purchase made on TindaHan, we help protect your
+                order.
               </p>
 
               <article className="buyer-protection-info-section">
                 <Receipt size={22} />
+
                 <div>
                   <h3>Refund policy</h3>
+
                   <p>You may be eligible for a refund if your order:</p>
+
                   <ul>
                     <li>is lost or never delivered</li>
                     <li>arrives damaged</li>
@@ -336,21 +407,24 @@ export default function ListingCard({ listing }) {
                   </ul>
 
                   <p>
-                    You have <strong>2 days to submit a claim</strong> from the
-                    moment the delivery is marked as completed or notified.
-                    Unless agreed otherwise, buyers cover return shipping fees.
+                    You have <strong>2 days to submit a claim</strong> from
+                    the moment the delivery is marked as completed or
+                    notified. Unless agreed otherwise, buyers cover return
+                    shipping fees.
                   </p>
                 </div>
               </article>
 
               <article className="buyer-protection-info-section">
                 <LockKeyhole size={22} />
+
                 <div>
                   <h3>Secure transactions</h3>
+
                   <p>
-                    Your payment is kept secure during the transaction. We do not
-                    transfer the money to the seller until you have received your
-                    order and confirmed that everything is okay.
+                    Your payment is kept secure during the transaction. We do
+                    not transfer the money to the seller until you have
+                    received your order and confirmed that everything is okay.
                   </p>
 
                   <p>
@@ -362,18 +436,23 @@ export default function ListingCard({ listing }) {
 
               <article className="buyer-protection-info-section">
                 <MessageCircle size={22} />
+
                 <div>
                   <h3>Dedicated support</h3>
+
                   <p>
-                    Our support team is here to help if something goes wrong with
-                    your order.
+                    Our support team is here to help if something goes wrong
+                    with your order.
                   </p>
                 </div>
               </article>
             </div>
 
             <div className="buyer-protection-info-cta">
-              <button type="button" onClick={closeProtectionInfo}>
+              <button
+                type="button"
+                onClick={closeProtectionInfo}
+              >
                 I understand
               </button>
             </div>

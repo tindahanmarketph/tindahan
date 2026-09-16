@@ -1,6 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { ShieldCheck, Tag, BadgeCheck, HeartHandshake } from "lucide-react";
+import {
+  ShieldCheck,
+  Tag,
+  BadgeCheck,
+  HeartHandshake
+} from "lucide-react";
 import ListingCard from "../components/ListingCard";
 import GuestHero from "../components/GuestHero";
 import { useAuth } from "../context/AuthContext";
@@ -56,7 +61,9 @@ function HomeTrustCards() {
             className="home-trust-card"
             style={{ "--trust-index": index }}
           >
-            <div className="home-trust-icon">{card.icon}</div>
+            <div className="home-trust-icon">
+              {card.icon}
+            </div>
 
             <div>
               <strong>{card.title}</strong>
@@ -69,7 +76,11 @@ function HomeTrustCards() {
   );
 }
 
-async function fetchWithTimeout(url, options = {}, timeoutMs = SUPABASE_TIMEOUT_MS) {
+async function fetchWithTimeout(
+  url,
+  options = {},
+  timeoutMs = SUPABASE_TIMEOUT_MS
+) {
   const controller = new AbortController();
 
   const timeoutId = setTimeout(() => {
@@ -96,22 +107,47 @@ function getSupabaseHeaders() {
   };
 }
 
-function buildListingsUrl({ category, subcategory, childCategory, query, sort }) {
+function buildListingsUrl({
+  category,
+  subcategory,
+  childCategory,
+  query,
+  sort
+}) {
   const params = new URLSearchParams();
 
   params.set("select", "*");
-  params.set("status", "eq.active");
+
+  /*
+   * "active" is the existing database value used for an
+   * available item.
+   * "available" is also accepted here in case it is used
+   * on older/newer records.
+   */
+  params.set(
+    "status",
+    "in.(active,available,reserved,sold)"
+  );
 
   if (category && category !== "all") {
-    params.set("category", `eq.${category}`);
+    params.set(
+      "category",
+      `eq.${category}`
+    );
   }
 
   if (subcategory) {
-    params.set("subcategory", `eq.${subcategory}`);
+    params.set(
+      "subcategory",
+      `eq.${subcategory}`
+    );
   }
 
   if (childCategory) {
-    params.set("child_category", `eq.${childCategory}`);
+    params.set(
+      "child_category",
+      `eq.${childCategory}`
+    );
   }
 
   if (query) {
@@ -126,11 +162,20 @@ function buildListingsUrl({ category, subcategory, childCategory, query, sort })
   }
 
   if (sort === "price-low") {
-    params.set("order", "price.asc");
+    params.set(
+      "order",
+      "price.asc"
+    );
   } else if (sort === "price-high") {
-    params.set("order", "price.desc");
+    params.set(
+      "order",
+      "price.desc"
+    );
   } else {
-    params.set("order", "created_at.desc");
+    params.set(
+      "order",
+      "created_at.desc"
+    );
   }
 
   return `${supabaseConfig.url}/rest/v1/listings?${params.toString()}`;
@@ -159,20 +204,29 @@ async function fetchListingsViaRest({
     sort
   });
 
-  const listingsResponse = await fetchWithTimeout(listingsUrl, {
-    headers: getSupabaseHeaders()
-  });
+  const listingsResponse = await fetchWithTimeout(
+    listingsUrl,
+    {
+      headers: getSupabaseHeaders()
+    }
+  );
 
   if (!listingsResponse.ok) {
     const text = await listingsResponse.text();
 
-    throw new Error(`Listings request failed: ${listingsResponse.status} ${text}`);
+    throw new Error(
+      `Listings request failed: ${listingsResponse.status} ${text}`
+    );
   }
 
   const listings = await listingsResponse.json();
 
   const sellerIds = [
-    ...new Set(listings.map((listing) => listing.seller_id).filter(Boolean))
+    ...new Set(
+      listings
+        .map((listing) => listing.seller_id)
+        .filter(Boolean)
+    )
   ];
 
   if (sellerIds.length === 0) {
@@ -183,16 +237,21 @@ async function fetchListingsViaRest({
   }
 
   try {
-    const encodedIds = sellerIds.map((id) => `"${id}"`).join(",");
+    const encodedIds = sellerIds
+      .map((id) => `"${id}"`)
+      .join(",");
 
     let profilesUrl =
       `${supabaseConfig.url}/rest/v1/profiles` +
       `?select=id,username,avatar_url,rating,is_verified,total_sales,holiday_mode` +
       `&id=in.(${encodedIds})`;
 
-    let profilesResponse = await fetchWithTimeout(profilesUrl, {
-      headers: getSupabaseHeaders()
-    });
+    let profilesResponse = await fetchWithTimeout(
+      profilesUrl,
+      {
+        headers: getSupabaseHeaders()
+      }
+    );
 
     if (!profilesResponse.ok) {
       profilesUrl =
@@ -200,47 +259,69 @@ async function fetchListingsViaRest({
         `?select=id,username,avatar_url,rating,is_verified,total_sales` +
         `&id=in.(${encodedIds})`;
 
-      profilesResponse = await fetchWithTimeout(profilesUrl, {
-        headers: getSupabaseHeaders()
-      });
+      profilesResponse = await fetchWithTimeout(
+        profilesUrl,
+        {
+          headers: getSupabaseHeaders()
+        }
+      );
     }
 
     if (!profilesResponse.ok) {
-      throw new Error(`Profiles request failed: ${profilesResponse.status}`);
+      throw new Error(
+        `Profiles request failed: ${profilesResponse.status}`
+      );
     }
 
-    const profiles = await profilesResponse.json();
+    const profiles =
+      await profilesResponse.json();
 
-    const profilesById = profiles.reduce((acc, profile) => {
-      acc[profile.id] = profile;
-      return acc;
-    }, {});
+    const profilesById = profiles.reduce(
+      (acc, profile) => {
+        acc[profile.id] = profile;
+        return acc;
+      },
+      {}
+    );
 
     const listingsWithProfiles = listings
       .map((listing) => ({
         ...listing,
-        profiles: profilesById[listing.seller_id] || null
+        profiles:
+          profilesById[listing.seller_id] ||
+          null
       }))
-      .filter((listing) => !listing.profiles?.holiday_mode);
+      .filter(
+        (listing) =>
+          !listing.profiles?.holiday_mode
+      );
 
     return {
       listings: listingsWithProfiles,
       warning: ""
     };
   } catch (profileError) {
-    console.warn("Profiles loading skipped:", profileError.message);
+    /*
+     * Seller profile information is secondary to the feed.
+     * Products remain visible and the technical warning is
+     * kept only in the console.
+     */
+    console.warn(
+      "Profiles loading skipped:",
+      profileError.message
+    );
 
     return {
       listings,
-      warning:
-        "Items loaded, but seller profiles could not be loaded. Check profiles RLS policies."
+      warning: ""
     };
   }
 }
 
 function useMobileFeedZoomLock() {
   useEffect(() => {
-    const isMobileViewport = () => window.innerWidth <= 760;
+    const isMobileViewport = () =>
+      window.innerWidth <= 760;
 
     let lastTouchEnd = 0;
 
@@ -253,7 +334,10 @@ function useMobileFeedZoomLock() {
     function preventMultiTouch(event) {
       if (!isMobileViewport()) return;
 
-      if (event.touches && event.touches.length > 1) {
+      if (
+        event.touches &&
+        event.touches.length > 1
+      ) {
         event.preventDefault();
       }
     }
@@ -281,47 +365,145 @@ function useMobileFeedZoomLock() {
     const html = document.documentElement;
     const body = document.body;
 
-    const previousHtmlTouchAction = html.style.touchAction;
-    const previousBodyTouchAction = body.style.touchAction;
-    const previousHtmlOverflowX = html.style.overflowX;
-    const previousBodyOverflowX = body.style.overflowX;
-    const previousBodyUserSelect = body.style.userSelect;
-    const previousBodyWebkitUserSelect = body.style.webkitUserSelect;
+    const previousHtmlTouchAction =
+      html.style.touchAction;
 
-    html.classList.add("tindahan-feed-zoom-locked");
-    body.classList.add("tindahan-feed-zoom-locked");
+    const previousBodyTouchAction =
+      body.style.touchAction;
+
+    const previousHtmlOverflowX =
+      html.style.overflowX;
+
+    const previousBodyOverflowX =
+      body.style.overflowX;
+
+    const previousBodyUserSelect =
+      body.style.userSelect;
+
+    const previousBodyWebkitUserSelect =
+      body.style.webkitUserSelect;
+
+    html.classList.add(
+      "tindahan-feed-zoom-locked"
+    );
+
+    body.classList.add(
+      "tindahan-feed-zoom-locked"
+    );
 
     html.style.touchAction = "pan-y";
     body.style.touchAction = "pan-y";
+
     html.style.overflowX = "hidden";
     body.style.overflowX = "hidden";
+
     body.style.userSelect = "none";
     body.style.webkitUserSelect = "none";
 
-    document.addEventListener("gesturestart", preventGesture, { passive: false });
-    document.addEventListener("gesturechange", preventGesture, { passive: false });
-    document.addEventListener("gestureend", preventGesture, { passive: false });
-    document.addEventListener("touchmove", preventMultiTouch, { passive: false });
-    document.addEventListener("touchend", preventDoubleTapZoom, { passive: false });
-    document.addEventListener("wheel", preventCtrlWheelZoom, { passive: false });
+    document.addEventListener(
+      "gesturestart",
+      preventGesture,
+      {
+        passive: false
+      }
+    );
+
+    document.addEventListener(
+      "gesturechange",
+      preventGesture,
+      {
+        passive: false
+      }
+    );
+
+    document.addEventListener(
+      "gestureend",
+      preventGesture,
+      {
+        passive: false
+      }
+    );
+
+    document.addEventListener(
+      "touchmove",
+      preventMultiTouch,
+      {
+        passive: false
+      }
+    );
+
+    document.addEventListener(
+      "touchend",
+      preventDoubleTapZoom,
+      {
+        passive: false
+      }
+    );
+
+    document.addEventListener(
+      "wheel",
+      preventCtrlWheelZoom,
+      {
+        passive: false
+      }
+    );
 
     return () => {
-      html.classList.remove("tindahan-feed-zoom-locked");
-      body.classList.remove("tindahan-feed-zoom-locked");
+      html.classList.remove(
+        "tindahan-feed-zoom-locked"
+      );
 
-      html.style.touchAction = previousHtmlTouchAction;
-      body.style.touchAction = previousBodyTouchAction;
-      html.style.overflowX = previousHtmlOverflowX;
-      body.style.overflowX = previousBodyOverflowX;
-      body.style.userSelect = previousBodyUserSelect;
-      body.style.webkitUserSelect = previousBodyWebkitUserSelect;
+      body.classList.remove(
+        "tindahan-feed-zoom-locked"
+      );
 
-      document.removeEventListener("gesturestart", preventGesture);
-      document.removeEventListener("gesturechange", preventGesture);
-      document.removeEventListener("gestureend", preventGesture);
-      document.removeEventListener("touchmove", preventMultiTouch);
-      document.removeEventListener("touchend", preventDoubleTapZoom);
-      document.removeEventListener("wheel", preventCtrlWheelZoom);
+      html.style.touchAction =
+        previousHtmlTouchAction;
+
+      body.style.touchAction =
+        previousBodyTouchAction;
+
+      html.style.overflowX =
+        previousHtmlOverflowX;
+
+      body.style.overflowX =
+        previousBodyOverflowX;
+
+      body.style.userSelect =
+        previousBodyUserSelect;
+
+      body.style.webkitUserSelect =
+        previousBodyWebkitUserSelect;
+
+      document.removeEventListener(
+        "gesturestart",
+        preventGesture
+      );
+
+      document.removeEventListener(
+        "gesturechange",
+        preventGesture
+      );
+
+      document.removeEventListener(
+        "gestureend",
+        preventGesture
+      );
+
+      document.removeEventListener(
+        "touchmove",
+        preventMultiTouch
+      );
+
+      document.removeEventListener(
+        "touchend",
+        preventDoubleTapZoom
+      );
+
+      document.removeEventListener(
+        "wheel",
+        preventCtrlWheelZoom
+      );
     };
   }, []);
 }
@@ -330,17 +512,33 @@ export default function Home() {
   useMobileFeedZoomLock();
 
   const { user, loadingAuth } = useAuth();
-  const [searchParams, setSearchParams] = useSearchParams();
 
-  const activeCategory = searchParams.get("category") || "all";
-  const activeSubcategory = searchParams.get("subcategory") || "";
-  const activeChildCategory = searchParams.get("child_category") || "";
-  const activeQuery = searchParams.get("q") || "";
-  const activeSort = searchParams.get("sort") || "newest";
+  const [searchParams, setSearchParams] =
+    useSearchParams();
 
-  const [listings, setListings] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadMessage, setLoadMessage] = useState("");
+  const activeCategory =
+    searchParams.get("category") || "all";
+
+  const activeSubcategory =
+    searchParams.get("subcategory") || "";
+
+  const activeChildCategory =
+    searchParams.get("child_category") || "";
+
+  const activeQuery =
+    searchParams.get("q") || "";
+
+  const activeSort =
+    searchParams.get("sort") || "newest";
+
+  const [listings, setListings] =
+    useState([]);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [loadMessage, setLoadMessage] =
+    useState("");
 
   const isFilteredPage =
     activeQuery ||
@@ -348,19 +546,37 @@ export default function Home() {
     activeSubcategory ||
     activeChildCategory;
 
-  const shouldShowGuestHero = !loadingAuth && !user && !isFilteredPage;
+  const shouldShowGuestHero =
+    !loadingAuth &&
+    !user &&
+    !isFilteredPage;
 
   const pageTitle = useMemo(() => {
-    if (activeQuery && activeChildCategory) {
-      return `${getChildCategoryLabel(activeChildCategory)} results for "${activeQuery}"`;
+    if (
+      activeQuery &&
+      activeChildCategory
+    ) {
+      return `${getChildCategoryLabel(
+        activeChildCategory
+      )} results for "${activeQuery}"`;
     }
 
-    if (activeQuery && activeSubcategory) {
-      return `${getSubcategoryLabel(activeSubcategory)} results for "${activeQuery}"`;
+    if (
+      activeQuery &&
+      activeSubcategory
+    ) {
+      return `${getSubcategoryLabel(
+        activeSubcategory
+      )} results for "${activeQuery}"`;
     }
 
-    if (activeQuery && activeCategory !== "all") {
-      return `${getCategoryLabel(activeCategory)} results for "${activeQuery}"`;
+    if (
+      activeQuery &&
+      activeCategory !== "all"
+    ) {
+      return `${getCategoryLabel(
+        activeCategory
+      )} results for "${activeQuery}"`;
     }
 
     if (activeQuery) {
@@ -368,19 +584,30 @@ export default function Home() {
     }
 
     if (activeChildCategory) {
-      return getChildCategoryLabel(activeChildCategory);
+      return getChildCategoryLabel(
+        activeChildCategory
+      );
     }
 
     if (activeSubcategory) {
-      return getSubcategoryLabel(activeSubcategory);
+      return getSubcategoryLabel(
+        activeSubcategory
+      );
     }
 
     if (activeCategory !== "all") {
-      return getCategoryLabel(activeCategory);
+      return getCategoryLabel(
+        activeCategory
+      );
     }
 
     return "Fresh finds";
-  }, [activeCategory, activeSubcategory, activeChildCategory, activeQuery]);
+  }, [
+    activeCategory,
+    activeSubcategory,
+    activeChildCategory,
+    activeQuery
+  ]);
 
   const pageSubtitle = useMemo(() => {
     if (activeChildCategory) {
@@ -402,7 +629,11 @@ export default function Home() {
     }
 
     return "Buy and sell second-hand treasures across the Philippines.";
-  }, [activeCategory, activeSubcategory, activeChildCategory]);
+  }, [
+    activeCategory,
+    activeSubcategory,
+    activeChildCategory
+  ]);
 
   useEffect(() => {
     let isMounted = true;
@@ -412,25 +643,38 @@ export default function Home() {
       setLoadMessage("");
 
       try {
-        const result = await fetchListingsViaRest({
-          category: activeCategory,
-          subcategory: activeSubcategory,
-          childCategory: activeChildCategory,
-          query: activeQuery,
-          sort: activeSort
-        });
+        const result =
+          await fetchListingsViaRest({
+            category: activeCategory,
+            subcategory: activeSubcategory,
+            childCategory: activeChildCategory,
+            query: activeQuery,
+            sort: activeSort
+          });
 
         if (!isMounted) return;
 
-        setListings(result.listings || []);
-        setLoadMessage(result.warning || "");
+        setListings(
+          result.listings || []
+        );
+
+        setLoadMessage(
+          result.warning || ""
+        );
       } catch (error) {
-        console.error("Home listings loading error:", error);
+        console.error(
+          "Home listings loading error:",
+          error
+        );
 
         if (!isMounted) return;
 
         setListings([]);
-        setLoadMessage(error?.message || "Unable to load listings from Supabase.");
+
+        setLoadMessage(
+          error?.message ||
+            "Unable to load listings from Supabase."
+        );
       } finally {
         if (isMounted) {
           setLoading(false);
@@ -452,10 +696,18 @@ export default function Home() {
   ]);
 
   function handleSortChange(event) {
-    const nextSort = event.target.value;
+    const nextSort =
+      event.target.value;
 
-    const nextParams = new URLSearchParams(searchParams);
-    nextParams.set("sort", nextSort);
+    const nextParams =
+      new URLSearchParams(
+        searchParams
+      );
+
+    nextParams.set(
+      "sort",
+      nextSort
+    );
 
     setSearchParams(nextParams);
   }
@@ -483,57 +735,82 @@ export default function Home() {
               <p>{pageSubtitle}</p>
             </div>
 
-            <select className="select" value={activeSort} onChange={handleSortChange}>
-              <option value="newest">Newest first</option>
-              <option value="price-low">Price low to high</option>
-              <option value="price-high">Price high to low</option>
+            <select
+              className="select"
+              value={activeSort}
+              onChange={handleSortChange}
+            >
+              <option value="newest">
+                Newest first
+              </option>
+
+              <option value="price-low">
+                Price low to high
+              </option>
+
+              <option value="price-high">
+                Price high to low
+              </option>
             </select>
           </div>
 
           {loading && (
             <div className="grid home-feed-grid">
-              {Array.from({ length: 12 }).map((_, index) => (
-                <ListingSkeleton key={index} />
+              {Array.from({
+                length: 12
+              }).map((_, index) => (
+                <ListingSkeleton
+                  key={index}
+                />
               ))}
             </div>
           )}
 
-          {!loading && loadMessage && listings.length === 0 && (
-            <div className="empty-state home-error-state">
-              <h2>Unable to load items</h2>
-              <p>{loadMessage}</p>
-              <p className="debug-id">
-                Check Netlify environment variables, Supabase table name, columns and
-                RLS policies.
-              </p>
-            </div>
-          )}
+          {!loading &&
+            loadMessage &&
+            listings.length === 0 && (
+              <div className="empty-state home-error-state">
+                <h2>
+                  Unable to load items
+                </h2>
 
-          {!loading && !loadMessage && listings.length === 0 && (
-            <div className="empty-state">
-              <h2>No items found</h2>
-              <p>
-                {isFilteredPage
-                  ? "There are no active items matching this selection yet."
-                  : "Be the first to list an item on TindaHan."}
-              </p>
-            </div>
-          )}
+                <p>{loadMessage}</p>
 
-          {!loading && loadMessage && listings.length > 0 && (
-            <div className="empty-state home-warning-state">
-              <h2>Items loaded with a warning</h2>
-              <p>{loadMessage}</p>
-            </div>
-          )}
+                <p className="debug-id">
+                  Check Netlify environment variables,
+                  Supabase table name, columns and
+                  RLS policies.
+                </p>
+              </div>
+            )}
 
-          {!loading && listings.length > 0 && (
-            <div className="grid home-feed-grid">
-              {listings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} />
-              ))}
-            </div>
-          )}
+          {!loading &&
+            !loadMessage &&
+            listings.length === 0 && (
+              <div className="empty-state">
+                <h2>No items found</h2>
+
+                <p>
+                  {isFilteredPage
+                    ? "There are no items matching this selection yet."
+                    : "Be the first to list an item on TindaHan."}
+                </p>
+              </div>
+            )}
+
+          {!loading &&
+            listings.length > 0 && (
+              <div className="grid home-feed-grid">
+                {listings.map(
+                  (listing) => (
+                    <ListingCard
+                      key={listing.id}
+                      listing={listing}
+                    />
+                  )
+                )}
+              </div>
+            )}
         </div>
       </main>
     </>
