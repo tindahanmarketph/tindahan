@@ -71,7 +71,8 @@ function getInitials(name) {
 }
 
 function getListingStatus(status) {
-  const normalizedStatus = String(status || "active").toLowerCase();
+  const normalizedStatus =
+    String(status || "active").toLowerCase();
 
   if (normalizedStatus === "reserved") {
     return {
@@ -90,21 +91,26 @@ function getListingStatus(status) {
       key: "sold",
       label: "Sold",
       message:
-        "This item has already been sold and is no longer available for purchase."
+        "This item has been sold and is no longer available."
     };
   }
 
   return {
     key: "available",
     label: "Available",
-    message: "This item is available for purchase."
+    message:
+      "This item is available for purchase."
   };
 }
 
 export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { user } = useAuth();
+
+  const {
+    user,
+    loadingAuth
+  } = useAuth();
 
   const touchStartRef = useRef({
     x: 0,
@@ -114,14 +120,43 @@ export default function ListingDetail() {
 
   const [listing, setListing] = useState(null);
   const [seller, setSeller] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [photoIndex, setPhotoIndex] = useState(0);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
-  const [isFavorite, setIsFavorite] = useState(false);
-  const [favoriteLoading, setFavoriteLoading] = useState(false);
-  const [showOwnerActions, setShowOwnerActions] = useState(false);
-  const [ownerActionLoading, setOwnerActionLoading] = useState(false);
+
+  const [loading, setLoading] =
+    useState(true);
+
+  const [photoIndex, setPhotoIndex] =
+    useState(0);
+
+  const [errorMessage, setErrorMessage] =
+    useState("");
+
+  const [
+    descriptionExpanded,
+    setDescriptionExpanded
+  ] = useState(false);
+
+  const [isFavorite, setIsFavorite] =
+    useState(false);
+
+  const [
+    favoriteLoading,
+    setFavoriteLoading
+  ] = useState(false);
+
+  const [
+    favoriteStateLoaded,
+    setFavoriteStateLoaded
+  ] = useState(false);
+
+  const [
+    showOwnerActions,
+    setShowOwnerActions
+  ] = useState(false);
+
+  const [
+    ownerActionLoading,
+    setOwnerActionLoading
+  ] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -134,6 +169,7 @@ export default function ListingDetail() {
       setPhotoIndex(0);
       setDescriptionExpanded(false);
       setShowOwnerActions(false);
+      setFavoriteStateLoaded(false);
 
       if (!id) {
         setErrorMessage("Missing listing ID.");
@@ -141,7 +177,10 @@ export default function ListingDetail() {
         return;
       }
 
-      const { data: listingData, error: listingError } = await supabase
+      const {
+        data: listingData,
+        error: listingError
+      } = await supabase
         .from("listings")
         .select("*")
         .eq("id", id)
@@ -150,14 +189,24 @@ export default function ListingDetail() {
       if (!isMounted) return;
 
       if (listingError) {
-        console.error("Listing detail error:", listingError);
-        setErrorMessage(listingError.message);
+        console.error(
+          "Listing detail error:",
+          listingError
+        );
+
+        setErrorMessage(
+          listingError.message
+        );
+
         setLoading(false);
         return;
       }
 
       if (!listingData) {
-        setErrorMessage("This listing does not exist or was removed.");
+        setErrorMessage(
+          "This listing does not exist or was removed."
+        );
+
         setLoading(false);
         return;
       }
@@ -165,18 +214,29 @@ export default function ListingDetail() {
       setListing(listingData);
 
       if (listingData.seller_id) {
-        const { data: sellerData, error: sellerError } = await supabase
+        const {
+          data: sellerData,
+          error: sellerError
+        } = await supabase
           .from("profiles")
           .select("*")
-          .eq("id", listingData.seller_id)
+          .eq(
+            "id",
+            listingData.seller_id
+          )
           .maybeSingle();
 
         if (!isMounted) return;
 
         if (sellerError) {
-          console.error("Seller profile error:", sellerError);
+          console.error(
+            "Seller profile error:",
+            sellerError
+          );
         } else {
-          setSeller(sellerData);
+          setSeller(
+            sellerData
+          );
         }
       }
 
@@ -196,15 +256,49 @@ export default function ListingDetail() {
     let isMounted = true;
 
     async function loadFavoriteState() {
-      if (!user?.id || !listing?.id) {
+      if (!listing?.id) {
         setIsFavorite(false);
+        setFavoriteStateLoaded(false);
         return;
       }
 
-      const favoriteState = await checkIsFavorite(user.id, listing.id);
+      if (loadingAuth) {
+        return;
+      }
 
-      if (isMounted) {
-        setIsFavorite(favoriteState);
+      if (!user?.id) {
+        setIsFavorite(false);
+        setFavoriteStateLoaded(true);
+        return;
+      }
+
+      setFavoriteStateLoaded(false);
+
+      try {
+        const favoriteState =
+          await checkIsFavorite(
+            user.id,
+            listing.id
+          );
+
+        if (!isMounted) return;
+
+        setIsFavorite(
+          favoriteState
+        );
+      } catch (error) {
+        console.warn(
+          "Favorite state loading skipped:",
+          error.message
+        );
+
+        if (!isMounted) return;
+
+        setIsFavorite(false);
+      } finally {
+        if (isMounted) {
+          setFavoriteStateLoaded(true);
+        }
       }
     }
 
@@ -213,21 +307,31 @@ export default function ListingDetail() {
     return () => {
       isMounted = false;
     };
-  }, [user?.id, listing?.id]);
+  }, [
+    user?.id,
+    listing?.id,
+    loadingAuth
+  ]);
 
   useEffect(() => {
     async function incrementViews() {
       if (!listing?.id) return;
 
-      const nextViews = Number(listing.views || 0) + 1;
+      const nextViews =
+        Number(listing.views || 0) + 1;
 
       const { error } = await supabase
         .from("listings")
-        .update({ views: nextViews })
+        .update({
+          views: nextViews
+        })
         .eq("id", listing.id);
 
       if (error) {
-        console.warn("View increment skipped:", error.message);
+        console.warn(
+          "View increment skipped:",
+          error.message
+        );
       }
     }
 
@@ -235,7 +339,12 @@ export default function ListingDetail() {
   }, [listing?.id]);
 
   const photos = useMemo(() => {
-    if (!listing?.photos || !Array.isArray(listing.photos)) return [];
+    if (
+      !listing?.photos ||
+      !Array.isArray(listing.photos)
+    ) {
+      return [];
+    }
 
     return listing.photos.filter(Boolean);
   }, [listing]);
@@ -243,92 +352,178 @@ export default function ListingDetail() {
   const isOwner = Boolean(
     user?.id &&
       listing?.seller_id &&
-      String(user.id) === String(listing.seller_id)
+      String(user.id) ===
+        String(listing.seller_id)
   );
 
-  const listingStatus = getListingStatus(listing?.status);
-  const isAvailable = listingStatus.key === "available";
-  const isReserved = listingStatus.key === "reserved";
-  const isSold = listingStatus.key === "sold";
+  const listingStatus =
+    getListingStatus(
+      listing?.status
+    );
 
-  const price = Number(listing?.price || 0);
-  const protection = price * 0.08;
+  const isAvailable =
+    listingStatus.key === "available";
+
+  const isReserved =
+    listingStatus.key === "reserved";
+
+  const isSold =
+    listingStatus.key === "sold";
+
+  const canViewSoldListing =
+    !isSold ||
+    isOwner ||
+    isFavorite;
+
+  const price =
+    Number(listing?.price || 0);
+
+  const protection =
+    price * 0.08;
+
   const shipping = 80;
-  const total = price + protection + shipping;
 
-  const relativeCreatedAt = formatRelativeTime(listing?.created_at);
+  const total =
+    price +
+    protection +
+    shipping;
+
+  const relativeCreatedAt =
+    formatRelativeTime(
+      listing?.created_at
+    );
 
   const conditionLabel =
-    conditionLabels[listing?.condition] || listing?.condition || "";
+    conditionLabels[
+      listing?.condition
+    ] ||
+    listing?.condition ||
+    "";
 
-  const categoryLabel = listing?.category
-    ? getCategoryLabel(listing.category)
-    : "";
+  const categoryLabel =
+    listing?.category
+      ? getCategoryLabel(
+          listing.category
+        )
+      : "";
 
-  const subcategoryLabel = listing?.subcategory
-    ? getSubcategoryLabel(listing.subcategory)
-    : "";
+  const subcategoryLabel =
+    listing?.subcategory
+      ? getSubcategoryLabel(
+          listing.subcategory
+        )
+      : "";
 
-  const childCategoryLabel = listing?.child_category
-    ? getChildCategoryLabel(listing.child_category)
-    : "";
+  const childCategoryLabel =
+    listing?.child_category
+      ? getChildCategoryLabel(
+          listing.child_category
+        )
+      : "";
 
   const description =
-    listing?.description?.trim() || "No description provided.";
+    listing?.description?.trim() ||
+    "No description provided.";
 
-  const shouldShowDescriptionToggle = description.length > 150;
+  const shouldShowDescriptionToggle =
+    description.length > 150;
 
   const displayedDescription =
-    descriptionExpanded || !shouldShowDescriptionToggle
+    descriptionExpanded ||
+    !shouldShowDescriptionToggle
       ? description
-      : `${description.slice(0, 150).trim()}...`;
+      : `${description
+          .slice(0, 150)
+          .trim()}...`;
 
-  const sellerMeetupSpot = listing?.seller_meetup_spot || null;
+  const sellerMeetupSpot =
+    listing?.seller_meetup_spot ||
+    null;
 
-  const hasSellerMeetup = Boolean(
-    listing?.meetup_enabled && sellerMeetupSpot
-  );
+  const hasSellerMeetup =
+    Boolean(
+      listing?.meetup_enabled &&
+      sellerMeetupSpot
+    );
 
   const characteristics = [
-    listing?.brand ? ["Brand", listing.brand] : null,
-    listing?.size ? ["Size", listing.size] : null,
-    listing?.condition ? ["Condition", conditionLabel] : null,
-    listing?.color ? ["Color", listing.color] : null,
-    categoryLabel ? ["Category", categoryLabel] : null,
-    subcategoryLabel ? ["Subcategory", subcategoryLabel] : null,
-    childCategoryLabel ? ["Type", childCategoryLabel] : null,
+    listing?.brand
+      ? ["Brand", listing.brand]
+      : null,
+
+    listing?.size
+      ? ["Size", listing.size]
+      : null,
+
+    listing?.condition
+      ? ["Condition", conditionLabel]
+      : null,
+
+    listing?.color
+      ? ["Color", listing.color]
+      : null,
+
+    categoryLabel
+      ? ["Category", categoryLabel]
+      : null,
+
+    subcategoryLabel
+      ? ["Subcategory", subcategoryLabel]
+      : null,
+
+    childCategoryLabel
+      ? ["Type", childCategoryLabel]
+      : null,
+
     ["Added", relativeCreatedAt]
   ].filter(Boolean);
 
-  const recommendationListing = useMemo(() => {
-    if (!listing) return null;
+  const recommendationListing =
+    useMemo(() => {
+      if (!listing) return null;
 
-    return {
-      ...listing,
-      profiles: seller || listing.profiles || null
-    };
-  }, [listing, seller]);
+      return {
+        ...listing,
+        profiles:
+          seller ||
+          listing.profiles ||
+          null
+      };
+    }, [
+      listing,
+      seller
+    ]);
 
   function prevPhoto() {
     if (photos.length <= 1) return;
 
-    setPhotoIndex((prev) =>
-      prev === 0 ? photos.length - 1 : prev - 1
+    setPhotoIndex(
+      (previousIndex) =>
+        previousIndex === 0
+          ? photos.length - 1
+          : previousIndex - 1
     );
   }
 
   function nextPhoto() {
     if (photos.length <= 1) return;
 
-    setPhotoIndex((prev) =>
-      prev === photos.length - 1 ? 0 : prev + 1
+    setPhotoIndex(
+      (previousIndex) =>
+        previousIndex ===
+        photos.length - 1
+          ? 0
+          : previousIndex + 1
     );
   }
 
-  function handlePhotoTouchStart(event) {
+  function handlePhotoTouchStart(
+    event
+  ) {
     if (photos.length <= 1) return;
 
-    const touch = event.touches[0];
+    const touch =
+      event.touches[0];
 
     touchStartRef.current = {
       x: touch.clientX,
@@ -337,27 +532,45 @@ export default function ListingDetail() {
     };
   }
 
-  function handlePhotoTouchEnd(event) {
+  function handlePhotoTouchEnd(
+    event
+  ) {
     if (photos.length <= 1) return;
 
-    const touch = event.changedTouches[0];
+    const touch =
+      event.changedTouches[0];
 
-    const startX = touchStartRef.current.x;
-    const startY = touchStartRef.current.y;
+    const startX =
+      touchStartRef.current.x;
 
-    const deltaX = touch.clientX - startX;
-    const deltaY = touch.clientY - startY;
-    const elapsedTime = Date.now() - touchStartRef.current.time;
+    const startY =
+      touchStartRef.current.y;
 
-    const horizontalDistance = Math.abs(deltaX);
-    const verticalDistance = Math.abs(deltaY);
+    const deltaX =
+      touch.clientX - startX;
+
+    const deltaY =
+      touch.clientY - startY;
+
+    const elapsedTime =
+      Date.now() -
+      touchStartRef.current.time;
+
+    const horizontalDistance =
+      Math.abs(deltaX);
+
+    const verticalDistance =
+      Math.abs(deltaY);
 
     const isHorizontalSwipe =
       horizontalDistance > 45 &&
-      horizontalDistance > verticalDistance * 1.35 &&
+      horizontalDistance >
+        verticalDistance * 1.35 &&
       elapsedTime < 700;
 
-    if (!isHorizontalSwipe) return;
+    if (!isHorizontalSwipe) {
+      return;
+    }
 
     if (deltaX < 0) {
       nextPhoto();
@@ -369,37 +582,64 @@ export default function ListingDetail() {
 
   function handleUnavailableAction() {
     if (isReserved) {
-      alert("This item is currently reserved.");
+      alert(
+        "This item is currently reserved."
+      );
       return;
     }
 
     if (isSold) {
-      alert("This item has already been sold.");
+      alert(
+        "This item has already been sold."
+      );
     }
   }
 
   function handleChatWithSeller() {
     if (!listing) return;
 
-    const params = new URLSearchParams();
+    const params =
+      new URLSearchParams();
 
-    params.set("listingId", listing.id);
-    params.set("title", listing.title || "Item");
-    params.set("price", String(listing.price || 0));
+    params.set(
+      "listingId",
+      listing.id
+    );
+
+    params.set(
+      "title",
+      listing.title || "Item"
+    );
+
+    params.set(
+      "price",
+      String(listing.price || 0)
+    );
 
     if (photos[0]) {
-      params.set("photo", photos[0]);
+      params.set(
+        "photo",
+        photos[0]
+      );
     }
 
     if (seller?.id) {
-      params.set("sellerId", seller.id);
+      params.set(
+        "sellerId",
+        seller.id
+      );
     }
 
     if (seller?.username) {
-      params.set("seller", seller.username);
+      params.set(
+        "seller",
+        seller.username
+      );
     }
 
-    navigate(`/messages?${params.toString()}`);
+    navigate(
+      `/messages?${params.toString()}`
+    );
   }
 
   function handleBuyNow() {
@@ -410,7 +650,9 @@ export default function ListingDetail() {
       return;
     }
 
-    navigate(`/checkout/${listing.id}`);
+    navigate(
+      `/checkout/${listing.id}`
+    );
   }
 
   function handleMeetupBuy() {
@@ -421,7 +663,9 @@ export default function ListingDetail() {
       return;
     }
 
-    navigate(`/safe-meetup/${listing.id}?returnTo=product`);
+    navigate(
+      `/safe-meetup/${listing.id}?returnTo=product`
+    );
   }
 
   function handleMakeOffer() {
@@ -432,10 +676,14 @@ export default function ListingDetail() {
       return;
     }
 
-    navigate(`/offer/${listing.id}`);
+    navigate(
+      `/offer/${listing.id}`
+    );
   }
 
-  async function handleFavoriteClick(event) {
+  async function handleFavoriteClick(
+    event
+  ) {
     event.preventDefault();
     event.stopPropagation();
 
@@ -444,13 +692,26 @@ export default function ListingDetail() {
       return;
     }
 
-    if (!listing?.id || favoriteLoading) return;
+    if (
+      !listing?.id ||
+      favoriteLoading
+    ) {
+      return;
+    }
 
-    const previousValue = isFavorite;
-    const nextValue = !previousValue;
+    const previousValue =
+      isFavorite;
 
-    setIsFavorite(nextValue);
-    setFavoriteLoading(true);
+    const nextValue =
+      !previousValue;
+
+    setIsFavorite(
+      nextValue
+    );
+
+    setFavoriteLoading(
+      true
+    );
 
     try {
       await toggleFavorite(
@@ -459,16 +720,34 @@ export default function ListingDetail() {
         previousValue
       );
     } catch (error) {
-      console.error("Favorite update error:", error);
-      setIsFavorite(previousValue);
-      alert(error.message || "Unable to update favorites.");
+      console.error(
+        "Favorite update error:",
+        error
+      );
+
+      setIsFavorite(
+        previousValue
+      );
+
+      alert(
+        error.message ||
+          "Unable to update favorites."
+      );
     } finally {
       setFavoriteLoading(false);
     }
   }
 
-  async function updateListingStatus(nextStatus) {
-    if (!isOwner || !listing?.id || ownerActionLoading) return;
+  async function updateListingStatus(
+    nextStatus
+  ) {
+    if (
+      !isOwner ||
+      !listing?.id ||
+      ownerActionLoading
+    ) {
+      return;
+    }
 
     setOwnerActionLoading(true);
 
@@ -478,35 +757,59 @@ export default function ListingDetail() {
         .update({
           status: nextStatus
         })
-        .eq("id", listing.id)
-        .eq("seller_id", user.id);
+        .eq(
+          "id",
+          listing.id
+        )
+        .eq(
+          "seller_id",
+          user.id
+        );
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      setListing((currentListing) => ({
-        ...currentListing,
-        status: nextStatus
-      }));
+      setListing(
+        (currentListing) => ({
+          ...currentListing,
+          status: nextStatus
+        })
+      );
 
-      setShowOwnerActions(false);
+      setShowOwnerActions(
+        false
+      );
     } catch (error) {
-      console.error("Listing status update error:", error);
+      console.error(
+        "Listing status update error:",
+        error
+      );
 
       alert(
         error.message ||
           "Unable to update this listing."
       );
     } finally {
-      setOwnerActionLoading(false);
+      setOwnerActionLoading(
+        false
+      );
     }
   }
 
   async function deleteOwnerListing() {
-    if (!isOwner || !listing?.id || ownerActionLoading) return;
+    if (
+      !isOwner ||
+      !listing?.id ||
+      ownerActionLoading
+    ) {
+      return;
+    }
 
-    const confirmed = window.confirm(
-      "Are you sure you want to delete this listing? This action cannot be undone."
-    );
+    const confirmed =
+      window.confirm(
+        "Are you sure you want to delete this listing? This action cannot be undone."
+      );
 
     if (!confirmed) return;
 
@@ -516,15 +819,27 @@ export default function ListingDetail() {
       const { error } = await supabase
         .from("listings")
         .delete()
-        .eq("id", listing.id)
-        .eq("seller_id", user.id);
+        .eq(
+          "id",
+          listing.id
+        )
+        .eq(
+          "seller_id",
+          user.id
+        );
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
       setShowOwnerActions(false);
+
       navigate("/");
     } catch (error) {
-      console.error("Listing delete error:", error);
+      console.error(
+        "Listing delete error:",
+        error
+      );
 
       alert(
         error.message ||
@@ -536,14 +851,24 @@ export default function ListingDetail() {
   }
 
   function editOwnerListing() {
-    if (!isOwner || !listing?.id) return;
+    if (
+      !isOwner ||
+      !listing?.id
+    ) {
+      return;
+    }
 
     setShowOwnerActions(false);
-    navigate(`/sell?edit=${listing.id}`);
+
+    navigate(
+      `/sell?edit=${listing.id}`
+    );
   }
 
   function handleBack() {
-    if (window.history.length > 1) {
+    if (
+      window.history.length > 1
+    ) {
       navigate(-1);
       return;
     }
@@ -551,13 +876,27 @@ export default function ListingDetail() {
     navigate("/");
   }
 
-  if (loading) {
+  if (
+    loading ||
+    loadingAuth ||
+    (
+      listing &&
+      isSold &&
+      !favoriteStateLoaded &&
+      !isOwner
+    )
+  ) {
     return (
       <main className="page">
         <div className="container">
           <div className="empty-state">
-            <h2>Loading item...</h2>
-            <p>Please wait a moment.</p>
+            <h2>
+              Loading item...
+            </h2>
+
+            <p>
+              Please wait a moment.
+            </p>
           </div>
         </div>
       </main>
@@ -569,15 +908,51 @@ export default function ListingDetail() {
       <main className="page">
         <div className="container">
           <div className="empty-state">
-            <h1>Item not found</h1>
+            <h1>
+              Item not found
+            </h1>
+
             <p>
               {errorMessage ||
                 "This listing may have been removed."}
             </p>
+          </div>
+        </div>
+      </main>
+    );
+  }
 
-            <p className="debug-id">
-              Listing ID: {id}
+  /*
+   * A sold item can only be opened by:
+   * - its seller
+   * - somebody who already favorited it
+   */
+  if (
+    isSold &&
+    favoriteStateLoaded &&
+    !canViewSoldListing
+  ) {
+    return (
+      <main className="page sold-listing-private-page">
+        <div className="container">
+          <div className="empty-state sold-listing-private-state">
+            <h1>
+              This item is no longer available
+            </h1>
+
+            <p>
+              This listing has already been sold.
             </p>
+
+            <button
+              type="button"
+              className="sold-listing-back-button"
+              onClick={() =>
+                navigate("/")
+              }
+            >
+              Discover other items
+            </button>
           </div>
         </div>
       </main>
@@ -590,14 +965,24 @@ export default function ListingDetail() {
         <section className="photo-panel product-gallery-panel">
           <div
             className={`main-photo product-main-photo swipeable-photo product-image-status-${listingStatus.key}`}
-            onTouchStart={handlePhotoTouchStart}
-            onTouchEnd={handlePhotoTouchEnd}
+            onTouchStart={
+              handlePhotoTouchStart
+            }
+            onTouchEnd={
+              handlePhotoTouchEnd
+            }
           >
             {photos.length > 0 ? (
               <img
-                key={photos[photoIndex]}
-                src={photos[photoIndex]}
-                alt={listing.title}
+                key={
+                  photos[photoIndex]
+                }
+                src={
+                  photos[photoIndex]
+                }
+                alt={
+                  listing.title
+                }
                 className="swipeable-photo-image"
                 draggable="false"
               />
@@ -607,19 +992,17 @@ export default function ListingDetail() {
               </div>
             )}
 
-            <span
-              className={`product-status-badge product-status-${listingStatus.key}`}
-            >
-              {listingStatus.label}
-            </span>
-
             <button
               className="mobile-gallery-back"
               type="button"
-              onClick={handleBack}
+              onClick={
+                handleBack
+              }
               aria-label="Go back"
             >
-              <ChevronLeft size={28} />
+              <ChevronLeft
+                size={28}
+              />
             </button>
 
             {isOwner && (
@@ -627,9 +1010,15 @@ export default function ListingDetail() {
                 className="mobile-gallery-more"
                 type="button"
                 aria-label="More options"
-                onClick={() => setShowOwnerActions(true)}
+                onClick={() =>
+                  setShowOwnerActions(
+                    true
+                  )
+                }
               >
-                <MoreHorizontal size={26} />
+                <MoreHorizontal
+                  size={26}
+                />
               </button>
             )}
 
@@ -645,13 +1034,23 @@ export default function ListingDetail() {
                   ? "Remove from favorites"
                   : "Add to favorites"
               }
-              aria-pressed={isFavorite}
-              disabled={favoriteLoading}
-              onClick={handleFavoriteClick}
+              aria-pressed={
+                isFavorite
+              }
+              disabled={
+                favoriteLoading
+              }
+              onClick={
+                handleFavoriteClick
+              }
             >
               <Heart
                 size={22}
-                fill={isFavorite ? "currentColor" : "none"}
+                fill={
+                  isFavorite
+                    ? "currentColor"
+                    : "none"
+                }
               />
             </button>
 
@@ -660,7 +1059,9 @@ export default function ListingDetail() {
                 <button
                   className="carousel-btn left"
                   type="button"
-                  onClick={prevPhoto}
+                  onClick={
+                    prevPhoto
+                  }
                   aria-label="Previous photo"
                 >
                   <ChevronLeft />
@@ -669,48 +1070,85 @@ export default function ListingDetail() {
                 <button
                   className="carousel-btn right"
                   type="button"
-                  onClick={nextPhoto}
+                  onClick={
+                    nextPhoto
+                  }
                   aria-label="Next photo"
                 >
                   <ChevronRight />
                 </button>
 
                 <div className="mobile-photo-dots">
-                  {photos.map((photo, index) => (
-                    <button
-                      key={`${photo}-${index}`}
-                      type="button"
-                      className={
-                        index === photoIndex
-                          ? "active"
-                          : ""
-                      }
-                      onClick={() => setPhotoIndex(index)}
-                      aria-label={`Show photo ${index + 1}`}
-                    />
-                  ))}
+                  {photos.map(
+                    (
+                      photo,
+                      index
+                    ) => (
+                      <button
+                        key={`${photo}-${index}`}
+                        type="button"
+                        className={
+                          index ===
+                          photoIndex
+                            ? "active"
+                            : ""
+                        }
+                        onClick={() =>
+                          setPhotoIndex(
+                            index
+                          )
+                        }
+                        aria-label={`Show photo ${index + 1}`}
+                      />
+                    )
+                  )}
                 </div>
               </>
             )}
           </div>
 
+          <div
+            className={`product-detail-status-strip product-detail-status-${listingStatus.key}`}
+          >
+            <span>
+              Item status
+            </span>
+
+            <strong>
+              {listingStatus.label}
+            </strong>
+          </div>
+
           {photos.length > 1 && (
             <div className="thumb-row product-thumb-row">
-              {photos.map((photo, index) => (
-                <button
-                  key={`${photo}-${index}`}
-                  className={
-                    index === photoIndex
-                      ? "thumb active"
-                      : "thumb"
-                  }
-                  onClick={() => setPhotoIndex(index)}
-                  type="button"
-                  aria-label={`Show photo ${index + 1}`}
-                >
-                  <img src={photo} alt="" />
-                </button>
-              ))}
+              {photos.map(
+                (
+                  photo,
+                  index
+                ) => (
+                  <button
+                    key={`${photo}-${index}`}
+                    className={
+                      index ===
+                      photoIndex
+                        ? "thumb active"
+                        : "thumb"
+                    }
+                    onClick={() =>
+                      setPhotoIndex(
+                        index
+                      )
+                    }
+                    type="button"
+                    aria-label={`Show photo ${index + 1}`}
+                  >
+                    <img
+                      src={photo}
+                      alt=""
+                    />
+                  </button>
+                )
+              )}
             </div>
           )}
         </section>
@@ -718,7 +1156,9 @@ export default function ListingDetail() {
         <aside className="detail-card detail-sticky-card product-info-panel">
           <section className="product-summary-card">
             <div className="product-title-row">
-              <h1>{listing.title}</h1>
+              <h1>
+                {listing.title}
+              </h1>
 
               <button
                 className={
@@ -732,47 +1172,78 @@ export default function ListingDetail() {
                     ? "Remove from favorites"
                     : "Add to favorites"
                 }
-                aria-pressed={isFavorite}
-                disabled={favoriteLoading}
-                onClick={handleFavoriteClick}
+                aria-pressed={
+                  isFavorite
+                }
+                disabled={
+                  favoriteLoading
+                }
+                onClick={
+                  handleFavoriteClick
+                }
               >
                 <Heart
                   size={24}
-                  fill={isFavorite ? "currentColor" : "none"}
+                  fill={
+                    isFavorite
+                      ? "currentColor"
+                      : "none"
+                  }
                 />
               </button>
             </div>
 
             <p className="product-meta-line">
-              {listing.size && `${listing.size} · `}
+              {listing.size &&
+                `${listing.size} · `}
+
               {conditionLabel}
 
               {listing.brand && (
                 <>
                   {" · "}
-                  <span>{listing.brand}</span>
+                  <span>
+                    {listing.brand}
+                  </span>
                 </>
               )}
 
-              {" · "}
-              Added {relativeCreatedAt}
+              {" · "}Added{" "}
+              {relativeCreatedAt}
             </p>
 
             <p className="detail-price product-price">
-              ₱{price.toLocaleString("en-PH")}
+              ₱
+              {price.toLocaleString(
+                "en-PH"
+              )}
             </p>
 
             <p className="buyer-protection-small product-protection-line">
-              ₱{(price + protection).toLocaleString("en-PH")} incl.
-              Buyer Protection <ShieldCheck size={15} />
+              ₱
+              {(
+                price +
+                protection
+              ).toLocaleString(
+                "en-PH"
+              )}{" "}
+              incl. Buyer Protection{" "}
+              <ShieldCheck
+                size={15}
+              />
             </p>
           </section>
 
           {isOwner && (
             <section className="product-owner-status-manager">
               <div className="product-owner-status-heading">
-                <span>Listing status</span>
-                <strong>{listingStatus.label}</strong>
+                <span>
+                  Listing status
+                </span>
+
+                <strong>
+                  {listingStatus.label}
+                </strong>
               </div>
 
               <div className="product-owner-status-options">
@@ -787,7 +1258,11 @@ export default function ListingDetail() {
                     ownerActionLoading ||
                     isAvailable
                   }
-                  onClick={() => updateListingStatus("active")}
+                  onClick={() =>
+                    updateListingStatus(
+                      "active"
+                    )
+                  }
                 >
                   Available
                 </button>
@@ -803,7 +1278,11 @@ export default function ListingDetail() {
                     ownerActionLoading ||
                     isReserved
                   }
-                  onClick={() => updateListingStatus("reserved")}
+                  onClick={() =>
+                    updateListingStatus(
+                      "reserved"
+                    )
+                  }
                 >
                   Reserved
                 </button>
@@ -819,7 +1298,11 @@ export default function ListingDetail() {
                     ownerActionLoading ||
                     isSold
                   }
-                  onClick={() => updateListingStatus("sold")}
+                  onClick={() =>
+                    updateListingStatus(
+                      "sold"
+                    )
+                  }
                 >
                   Sold
                 </button>
@@ -831,24 +1314,33 @@ export default function ListingDetail() {
             <section
               className={`product-status-information product-status-information-${listingStatus.key}`}
             >
-              <strong>{listingStatus.label}</strong>
-              <p>{listingStatus.message}</p>
+              <strong>
+                {listingStatus.label}
+              </strong>
+
+              <p>
+                {listingStatus.message}
+              </p>
             </section>
           )}
 
           {isAvailable && (
             <section className="mobile-demand-box">
-              <span>🔥</span>
+              <span>
+                🔥
+              </span>
 
               <p>
-                In demand! Buyers recently viewed or saved
-                similar items.
+                In demand! Buyers recently
+                viewed or saved similar items.
               </p>
             </section>
           )}
 
           <section className="product-description-card">
-            <h2>Description</h2>
+            <h2>
+              Description
+            </h2>
 
             <p className="product-description-text">
               {displayedDescription}
@@ -860,7 +1352,10 @@ export default function ListingDetail() {
                 type="button"
                 onClick={() =>
                   setDescriptionExpanded(
-                    (currentValue) => !currentValue
+                    (
+                      currentValue
+                    ) =>
+                      !currentValue
                   )
                 }
               >
@@ -871,15 +1366,27 @@ export default function ListingDetail() {
             )}
 
             <div className="product-characteristics-clean">
-              {characteristics.map(([label, value]) => (
-                <div
-                  className="product-characteristic-clean-row"
-                  key={label}
-                >
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              ))}
+              {characteristics.map(
+                (
+                  [
+                    label,
+                    value
+                  ]
+                ) => (
+                  <div
+                    className="product-characteristic-clean-row"
+                    key={label}
+                  >
+                    <span>
+                      {label}
+                    </span>
+
+                    <strong>
+                      {value}
+                    </strong>
+                  </div>
+                )
+              )}
             </div>
           </section>
 
@@ -892,21 +1399,36 @@ export default function ListingDetail() {
                 <div className="avatar-large">
                   {seller.avatar_url ? (
                     <img
-                      src={seller.avatar_url}
-                      alt={seller.username}
+                      src={
+                        seller.avatar_url
+                      }
+                      alt={
+                        seller.username
+                      }
                     />
                   ) : (
-                    getInitials(seller.username)
+                    getInitials(
+                      seller.username
+                    )
                   )}
                 </div>
 
                 <div>
-                  <strong>{seller.username}</strong>
+                  <strong>
+                    {seller.username}
+                  </strong>
 
                   <p>
-                    <Star size={15} fill="currentColor" />{" "}
-                    {seller.rating || 5} ·{" "}
-                    {seller.total_sales || 0} sales
+                    <Star
+                      size={15}
+                      fill="currentColor"
+                    />{" "}
+                    {seller.rating ||
+                      5}{" "}
+                    ·{" "}
+                    {seller.total_sales ||
+                      0}{" "}
+                    sales
                   </p>
 
                   <span className="product-seller-active">
@@ -917,7 +1439,9 @@ export default function ListingDetail() {
 
               <button
                 type="button"
-                onClick={handleChatWithSeller}
+                onClick={
+                  handleChatWithSeller
+                }
               >
                 Message
               </button>
@@ -926,7 +1450,10 @@ export default function ListingDetail() {
 
           {listing.location && (
             <p className="location-line product-location-line">
-              <MapPin size={17} />
+              <MapPin
+                size={17}
+              />
+
               {listing.location}
             </p>
           )}
@@ -935,38 +1462,55 @@ export default function ListingDetail() {
             <section className="product-seller-meetup-card">
               <div className="product-seller-meetup-top">
                 <div className="product-seller-meetup-icon">
-                  <Users size={22} />
+                  <Users
+                    size={22}
+                  />
                 </div>
 
                 <div>
                   <span>
-                    Seller preferred Meet-Up point
+                    Seller preferred
+                    Meet-Up point
                   </span>
 
                   <strong>
-                    {sellerMeetupSpot.name}
+                    {
+                      sellerMeetupSpot.name
+                    }
                   </strong>
 
                   <p>
-                    {sellerMeetupSpot.address}
+                    {
+                      sellerMeetupSpot.address
+                    }
                   </p>
                 </div>
               </div>
 
               <div className="product-seller-meetup-meta">
                 <span>
-                  Safety Score {sellerMeetupSpot.score}/100
+                  Safety Score{" "}
+                  {
+                    sellerMeetupSpot.score
+                  }
+                  /100
                 </span>
 
                 <span>
-                  {sellerMeetupSpot.type}
+                  {
+                    sellerMeetupSpot.type
+                  }
                 </span>
               </div>
 
               <button
                 type="button"
-                onClick={handleMeetupBuy}
-                disabled={!isAvailable}
+                onClick={
+                  handleMeetupBuy
+                }
+                disabled={
+                  !isAvailable
+                }
               >
                 {isAvailable
                   ? "View Meet-Up option"
@@ -977,61 +1521,99 @@ export default function ListingDetail() {
 
           <section className="shield-banner product-shield-banner">
             <div className="product-shield-icon">
-              <ShieldCheck size={22} />
+              <ShieldCheck
+                size={22}
+              />
             </div>
 
             <div>
-              <strong>Buyer Protection</strong>
+              <strong>
+                Buyer Protection
+              </strong>
 
               <p>
-                Your payment is secured by TindaHan until the item
-                is delivered. If there is an issue with your order,
-                our protection helps support a fair resolution.
+                Your payment is secured by
+                TindaHan until the item is
+                delivered. If there is an
+                issue with your order, our
+                protection helps support a
+                fair resolution.
               </p>
             </div>
           </section>
 
           <section className="product-shipping-row">
-            <strong>Shipping fees</strong>
+            <strong>
+              Shipping fees
+            </strong>
+
             <span>
-              from ₱{shipping.toLocaleString("en-PH")}
+              from ₱
+              {shipping.toLocaleString(
+                "en-PH"
+              )}
             </span>
           </section>
 
           <section className="product-legal-note">
             <p>
-              Buyer Protection includes secure payment support
-              and issue handling if the item is not delivered
-              as expected.
+              Buyer Protection includes
+              secure payment support and
+              issue handling if the item is
+              not delivered as expected.
             </p>
           </section>
 
           <section className="price-table product-price-table">
             <div>
-              <span>Item</span>
+              <span>
+                Item
+              </span>
+
               <strong>
-                ₱{price.toLocaleString("en-PH")}
+                ₱
+                {price.toLocaleString(
+                  "en-PH"
+                )}
               </strong>
             </div>
 
             <div>
-              <span>Buyer Protection 8%</span>
+              <span>
+                Buyer Protection 8%
+              </span>
+
               <strong>
-                ₱{protection.toLocaleString("en-PH")}
+                ₱
+                {protection.toLocaleString(
+                  "en-PH"
+                )}
               </strong>
             </div>
 
             <div>
-              <span>Estimated J&T delivery</span>
+              <span>
+                Estimated J&T delivery
+              </span>
+
               <strong>
-                ₱{shipping.toLocaleString("en-PH")}
+                ₱
+                {shipping.toLocaleString(
+                  "en-PH"
+                )}
               </strong>
             </div>
 
             <div className="total-row">
-              <span>Total</span>
+              <span>
+                Total
+              </span>
+
               <strong>
-                ₱{total.toLocaleString("en-PH")}
+                ₱
+                {total.toLocaleString(
+                  "en-PH"
+                )}
               </strong>
             </div>
           </section>
@@ -1040,8 +1622,12 @@ export default function ListingDetail() {
             <button
               className="detail-action-btn detail-offer-btn"
               type="button"
-              onClick={handleMakeOffer}
-              disabled={!isAvailable}
+              onClick={
+                handleMakeOffer
+              }
+              disabled={
+                !isAvailable
+              }
             >
               {isAvailable
                 ? "Make an offer"
@@ -1051,8 +1637,12 @@ export default function ListingDetail() {
             <button
               className="detail-action-btn detail-buy-btn"
               type="button"
-              onClick={handleBuyNow}
-              disabled={!isAvailable}
+              onClick={
+                handleBuyNow
+              }
+              disabled={
+                !isAvailable
+              }
             >
               {isAvailable
                 ? "Buy"
@@ -1062,7 +1652,9 @@ export default function ListingDetail() {
             <button
               className="detail-action-btn detail-chat-btn"
               type="button"
-              onClick={handleChatWithSeller}
+              onClick={
+                handleChatWithSeller
+              }
             >
               Chat with seller
             </button>
@@ -1071,111 +1663,158 @@ export default function ListingDetail() {
 
         <section className="detail-recommendations-slot product-recommendations-section">
           <ListingRecommendations
-            listing={recommendationListing}
+            listing={
+              recommendationListing
+            }
           />
         </section>
       </div>
 
-      {isOwner && showOwnerActions && (
-        <div
-          className="owner-actions-overlay"
-          role="presentation"
-          onClick={() => setShowOwnerActions(false)}
-        >
-          <section
-            className="owner-actions-sheet"
-            role="dialog"
-            aria-modal="true"
-            aria-label="Listing owner actions"
-            onClick={(event) => event.stopPropagation()}
+      {isOwner &&
+        showOwnerActions && (
+          <div
+            className="owner-actions-overlay"
+            role="presentation"
+            onClick={() =>
+              setShowOwnerActions(
+                false
+              )
+            }
           >
-            {!isAvailable && (
-              <button
-                type="button"
-                disabled={ownerActionLoading}
-                onClick={() =>
-                  updateListingStatus("active")
-                }
-              >
-                Mark as available
-              </button>
-            )}
-
-            {!isSold && (
-              <button
-                type="button"
-                disabled={ownerActionLoading}
-                onClick={() =>
-                  updateListingStatus("sold")
-                }
-              >
-                Mark as sold
-              </button>
-            )}
-
-            {!isReserved && (
-              <button
-                type="button"
-                disabled={ownerActionLoading}
-                onClick={() =>
-                  updateListingStatus("reserved")
-                }
-              >
-                Mark as reserved
-              </button>
-            )}
-
-            <button
-              type="button"
-              disabled={ownerActionLoading}
-              onClick={() =>
-                updateListingStatus("hidden")
+            <section
+              className="owner-actions-sheet"
+              role="dialog"
+              aria-modal="true"
+              aria-label="Listing owner actions"
+              onClick={(
+                event
+              ) =>
+                event.stopPropagation()
               }
             >
-              Hide
-            </button>
+              {!isAvailable && (
+                <button
+                  type="button"
+                  disabled={
+                    ownerActionLoading
+                  }
+                  onClick={() =>
+                    updateListingStatus(
+                      "active"
+                    )
+                  }
+                >
+                  Mark as available
+                </button>
+              )}
 
-            <button
-              type="button"
-              disabled={ownerActionLoading}
-              onClick={editOwnerListing}
-            >
-              Edit
-            </button>
+              {!isReserved && (
+                <button
+                  type="button"
+                  disabled={
+                    ownerActionLoading
+                  }
+                  onClick={() =>
+                    updateListingStatus(
+                      "reserved"
+                    )
+                  }
+                >
+                  Mark as reserved
+                </button>
+              )}
 
-            <button
-              type="button"
-              className="danger"
-              disabled={ownerActionLoading}
-              onClick={deleteOwnerListing}
-            >
-              Delete
-            </button>
-          </section>
+              {!isSold && (
+                <button
+                  type="button"
+                  disabled={
+                    ownerActionLoading
+                  }
+                  onClick={() =>
+                    updateListingStatus(
+                      "sold"
+                    )
+                  }
+                >
+                  Mark as sold
+                </button>
+              )}
 
-          <section
-            className="owner-actions-cancel"
-            onClick={(event) => event.stopPropagation()}
-          >
-            <button
-              type="button"
-              disabled={ownerActionLoading}
-              onClick={() =>
-                setShowOwnerActions(false)
+              <button
+                type="button"
+                disabled={
+                  ownerActionLoading
+                }
+                onClick={() =>
+                  updateListingStatus(
+                    "hidden"
+                  )
+                }
+              >
+                Hide
+              </button>
+
+              <button
+                type="button"
+                disabled={
+                  ownerActionLoading
+                }
+                onClick={
+                  editOwnerListing
+                }
+              >
+                Edit
+              </button>
+
+              <button
+                type="button"
+                className="danger"
+                disabled={
+                  ownerActionLoading
+                }
+                onClick={
+                  deleteOwnerListing
+                }
+              >
+                Delete
+              </button>
+            </section>
+
+            <section
+              className="owner-actions-cancel"
+              onClick={(
+                event
+              ) =>
+                event.stopPropagation()
               }
             >
-              Close
-            </button>
-          </section>
-        </div>
-      )}
+              <button
+                type="button"
+                disabled={
+                  ownerActionLoading
+                }
+                onClick={() =>
+                  setShowOwnerActions(
+                    false
+                  )
+                }
+              >
+                Close
+              </button>
+            </section>
+          </div>
+        )}
 
       <div className="mobile-product-cta-bar">
         <button
           className="mobile-product-offer-button"
           type="button"
-          onClick={handleMakeOffer}
-          disabled={!isAvailable}
+          onClick={
+            handleMakeOffer
+          }
+          disabled={
+            !isAvailable
+          }
         >
           {isAvailable
             ? "Make an offer"
@@ -1185,8 +1824,12 @@ export default function ListingDetail() {
         <button
           className="mobile-product-buy-button"
           type="button"
-          onClick={handleBuyNow}
-          disabled={!isAvailable}
+          onClick={
+            handleBuyNow
+          }
+          disabled={
+            !isAvailable
+          }
         >
           {isAvailable
             ? "Buy"

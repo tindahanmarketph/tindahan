@@ -119,14 +119,15 @@ function buildListingsUrl({
   params.set("select", "*");
 
   /*
-   * "active" is the existing database value used for an
-   * available item.
-   * "available" is also accepted here in case it is used
-   * on older/newer records.
+   * IMPORTANT
+   *
+   * active / available = available item
+   * reserved = still visible
+   * sold = NEVER visible in the public feed or search results
    */
   params.set(
     "status",
-    "in.(active,available,reserved,sold)"
+    "in.(active,available,reserved)"
   );
 
   if (category && category !== "all") {
@@ -238,7 +239,7 @@ async function fetchListingsViaRest({
 
   try {
     const encodedIds = sellerIds
-      .map((id) => `"${id}"`)
+      .map((sellerId) => `"${sellerId}"`)
       .join(",");
 
     let profilesUrl =
@@ -273,13 +274,12 @@ async function fetchListingsViaRest({
       );
     }
 
-    const profiles =
-      await profilesResponse.json();
+    const profiles = await profilesResponse.json();
 
     const profilesById = profiles.reduce(
-      (acc, profile) => {
-        acc[profile.id] = profile;
-        return acc;
+      (accumulator, profile) => {
+        accumulator[profile.id] = profile;
+        return accumulator;
       },
       {}
     );
@@ -288,8 +288,7 @@ async function fetchListingsViaRest({
       .map((listing) => ({
         ...listing,
         profiles:
-          profilesById[listing.seller_id] ||
-          null
+          profilesById[listing.seller_id] || null
       }))
       .filter(
         (listing) =>
@@ -301,16 +300,15 @@ async function fetchListingsViaRest({
       warning: ""
     };
   } catch (profileError) {
-    /*
-     * Seller profile information is secondary to the feed.
-     * Products remain visible and the technical warning is
-     * kept only in the console.
-     */
     console.warn(
       "Profiles loading skipped:",
       profileError.message
     );
 
+    /*
+     * Do not display technical profile warnings
+     * to buyers.
+     */
     return {
       listings,
       warning: ""
@@ -403,49 +401,37 @@ function useMobileFeedZoomLock() {
     document.addEventListener(
       "gesturestart",
       preventGesture,
-      {
-        passive: false
-      }
+      { passive: false }
     );
 
     document.addEventListener(
       "gesturechange",
       preventGesture,
-      {
-        passive: false
-      }
+      { passive: false }
     );
 
     document.addEventListener(
       "gestureend",
       preventGesture,
-      {
-        passive: false
-      }
+      { passive: false }
     );
 
     document.addEventListener(
       "touchmove",
       preventMultiTouch,
-      {
-        passive: false
-      }
+      { passive: false }
     );
 
     document.addEventListener(
       "touchend",
       preventDoubleTapZoom,
-      {
-        passive: false
-      }
+      { passive: false }
     );
 
     document.addEventListener(
       "wheel",
       preventCtrlWheelZoom,
-      {
-        passive: false
-      }
+      { passive: false }
     );
 
     return () => {
@@ -700,9 +686,7 @@ export default function Home() {
       event.target.value;
 
     const nextParams =
-      new URLSearchParams(
-        searchParams
-      );
+      new URLSearchParams(searchParams);
 
     nextParams.set(
       "sort",
@@ -775,12 +759,6 @@ export default function Home() {
                 </h2>
 
                 <p>{loadMessage}</p>
-
-                <p className="debug-id">
-                  Check Netlify environment variables,
-                  Supabase table name, columns and
-                  RLS policies.
-                </p>
               </div>
             )}
 
