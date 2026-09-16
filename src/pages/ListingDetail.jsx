@@ -48,33 +48,12 @@ function formatRelativeTime(dateValue) {
   const date = new Date(dateValue);
   const now = new Date();
 
-  const diffMs =
-    now - date;
-
-  const diffMinutes =
-    Math.floor(
-      diffMs / 1000 / 60
-    );
-
-  const diffHours =
-    Math.floor(
-      diffMinutes / 60
-    );
-
-  const diffDays =
-    Math.floor(
-      diffHours / 24
-    );
-
-  const diffWeeks =
-    Math.floor(
-      diffDays / 7
-    );
-
-  const diffMonths =
-    Math.floor(
-      diffDays / 30
-    );
+  const diffMs = now - date;
+  const diffMinutes = Math.floor(diffMs / 1000 / 60);
+  const diffHours = Math.floor(diffMinutes / 60);
+  const diffDays = Math.floor(diffHours / 24);
+  const diffWeeks = Math.floor(diffDays / 7);
+  const diffMonths = Math.floor(diffDays / 30);
 
   if (diffMinutes < 1) {
     return "just now";
@@ -104,14 +83,11 @@ function formatRelativeTime(dateValue) {
     return `${diffMonths} months ago`;
   }
 
-  return date.toLocaleDateString(
-    "en-PH",
-    {
-      year: "numeric",
-      month: "short",
-      day: "numeric"
-    }
-  );
+  return date.toLocaleDateString("en-PH", {
+    year: "numeric",
+    month: "short",
+    day: "numeric"
+  });
 }
 
 function getInitials(name) {
@@ -119,10 +95,7 @@ function getInitials(name) {
 
   return name
     .split(" ")
-    .map(
-      (part) =>
-        part.trim()[0]
-    )
+    .map((part) => part.trim()[0])
     .filter(Boolean)
     .join("")
     .slice(0, 2)
@@ -130,10 +103,9 @@ function getInitials(name) {
 }
 
 function getListingStatus(status) {
-  const normalizedStatus =
-    String(
-      status || "active"
-    ).toLowerCase();
+  const normalizedStatus = String(
+    status || "active"
+  ).toLowerCase();
 
   if (
     normalizedStatus === "sold" ||
@@ -142,9 +114,7 @@ function getListingStatus(status) {
     return "sold";
   }
 
-  if (
-    normalizedStatus === "reserved"
-  ) {
+  if (normalizedStatus === "reserved") {
     return "reserved";
   }
 
@@ -153,69 +123,25 @@ function getListingStatus(status) {
 
 export default function ListingDetail() {
   const { id } = useParams();
+  const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const navigate =
-    useNavigate();
+  const touchStartRef = useRef({
+    x: 0,
+    y: 0,
+    time: 0
+  });
 
-  const { user } =
-    useAuth();
-
-  const touchStartRef =
-    useRef({
-      x: 0,
-      y: 0,
-      time: 0
-    });
-
-  const [
-    listing,
-    setListing
-  ] = useState(null);
-
-  const [
-    seller,
-    setSeller
-  ] = useState(null);
-
-  const [
-    loading,
-    setLoading
-  ] = useState(true);
-
-  const [
-    photoIndex,
-    setPhotoIndex
-  ] = useState(0);
-
-  const [
-    errorMessage,
-    setErrorMessage
-  ] = useState("");
-
-  const [
-    descriptionExpanded,
-    setDescriptionExpanded
-  ] = useState(false);
-
-  const [
-    isFavorite,
-    setIsFavorite
-  ] = useState(false);
-
-  const [
-    favoriteLoading,
-    setFavoriteLoading
-  ] = useState(false);
-
-  const [
-    showOwnerActions,
-    setShowOwnerActions
-  ] = useState(false);
-
-  const [
-    ownerActionLoading,
-    setOwnerActionLoading
-  ] = useState(false);
+  const [listing, setListing] = useState(null);
+  const [seller, setSeller] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [photoIndex, setPhotoIndex] = useState(0);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+  const [favoriteLoading, setFavoriteLoading] = useState(false);
+  const [showOwnerActions, setShowOwnerActions] = useState(false);
+  const [ownerActionLoading, setOwnerActionLoading] = useState(false);
 
   useEffect(() => {
     let isMounted = true;
@@ -230,10 +156,7 @@ export default function ListingDetail() {
       setShowOwnerActions(false);
 
       if (!id) {
-        setErrorMessage(
-          "Missing listing ID."
-        );
-
+        setErrorMessage("Missing listing ID.");
         setLoading(false);
         return;
       }
@@ -247,9 +170,7 @@ export default function ListingDetail() {
         .eq("id", id)
         .maybeSingle();
 
-      if (!isMounted) {
-        return;
-      }
+      if (!isMounted) return;
 
       if (listingError) {
         console.error(
@@ -257,12 +178,8 @@ export default function ListingDetail() {
           listingError
         );
 
-        setErrorMessage(
-          listingError.message
-        );
-
+        setErrorMessage(listingError.message);
         setLoading(false);
-
         return;
       }
 
@@ -272,32 +189,22 @@ export default function ListingDetail() {
         );
 
         setLoading(false);
-
         return;
       }
 
-      setListing(
-        listingData
-      );
+      setListing(listingData);
 
-      if (
-        listingData.seller_id
-      ) {
+      if (listingData.seller_id) {
         const {
           data: sellerData,
           error: sellerError
         } = await supabase
           .from("profiles")
           .select("*")
-          .eq(
-            "id",
-            listingData.seller_id
-          )
+          .eq("id", listingData.seller_id)
           .maybeSingle();
 
-        if (!isMounted) {
-          return;
-        }
+        if (!isMounted) return;
 
         if (sellerError) {
           console.error(
@@ -305,9 +212,7 @@ export default function ListingDetail() {
             sellerError
           );
         } else {
-          setSeller(
-            sellerData
-          );
+          setSeller(sellerData);
         }
       }
 
@@ -327,10 +232,7 @@ export default function ListingDetail() {
     let isMounted = true;
 
     async function loadFavoriteState() {
-      if (
-        !user?.id ||
-        !listing?.id
-      ) {
+      if (!user?.id || !listing?.id) {
         setIsFavorite(false);
         return;
       }
@@ -342,9 +244,7 @@ export default function ListingDetail() {
         );
 
       if (isMounted) {
-        setIsFavorite(
-          favoriteState
-        );
+        setIsFavorite(favoriteState);
       }
     }
 
@@ -360,25 +260,17 @@ export default function ListingDetail() {
 
   useEffect(() => {
     async function incrementViews() {
-      if (!listing?.id) {
-        return;
-      }
+      if (!listing?.id) return;
 
       const nextViews =
-        Number(
-          listing.views || 0
-        ) + 1;
+        Number(listing.views || 0) + 1;
 
-      const { error } =
-        await supabase
-          .from("listings")
-          .update({
-            views: nextViews
-          })
-          .eq(
-            "id",
-            listing.id
-          );
+      const { error } = await supabase
+        .from("listings")
+        .update({
+          views: nextViews
+        })
+        .eq("id", listing.id);
 
       if (error) {
         console.warn(
@@ -391,36 +283,26 @@ export default function ListingDetail() {
     incrementViews();
   }, [listing?.id]);
 
-  const photos =
-    useMemo(() => {
-      if (
-        !listing?.photos ||
-        !Array.isArray(
-          listing.photos
-        )
-      ) {
-        return [];
-      }
+  const photos = useMemo(() => {
+    if (
+      !listing?.photos ||
+      !Array.isArray(listing.photos)
+    ) {
+      return [];
+    }
 
-      return listing.photos.filter(
-        Boolean
-      );
-    }, [listing]);
+    return listing.photos.filter(Boolean);
+  }, [listing]);
 
-  const isOwner =
-    Boolean(
-      user?.id &&
-        listing?.seller_id &&
-        String(user.id) ===
-          String(
-            listing.seller_id
-          )
-    );
+  const isOwner = Boolean(
+    user?.id &&
+      listing?.seller_id &&
+      String(user.id) ===
+        String(listing.seller_id)
+  );
 
   const status =
-    getListingStatus(
-      listing?.status
-    );
+    getListingStatus(listing?.status);
 
   const isSold =
     status === "sold";
@@ -432,9 +314,7 @@ export default function ListingDetail() {
     status === "available";
 
   const price =
-    Number(
-      listing?.price || 0
-    );
+    Number(listing?.price || 0);
 
   const protection =
     price * 0.08;
@@ -506,52 +386,31 @@ export default function ListingDetail() {
 
   const characteristics = [
     listing?.brand
-      ? [
-          "Brand",
-          listing.brand
-        ]
+      ? ["Brand", listing.brand]
       : null,
 
     listing?.size
-      ? [
-          "Size",
-          listing.size
-        ]
+      ? ["Size", listing.size]
       : null,
 
     listing?.condition
-      ? [
-          "Condition",
-          conditionLabel
-        ]
+      ? ["Condition", conditionLabel]
       : null,
 
     listing?.color
-      ? [
-          "Color",
-          listing.color
-        ]
+      ? ["Color", listing.color]
       : null,
 
     categoryLabel
-      ? [
-          "Category",
-          categoryLabel
-        ]
+      ? ["Category", categoryLabel]
       : null,
 
     subcategoryLabel
-      ? [
-          "Subcategory",
-          subcategoryLabel
-        ]
+      ? ["Subcategory", subcategoryLabel]
       : null,
 
     childCategoryLabel
-      ? [
-          "Type",
-          childCategoryLabel
-        ]
+      ? ["Type", childCategoryLabel]
       : null,
 
     [
@@ -579,9 +438,7 @@ export default function ListingDetail() {
     ]);
 
   function prevPhoto() {
-    if (
-      photos.length <= 1
-    ) {
+    if (photos.length <= 1) {
       return;
     }
 
@@ -594,9 +451,7 @@ export default function ListingDetail() {
   }
 
   function nextPhoto() {
-    if (
-      photos.length <= 1
-    ) {
+    if (photos.length <= 1) {
       return;
     }
 
@@ -609,12 +464,8 @@ export default function ListingDetail() {
     );
   }
 
-  function handlePhotoTouchStart(
-    event
-  ) {
-    if (
-      photos.length <= 1
-    ) {
+  function handlePhotoTouchStart(event) {
+    if (photos.length <= 1) {
       return;
     }
 
@@ -628,12 +479,8 @@ export default function ListingDetail() {
     };
   }
 
-  function handlePhotoTouchEnd(
-    event
-  ) {
-    if (
-      photos.length <= 1
-    ) {
+  function handlePhotoTouchEnd(event) {
+    if (photos.length <= 1) {
       return;
     }
 
@@ -647,12 +494,10 @@ export default function ListingDetail() {
       touchStartRef.current.y;
 
     const deltaX =
-      touch.clientX -
-      startX;
+      touch.clientX - startX;
 
     const deltaY =
-      touch.clientY -
-      startY;
+      touch.clientY - startY;
 
     const elapsedTime =
       Date.now() -
@@ -670,15 +515,11 @@ export default function ListingDetail() {
         verticalDistance * 1.35 &&
       elapsedTime < 700;
 
-    if (
-      !isHorizontalSwipe
-    ) {
+    if (!isHorizontalSwipe) {
       return;
     }
 
-    if (
-      deltaX < 0
-    ) {
+    if (deltaX < 0) {
       nextPhoto();
       return;
     }
@@ -742,9 +583,7 @@ export default function ListingDetail() {
       );
     }
 
-    if (
-      seller?.username
-    ) {
+    if (seller?.username) {
       params.set(
         "seller",
         seller.username
@@ -896,9 +735,7 @@ export default function ListingDetail() {
       }
 
       setListing(
-        (
-          currentListing
-        ) => ({
+        (currentListing) => ({
           ...currentListing,
           status: nextStatus
         })
@@ -1339,86 +1176,6 @@ export default function ListingDetail() {
             </p>
           </section>
 
-          {isOwner && (
-            <section className="product-owner-status-manager">
-              <div className="product-owner-status-heading">
-                <span>
-                  Listing status
-                </span>
-
-                <strong>
-                  {isSold
-                    ? "Sold"
-                    : isReserved
-                    ? "Reserved"
-                    : "Available"}
-                </strong>
-              </div>
-
-              <div className="product-owner-status-options">
-                <button
-                  type="button"
-                  className={
-                    isAvailable
-                      ? "product-owner-status-button available active"
-                      : "product-owner-status-button available"
-                  }
-                  disabled={
-                    ownerActionLoading ||
-                    isAvailable
-                  }
-                  onClick={() =>
-                    updateListingStatus(
-                      "active"
-                    )
-                  }
-                >
-                  Available
-                </button>
-
-                <button
-                  type="button"
-                  className={
-                    isReserved
-                      ? "product-owner-status-button reserved active"
-                      : "product-owner-status-button reserved"
-                  }
-                  disabled={
-                    ownerActionLoading ||
-                    isReserved
-                  }
-                  onClick={() =>
-                    updateListingStatus(
-                      "reserved"
-                    )
-                  }
-                >
-                  Reserved
-                </button>
-
-                <button
-                  type="button"
-                  className={
-                    isSold
-                      ? "product-owner-status-button sold active"
-                      : "product-owner-status-button sold"
-                  }
-                  disabled={
-                    ownerActionLoading ||
-                    isSold
-                  }
-                  onClick={() =>
-                    updateListingStatus(
-                      "sold"
-                    )
-                  }
-                >
-                  Sold
-                </button>
-              </div>
-            </section>
-          )}
-
           {!isSold &&
             isAvailable && (
               <section className="mobile-demand-box">
@@ -1519,15 +1276,11 @@ export default function ListingDetail() {
                       size={15}
                       fill="currentColor"
                     />{" "}
-
                     {seller.rating ||
                       5}{" "}
-
                     ·{" "}
-
                     {seller.total_sales ||
                       0}{" "}
-
                     sales
                   </p>
 
