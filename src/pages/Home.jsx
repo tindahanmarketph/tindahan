@@ -88,12 +88,10 @@ async function fetchWithTimeout(
   }, timeoutMs);
 
   try {
-    const response = await fetch(url, {
+    return await fetch(url, {
       ...options,
       signal: controller.signal
     });
-
-    return response;
   } finally {
     clearTimeout(timeoutId);
   }
@@ -119,11 +117,12 @@ function buildListingsUrl({
   params.set("select", "*");
 
   /*
-   * IMPORTANT
+   * Public feed / public search:
    *
-   * active / available = available item
-   * reserved = still visible
-   * sold = NEVER visible in the public feed or search results
+   * active    = available
+   * available = optional alias
+   * reserved  = remains visible
+   * sold      = NEVER included here
    */
   params.set(
     "status",
@@ -131,24 +130,15 @@ function buildListingsUrl({
   );
 
   if (category && category !== "all") {
-    params.set(
-      "category",
-      `eq.${category}`
-    );
+    params.set("category", `eq.${category}`);
   }
 
   if (subcategory) {
-    params.set(
-      "subcategory",
-      `eq.${subcategory}`
-    );
+    params.set("subcategory", `eq.${subcategory}`);
   }
 
   if (childCategory) {
-    params.set(
-      "child_category",
-      `eq.${childCategory}`
-    );
+    params.set("child_category", `eq.${childCategory}`);
   }
 
   if (query) {
@@ -163,20 +153,11 @@ function buildListingsUrl({
   }
 
   if (sort === "price-low") {
-    params.set(
-      "order",
-      "price.asc"
-    );
+    params.set("order", "price.asc");
   } else if (sort === "price-high") {
-    params.set(
-      "order",
-      "price.desc"
-    );
+    params.set("order", "price.desc");
   } else {
-    params.set(
-      "order",
-      "created_at.desc"
-    );
+    params.set("order", "created_at.desc");
   }
 
   return `${supabaseConfig.url}/rest/v1/listings?${params.toString()}`;
@@ -205,12 +186,9 @@ async function fetchListingsViaRest({
     sort
   });
 
-  const listingsResponse = await fetchWithTimeout(
-    listingsUrl,
-    {
-      headers: getSupabaseHeaders()
-    }
-  );
+  const listingsResponse = await fetchWithTimeout(listingsUrl, {
+    headers: getSupabaseHeaders()
+  });
 
   if (!listingsResponse.ok) {
     const text = await listingsResponse.text();
@@ -247,12 +225,9 @@ async function fetchListingsViaRest({
       `?select=id,username,avatar_url,rating,is_verified,total_sales,holiday_mode` +
       `&id=in.(${encodedIds})`;
 
-    let profilesResponse = await fetchWithTimeout(
-      profilesUrl,
-      {
-        headers: getSupabaseHeaders()
-      }
-    );
+    let profilesResponse = await fetchWithTimeout(profilesUrl, {
+      headers: getSupabaseHeaders()
+    });
 
     if (!profilesResponse.ok) {
       profilesUrl =
@@ -260,12 +235,9 @@ async function fetchListingsViaRest({
         `?select=id,username,avatar_url,rating,is_verified,total_sales` +
         `&id=in.(${encodedIds})`;
 
-      profilesResponse = await fetchWithTimeout(
-        profilesUrl,
-        {
-          headers: getSupabaseHeaders()
-        }
-      );
+      profilesResponse = await fetchWithTimeout(profilesUrl, {
+        headers: getSupabaseHeaders()
+      });
     }
 
     if (!profilesResponse.ok) {
@@ -276,13 +248,10 @@ async function fetchListingsViaRest({
 
     const profiles = await profilesResponse.json();
 
-    const profilesById = profiles.reduce(
-      (accumulator, profile) => {
-        accumulator[profile.id] = profile;
-        return accumulator;
-      },
-      {}
-    );
+    const profilesById = profiles.reduce((accumulator, profile) => {
+      accumulator[profile.id] = profile;
+      return accumulator;
+    }, {});
 
     const listingsWithProfiles = listings
       .map((listing) => ({
@@ -306,8 +275,8 @@ async function fetchListingsViaRest({
     );
 
     /*
-     * Do not display technical profile warnings
-     * to buyers.
+     * Do not expose technical profile/RLS warnings
+     * to marketplace buyers.
      */
     return {
       listings,
@@ -381,13 +350,8 @@ function useMobileFeedZoomLock() {
     const previousBodyWebkitUserSelect =
       body.style.webkitUserSelect;
 
-    html.classList.add(
-      "tindahan-feed-zoom-locked"
-    );
-
-    body.classList.add(
-      "tindahan-feed-zoom-locked"
-    );
+    html.classList.add("tindahan-feed-zoom-locked");
+    body.classList.add("tindahan-feed-zoom-locked");
 
     html.style.touchAction = "pan-y";
     body.style.touchAction = "pan-y";
@@ -435,31 +399,17 @@ function useMobileFeedZoomLock() {
     );
 
     return () => {
-      html.classList.remove(
-        "tindahan-feed-zoom-locked"
-      );
+      html.classList.remove("tindahan-feed-zoom-locked");
+      body.classList.remove("tindahan-feed-zoom-locked");
 
-      body.classList.remove(
-        "tindahan-feed-zoom-locked"
-      );
+      html.style.touchAction = previousHtmlTouchAction;
+      body.style.touchAction = previousBodyTouchAction;
 
-      html.style.touchAction =
-        previousHtmlTouchAction;
+      html.style.overflowX = previousHtmlOverflowX;
+      body.style.overflowX = previousBodyOverflowX;
 
-      body.style.touchAction =
-        previousBodyTouchAction;
-
-      html.style.overflowX =
-        previousHtmlOverflowX;
-
-      body.style.overflowX =
-        previousBodyOverflowX;
-
-      body.style.userSelect =
-        previousBodyUserSelect;
-
-      body.style.webkitUserSelect =
-        previousBodyWebkitUserSelect;
+      body.style.userSelect = previousBodyUserSelect;
+      body.style.webkitUserSelect = previousBodyWebkitUserSelect;
 
       document.removeEventListener(
         "gesturestart",
@@ -517,14 +467,9 @@ export default function Home() {
   const activeSort =
     searchParams.get("sort") || "newest";
 
-  const [listings, setListings] =
-    useState([]);
-
-  const [loading, setLoading] =
-    useState(true);
-
-  const [loadMessage, setLoadMessage] =
-    useState("");
+  const [listings, setListings] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadMessage, setLoadMessage] = useState("");
 
   const isFilteredPage =
     activeQuery ||
@@ -629,24 +574,18 @@ export default function Home() {
       setLoadMessage("");
 
       try {
-        const result =
-          await fetchListingsViaRest({
-            category: activeCategory,
-            subcategory: activeSubcategory,
-            childCategory: activeChildCategory,
-            query: activeQuery,
-            sort: activeSort
-          });
+        const result = await fetchListingsViaRest({
+          category: activeCategory,
+          subcategory: activeSubcategory,
+          childCategory: activeChildCategory,
+          query: activeQuery,
+          sort: activeSort
+        });
 
         if (!isMounted) return;
 
-        setListings(
-          result.listings || []
-        );
-
-        setLoadMessage(
-          result.warning || ""
-        );
+        setListings(result.listings || []);
+        setLoadMessage(result.warning || "");
       } catch (error) {
         console.error(
           "Home listings loading error:",
@@ -682,16 +621,12 @@ export default function Home() {
   ]);
 
   function handleSortChange(event) {
-    const nextSort =
-      event.target.value;
+    const nextSort = event.target.value;
 
     const nextParams =
       new URLSearchParams(searchParams);
 
-    nextParams.set(
-      "sort",
-      nextSort
-    );
+    nextParams.set("sort", nextSort);
 
     setSearchParams(nextParams);
   }
@@ -754,10 +689,7 @@ export default function Home() {
             loadMessage &&
             listings.length === 0 && (
               <div className="empty-state home-error-state">
-                <h2>
-                  Unable to load items
-                </h2>
-
+                <h2>Unable to load items</h2>
                 <p>{loadMessage}</p>
               </div>
             )}
@@ -779,14 +711,12 @@ export default function Home() {
           {!loading &&
             listings.length > 0 && (
               <div className="grid home-feed-grid">
-                {listings.map(
-                  (listing) => (
-                    <ListingCard
-                      key={listing.id}
-                      listing={listing}
-                    />
-                  )
-                )}
+                {listings.map((listing) => (
+                  <ListingCard
+                    key={listing.id}
+                    listing={listing}
+                  />
+                ))}
               </div>
             )}
         </div>

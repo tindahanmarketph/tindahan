@@ -35,30 +35,10 @@ function formatPrice(value) {
   });
 }
 
-function getListingStatus(status) {
-  const normalizedStatus = String(status || "active").toLowerCase();
+function isListingSold(status) {
+  const normalizedStatus = String(status || "").toLowerCase();
 
-  if (normalizedStatus === "reserved") {
-    return {
-      key: "reserved",
-      label: "Reserved"
-    };
-  }
-
-  if (
-    normalizedStatus === "sold" ||
-    normalizedStatus === "completed"
-  ) {
-    return {
-      key: "sold",
-      label: "Sold"
-    };
-  }
-
-  return {
-    key: "available",
-    label: "Available"
-  };
+  return normalizedStatus === "sold" || normalizedStatus === "completed";
 }
 
 export default function ListingCard({ listing }) {
@@ -102,7 +82,7 @@ export default function ListingCard({ listing }) {
   const buyerProtection = itemPrice * 0.08;
   const protectedPrice = itemPrice + buyerProtection;
 
-  const listingStatus = getListingStatus(listing.status);
+  const sold = isListingSold(listing.status);
 
   async function handleFavoriteClick(event) {
     event.preventDefault();
@@ -165,13 +145,8 @@ export default function ListingCard({ listing }) {
 
   return (
     <>
-      <article
-        className={`listing-card listing-card-status-${listingStatus.key}`}
-      >
-        <Link
-          to={`/item/${listing.id}`}
-          className={`listing-image-wrap listing-image-status-${listingStatus.key}`}
-        >
+      <article className={sold ? "listing-card listing-card-sold" : "listing-card"}>
+        <Link to={`/item/${listing.id}`} className="listing-image-wrap">
           {firstPhoto ? (
             <img
               src={firstPhoto}
@@ -182,26 +157,21 @@ export default function ListingCard({ listing }) {
             <div className="image-placeholder">No photo</div>
           )}
 
-          <span
-            className={`listing-status-badge listing-status-${listingStatus.key}`}
-          >
-            {listingStatus.label}
-          </span>
+          {sold && (
+            <span className="listing-sold-badge">
+              Sold
+            </span>
+          )}
 
           <button
             className={isFavorite ? "heart-floating favorited" : "heart-floating"}
             type="button"
-            aria-label={
-              isFavorite ? "Remove from favorites" : "Add to favorites"
-            }
+            aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
             aria-pressed={isFavorite}
             disabled={favoriteLoading}
             onClick={handleFavoriteClick}
           >
-            <Heart
-              size={18}
-              fill={isFavorite ? "currentColor" : "none"}
-            />
+            <Heart size={18} fill={isFavorite ? "currentColor" : "none"} />
           </button>
         </Link>
 
@@ -241,16 +211,10 @@ export default function ListingCard({ listing }) {
         </Link>
 
         {seller && (
-          <Link
-            to={`/profile/${seller.username}`}
-            className="seller-mini"
-          >
+          <Link to={`/profile/${seller.username}`} className="seller-mini">
             <div className="avatar-small">
               {seller.avatar_url ? (
-                <img
-                  src={seller.avatar_url}
-                  alt={seller.username}
-                />
+                <img src={seller.avatar_url} alt={seller.username} />
               ) : (
                 seller.username?.slice(0, 1)?.toUpperCase()
               )}
@@ -292,10 +256,7 @@ export default function ListingCard({ listing }) {
               <div className="price-details-product">
                 <div className="price-details-product-image">
                   {firstPhoto ? (
-                    <img
-                      src={firstPhoto}
-                      alt={listing.title}
-                    />
+                    <img src={firstPhoto} alt={listing.title} />
                   ) : (
                     <Package size={22} />
                   )}
@@ -342,9 +303,7 @@ export default function ListingCard({ listing }) {
                 <div>
                   <strong>Shipping fees</strong>
                   <span>from ₱80.00</span>
-                  <small>
-                    Depending on the selected delivery method
-                  </small>
+                  <small>Depending on the selected delivery method</small>
                 </div>
               </div>
 
@@ -388,8 +347,7 @@ export default function ListingCard({ listing }) {
               </button>
 
               <p className="buyer-protection-info-intro">
-                For every purchase made on TindaHan, we help protect your
-                order.
+                For every purchase made on TindaHan, we help protect your order.
               </p>
 
               <article className="buyer-protection-info-section">
@@ -407,10 +365,9 @@ export default function ListingCard({ listing }) {
                   </ul>
 
                   <p>
-                    You have <strong>2 days to submit a claim</strong> from
-                    the moment the delivery is marked as completed or
-                    notified. Unless agreed otherwise, buyers cover return
-                    shipping fees.
+                    You have <strong>2 days to submit a claim</strong> from the
+                    moment the delivery is marked as completed or notified.
+                    Unless agreed otherwise, buyers cover return shipping fees.
                   </p>
                 </div>
               </article>
@@ -449,10 +406,7 @@ export default function ListingCard({ listing }) {
             </div>
 
             <div className="buyer-protection-info-cta">
-              <button
-                type="button"
-                onClick={closeProtectionInfo}
-              >
+              <button type="button" onClick={closeProtectionInfo}>
                 I understand
               </button>
             </div>

@@ -8,8 +8,17 @@ import {
   Star,
   Users
 } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Link, useNavigate, useParams } from "react-router-dom";
+import {
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from "react";
+import {
+  Link,
+  useNavigate,
+  useParams
+} from "react-router-dom";
 import {
   getCategoryLabel,
   getChildCategoryLabel,
@@ -17,7 +26,10 @@ import {
 } from "../lib/categories";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
-import { checkIsFavorite, toggleFavorite } from "../lib/favorites";
+import {
+  checkIsFavorite,
+  toggleFavorite
+} from "../lib/favorites";
 import ListingRecommendations from "../components/ListingRecommendations";
 import "../styles/listingStatus.css";
 
@@ -36,26 +48,70 @@ function formatRelativeTime(dateValue) {
   const date = new Date(dateValue);
   const now = new Date();
 
-  const diffMs = now - date;
-  const diffMinutes = Math.floor(diffMs / 1000 / 60);
-  const diffHours = Math.floor(diffMinutes / 60);
-  const diffDays = Math.floor(diffHours / 24);
-  const diffWeeks = Math.floor(diffDays / 7);
-  const diffMonths = Math.floor(diffDays / 30);
+  const diffMs =
+    now - date;
 
-  if (diffMinutes < 1) return "just now";
-  if (diffMinutes < 60) return `${diffMinutes} min ago`;
-  if (diffHours < 24) return `${diffHours} h ago`;
-  if (diffDays === 1) return "yesterday";
-  if (diffDays < 7) return `${diffDays} days ago`;
-  if (diffWeeks < 5) return `${diffWeeks} weeks ago`;
-  if (diffMonths < 12) return `${diffMonths} months ago`;
+  const diffMinutes =
+    Math.floor(
+      diffMs / 1000 / 60
+    );
 
-  return date.toLocaleDateString("en-PH", {
-    year: "numeric",
-    month: "short",
-    day: "numeric"
-  });
+  const diffHours =
+    Math.floor(
+      diffMinutes / 60
+    );
+
+  const diffDays =
+    Math.floor(
+      diffHours / 24
+    );
+
+  const diffWeeks =
+    Math.floor(
+      diffDays / 7
+    );
+
+  const diffMonths =
+    Math.floor(
+      diffDays / 30
+    );
+
+  if (diffMinutes < 1) {
+    return "just now";
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes} min ago`;
+  }
+
+  if (diffHours < 24) {
+    return `${diffHours} h ago`;
+  }
+
+  if (diffDays === 1) {
+    return "yesterday";
+  }
+
+  if (diffDays < 7) {
+    return `${diffDays} days ago`;
+  }
+
+  if (diffWeeks < 5) {
+    return `${diffWeeks} weeks ago`;
+  }
+
+  if (diffMonths < 12) {
+    return `${diffMonths} months ago`;
+  }
+
+  return date.toLocaleDateString(
+    "en-PH",
+    {
+      year: "numeric",
+      month: "short",
+      day: "numeric"
+    }
+  );
 }
 
 function getInitials(name) {
@@ -63,7 +119,10 @@ function getInitials(name) {
 
   return name
     .split(" ")
-    .map((part) => part.trim()[0])
+    .map(
+      (part) =>
+        part.trim()[0]
+    )
     .filter(Boolean)
     .join("")
     .slice(0, 2)
@@ -72,80 +131,80 @@ function getInitials(name) {
 
 function getListingStatus(status) {
   const normalizedStatus =
-    String(status || "active").toLowerCase();
-
-  if (normalizedStatus === "reserved") {
-    return {
-      key: "reserved",
-      label: "Reserved",
-      message:
-        "This item is currently reserved for another buyer."
-    };
-  }
+    String(
+      status || "active"
+    ).toLowerCase();
 
   if (
     normalizedStatus === "sold" ||
     normalizedStatus === "completed"
   ) {
-    return {
-      key: "sold",
-      label: "Sold",
-      message:
-        "This item has been sold and is no longer available."
-    };
+    return "sold";
   }
 
-  return {
-    key: "available",
-    label: "Available",
-    message:
-      "This item is available for purchase."
-  };
+  if (
+    normalizedStatus === "reserved"
+  ) {
+    return "reserved";
+  }
+
+  return "available";
 }
 
 export default function ListingDetail() {
   const { id } = useParams();
-  const navigate = useNavigate();
 
-  const {
-    user,
-    loadingAuth
-  } = useAuth();
+  const navigate =
+    useNavigate();
 
-  const touchStartRef = useRef({
-    x: 0,
-    y: 0,
-    time: 0
-  });
+  const { user } =
+    useAuth();
 
-  const [listing, setListing] = useState(null);
-  const [seller, setSeller] = useState(null);
+  const touchStartRef =
+    useRef({
+      x: 0,
+      y: 0,
+      time: 0
+    });
 
-  const [loading, setLoading] =
-    useState(true);
+  const [
+    listing,
+    setListing
+  ] = useState(null);
 
-  const [photoIndex, setPhotoIndex] =
-    useState(0);
+  const [
+    seller,
+    setSeller
+  ] = useState(null);
 
-  const [errorMessage, setErrorMessage] =
-    useState("");
+  const [
+    loading,
+    setLoading
+  ] = useState(true);
+
+  const [
+    photoIndex,
+    setPhotoIndex
+  ] = useState(0);
+
+  const [
+    errorMessage,
+    setErrorMessage
+  ] = useState("");
 
   const [
     descriptionExpanded,
     setDescriptionExpanded
   ] = useState(false);
 
-  const [isFavorite, setIsFavorite] =
-    useState(false);
+  const [
+    isFavorite,
+    setIsFavorite
+  ] = useState(false);
 
   const [
     favoriteLoading,
     setFavoriteLoading
-  ] = useState(false);
-
-  const [
-    favoriteStateLoaded,
-    setFavoriteStateLoaded
   ] = useState(false);
 
   const [
@@ -169,10 +228,12 @@ export default function ListingDetail() {
       setPhotoIndex(0);
       setDescriptionExpanded(false);
       setShowOwnerActions(false);
-      setFavoriteStateLoaded(false);
 
       if (!id) {
-        setErrorMessage("Missing listing ID.");
+        setErrorMessage(
+          "Missing listing ID."
+        );
+
         setLoading(false);
         return;
       }
@@ -186,7 +247,9 @@ export default function ListingDetail() {
         .eq("id", id)
         .maybeSingle();
 
-      if (!isMounted) return;
+      if (!isMounted) {
+        return;
+      }
 
       if (listingError) {
         console.error(
@@ -199,6 +262,7 @@ export default function ListingDetail() {
         );
 
         setLoading(false);
+
         return;
       }
 
@@ -208,12 +272,17 @@ export default function ListingDetail() {
         );
 
         setLoading(false);
+
         return;
       }
 
-      setListing(listingData);
+      setListing(
+        listingData
+      );
 
-      if (listingData.seller_id) {
+      if (
+        listingData.seller_id
+      ) {
         const {
           data: sellerData,
           error: sellerError
@@ -226,7 +295,9 @@ export default function ListingDetail() {
           )
           .maybeSingle();
 
-        if (!isMounted) return;
+        if (!isMounted) {
+          return;
+        }
 
         if (sellerError) {
           console.error(
@@ -256,49 +327,24 @@ export default function ListingDetail() {
     let isMounted = true;
 
     async function loadFavoriteState() {
-      if (!listing?.id) {
+      if (
+        !user?.id ||
+        !listing?.id
+      ) {
         setIsFavorite(false);
-        setFavoriteStateLoaded(false);
         return;
       }
 
-      if (loadingAuth) {
-        return;
-      }
+      const favoriteState =
+        await checkIsFavorite(
+          user.id,
+          listing.id
+        );
 
-      if (!user?.id) {
-        setIsFavorite(false);
-        setFavoriteStateLoaded(true);
-        return;
-      }
-
-      setFavoriteStateLoaded(false);
-
-      try {
-        const favoriteState =
-          await checkIsFavorite(
-            user.id,
-            listing.id
-          );
-
-        if (!isMounted) return;
-
+      if (isMounted) {
         setIsFavorite(
           favoriteState
         );
-      } catch (error) {
-        console.warn(
-          "Favorite state loading skipped:",
-          error.message
-        );
-
-        if (!isMounted) return;
-
-        setIsFavorite(false);
-      } finally {
-        if (isMounted) {
-          setFavoriteStateLoaded(true);
-        }
       }
     }
 
@@ -309,23 +355,30 @@ export default function ListingDetail() {
     };
   }, [
     user?.id,
-    listing?.id,
-    loadingAuth
+    listing?.id
   ]);
 
   useEffect(() => {
     async function incrementViews() {
-      if (!listing?.id) return;
+      if (!listing?.id) {
+        return;
+      }
 
       const nextViews =
-        Number(listing.views || 0) + 1;
+        Number(
+          listing.views || 0
+        ) + 1;
 
-      const { error } = await supabase
-        .from("listings")
-        .update({
-          views: nextViews
-        })
-        .eq("id", listing.id);
+      const { error } =
+        await supabase
+          .from("listings")
+          .update({
+            views: nextViews
+          })
+          .eq(
+            "id",
+            listing.id
+          );
 
       if (error) {
         console.warn(
@@ -338,45 +391,50 @@ export default function ListingDetail() {
     incrementViews();
   }, [listing?.id]);
 
-  const photos = useMemo(() => {
-    if (
-      !listing?.photos ||
-      !Array.isArray(listing.photos)
-    ) {
-      return [];
-    }
+  const photos =
+    useMemo(() => {
+      if (
+        !listing?.photos ||
+        !Array.isArray(
+          listing.photos
+        )
+      ) {
+        return [];
+      }
 
-    return listing.photos.filter(Boolean);
-  }, [listing]);
+      return listing.photos.filter(
+        Boolean
+      );
+    }, [listing]);
 
-  const isOwner = Boolean(
-    user?.id &&
-      listing?.seller_id &&
-      String(user.id) ===
-        String(listing.seller_id)
-  );
+  const isOwner =
+    Boolean(
+      user?.id &&
+        listing?.seller_id &&
+        String(user.id) ===
+          String(
+            listing.seller_id
+          )
+    );
 
-  const listingStatus =
+  const status =
     getListingStatus(
       listing?.status
     );
 
-  const isAvailable =
-    listingStatus.key === "available";
+  const isSold =
+    status === "sold";
 
   const isReserved =
-    listingStatus.key === "reserved";
+    status === "reserved";
 
-  const isSold =
-    listingStatus.key === "sold";
-
-  const canViewSoldListing =
-    !isSold ||
-    isOwner ||
-    isFavorite;
+  const isAvailable =
+    status === "available";
 
   const price =
-    Number(listing?.price || 0);
+    Number(
+      listing?.price || 0
+    );
 
   const protection =
     price * 0.08;
@@ -443,44 +501,70 @@ export default function ListingDetail() {
   const hasSellerMeetup =
     Boolean(
       listing?.meetup_enabled &&
-      sellerMeetupSpot
+        sellerMeetupSpot
     );
 
   const characteristics = [
     listing?.brand
-      ? ["Brand", listing.brand]
+      ? [
+          "Brand",
+          listing.brand
+        ]
       : null,
 
     listing?.size
-      ? ["Size", listing.size]
+      ? [
+          "Size",
+          listing.size
+        ]
       : null,
 
     listing?.condition
-      ? ["Condition", conditionLabel]
+      ? [
+          "Condition",
+          conditionLabel
+        ]
       : null,
 
     listing?.color
-      ? ["Color", listing.color]
+      ? [
+          "Color",
+          listing.color
+        ]
       : null,
 
     categoryLabel
-      ? ["Category", categoryLabel]
+      ? [
+          "Category",
+          categoryLabel
+        ]
       : null,
 
     subcategoryLabel
-      ? ["Subcategory", subcategoryLabel]
+      ? [
+          "Subcategory",
+          subcategoryLabel
+        ]
       : null,
 
     childCategoryLabel
-      ? ["Type", childCategoryLabel]
+      ? [
+          "Type",
+          childCategoryLabel
+        ]
       : null,
 
-    ["Added", relativeCreatedAt]
+    [
+      "Added",
+      relativeCreatedAt
+    ]
   ].filter(Boolean);
 
   const recommendationListing =
     useMemo(() => {
-      if (!listing) return null;
+      if (!listing) {
+        return null;
+      }
 
       return {
         ...listing,
@@ -495,7 +579,11 @@ export default function ListingDetail() {
     ]);
 
   function prevPhoto() {
-    if (photos.length <= 1) return;
+    if (
+      photos.length <= 1
+    ) {
+      return;
+    }
 
     setPhotoIndex(
       (previousIndex) =>
@@ -506,7 +594,11 @@ export default function ListingDetail() {
   }
 
   function nextPhoto() {
-    if (photos.length <= 1) return;
+    if (
+      photos.length <= 1
+    ) {
+      return;
+    }
 
     setPhotoIndex(
       (previousIndex) =>
@@ -520,7 +612,11 @@ export default function ListingDetail() {
   function handlePhotoTouchStart(
     event
   ) {
-    if (photos.length <= 1) return;
+    if (
+      photos.length <= 1
+    ) {
+      return;
+    }
 
     const touch =
       event.touches[0];
@@ -535,7 +631,11 @@ export default function ListingDetail() {
   function handlePhotoTouchEnd(
     event
   ) {
-    if (photos.length <= 1) return;
+    if (
+      photos.length <= 1
+    ) {
+      return;
+    }
 
     const touch =
       event.changedTouches[0];
@@ -547,10 +647,12 @@ export default function ListingDetail() {
       touchStartRef.current.y;
 
     const deltaX =
-      touch.clientX - startX;
+      touch.clientX -
+      startX;
 
     const deltaY =
-      touch.clientY - startY;
+      touch.clientY -
+      startY;
 
     const elapsedTime =
       Date.now() -
@@ -568,11 +670,15 @@ export default function ListingDetail() {
         verticalDistance * 1.35 &&
       elapsedTime < 700;
 
-    if (!isHorizontalSwipe) {
+    if (
+      !isHorizontalSwipe
+    ) {
       return;
     }
 
-    if (deltaX < 0) {
+    if (
+      deltaX < 0
+    ) {
       nextPhoto();
       return;
     }
@@ -581,22 +687,25 @@ export default function ListingDetail() {
   }
 
   function handleUnavailableAction() {
-    if (isReserved) {
-      alert(
-        "This item is currently reserved."
-      );
-      return;
-    }
-
     if (isSold) {
       alert(
         "This item has already been sold."
+      );
+
+      return;
+    }
+
+    if (isReserved) {
+      alert(
+        "This item is currently reserved."
       );
     }
   }
 
   function handleChatWithSeller() {
-    if (!listing) return;
+    if (!listing) {
+      return;
+    }
 
     const params =
       new URLSearchParams();
@@ -608,12 +717,15 @@ export default function ListingDetail() {
 
     params.set(
       "title",
-      listing.title || "Item"
+      listing.title ||
+        "Item"
     );
 
     params.set(
       "price",
-      String(listing.price || 0)
+      String(
+        listing.price || 0
+      )
     );
 
     if (photos[0]) {
@@ -630,7 +742,9 @@ export default function ListingDetail() {
       );
     }
 
-    if (seller?.username) {
+    if (
+      seller?.username
+    ) {
       params.set(
         "seller",
         seller.username
@@ -643,7 +757,9 @@ export default function ListingDetail() {
   }
 
   function handleBuyNow() {
-    if (!listing?.id) return;
+    if (!listing?.id) {
+      return;
+    }
 
     if (!isAvailable) {
       handleUnavailableAction();
@@ -656,7 +772,9 @@ export default function ListingDetail() {
   }
 
   function handleMeetupBuy() {
-    if (!listing?.id) return;
+    if (!listing?.id) {
+      return;
+    }
 
     if (!isAvailable) {
       handleUnavailableAction();
@@ -669,7 +787,9 @@ export default function ListingDetail() {
   }
 
   function handleMakeOffer() {
-    if (!listing?.id) return;
+    if (!listing?.id) {
+      return;
+    }
 
     if (!isAvailable) {
       handleUnavailableAction();
@@ -734,7 +854,9 @@ export default function ListingDetail() {
           "Unable to update favorites."
       );
     } finally {
-      setFavoriteLoading(false);
+      setFavoriteLoading(
+        false
+      );
     }
   }
 
@@ -749,29 +871,34 @@ export default function ListingDetail() {
       return;
     }
 
-    setOwnerActionLoading(true);
+    setOwnerActionLoading(
+      true
+    );
 
     try {
-      const { error } = await supabase
-        .from("listings")
-        .update({
-          status: nextStatus
-        })
-        .eq(
-          "id",
-          listing.id
-        )
-        .eq(
-          "seller_id",
-          user.id
-        );
+      const { error } =
+        await supabase
+          .from("listings")
+          .update({
+            status: nextStatus
+          })
+          .eq(
+            "id",
+            listing.id
+          )
+          .eq(
+            "seller_id",
+            user.id
+          );
 
       if (error) {
         throw error;
       }
 
       setListing(
-        (currentListing) => ({
+        (
+          currentListing
+        ) => ({
           ...currentListing,
           status: nextStatus
         })
@@ -811,28 +938,35 @@ export default function ListingDetail() {
         "Are you sure you want to delete this listing? This action cannot be undone."
       );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
-    setOwnerActionLoading(true);
+    setOwnerActionLoading(
+      true
+    );
 
     try {
-      const { error } = await supabase
-        .from("listings")
-        .delete()
-        .eq(
-          "id",
-          listing.id
-        )
-        .eq(
-          "seller_id",
-          user.id
-        );
+      const { error } =
+        await supabase
+          .from("listings")
+          .delete()
+          .eq(
+            "id",
+            listing.id
+          )
+          .eq(
+            "seller_id",
+            user.id
+          );
 
       if (error) {
         throw error;
       }
 
-      setShowOwnerActions(false);
+      setShowOwnerActions(
+        false
+      );
 
       navigate("/");
     } catch (error) {
@@ -846,7 +980,9 @@ export default function ListingDetail() {
           "Unable to delete this listing."
       );
     } finally {
-      setOwnerActionLoading(false);
+      setOwnerActionLoading(
+        false
+      );
     }
   }
 
@@ -858,7 +994,9 @@ export default function ListingDetail() {
       return;
     }
 
-    setShowOwnerActions(false);
+    setShowOwnerActions(
+      false
+    );
 
     navigate(
       `/sell?edit=${listing.id}`
@@ -876,16 +1014,7 @@ export default function ListingDetail() {
     navigate("/");
   }
 
-  if (
-    loading ||
-    loadingAuth ||
-    (
-      listing &&
-      isSold &&
-      !favoriteStateLoaded &&
-      !isOwner
-    )
-  ) {
+  if (loading) {
     return (
       <main className="page">
         <div className="container">
@@ -916,43 +1045,10 @@ export default function ListingDetail() {
               {errorMessage ||
                 "This listing may have been removed."}
             </p>
-          </div>
-        </div>
-      </main>
-    );
-  }
 
-  /*
-   * A sold item can only be opened by:
-   * - its seller
-   * - somebody who already favorited it
-   */
-  if (
-    isSold &&
-    favoriteStateLoaded &&
-    !canViewSoldListing
-  ) {
-    return (
-      <main className="page sold-listing-private-page">
-        <div className="container">
-          <div className="empty-state sold-listing-private-state">
-            <h1>
-              This item is no longer available
-            </h1>
-
-            <p>
-              This listing has already been sold.
+            <p className="debug-id">
+              Listing ID: {id}
             </p>
-
-            <button
-              type="button"
-              className="sold-listing-back-button"
-              onClick={() =>
-                navigate("/")
-              }
-            >
-              Discover other items
-            </button>
           </div>
         </div>
       </main>
@@ -964,7 +1060,7 @@ export default function ListingDetail() {
       <div className="container detail-layout product-vinted-layout">
         <section className="photo-panel product-gallery-panel">
           <div
-            className={`main-photo product-main-photo swipeable-photo product-image-status-${listingStatus.key}`}
+            className="main-photo product-main-photo swipeable-photo"
             onTouchStart={
               handlePhotoTouchStart
             }
@@ -975,10 +1071,14 @@ export default function ListingDetail() {
             {photos.length > 0 ? (
               <img
                 key={
-                  photos[photoIndex]
+                  photos[
+                    photoIndex
+                  ]
                 }
                 src={
-                  photos[photoIndex]
+                  photos[
+                    photoIndex
+                  ]
                 }
                 alt={
                   listing.title
@@ -1078,7 +1178,7 @@ export default function ListingDetail() {
                   <ChevronRight />
                 </button>
 
-                <div className="mobile-photo-dots">
+                <div className="mobile-photo-dots product-status-photo-dots">
                   {photos.map(
                     (
                       photo,
@@ -1107,17 +1207,20 @@ export default function ListingDetail() {
             )}
           </div>
 
-          <div
-            className={`product-detail-status-strip product-detail-status-${listingStatus.key}`}
-          >
-            <span>
-              Item status
-            </span>
+          {isSold && (
+            <div
+              className="product-sold-banner"
+              role="status"
+            >
+              <strong>
+                Sold
+              </strong>
 
-            <strong>
-              {listingStatus.label}
-            </strong>
-          </div>
+              <span>
+                This item has been sold.
+              </span>
+            </div>
+          )}
 
           {photos.length > 1 && (
             <div className="thumb-row product-thumb-row">
@@ -1202,6 +1305,7 @@ export default function ListingDetail() {
               {listing.brand && (
                 <>
                   {" · "}
+
                   <span>
                     {listing.brand}
                   </span>
@@ -1228,6 +1332,7 @@ export default function ListingDetail() {
                 "en-PH"
               )}{" "}
               incl. Buyer Protection{" "}
+
               <ShieldCheck
                 size={15}
               />
@@ -1242,7 +1347,11 @@ export default function ListingDetail() {
                 </span>
 
                 <strong>
-                  {listingStatus.label}
+                  {isSold
+                    ? "Sold"
+                    : isReserved
+                    ? "Reserved"
+                    : "Available"}
                 </strong>
               </div>
 
@@ -1310,32 +1419,19 @@ export default function ListingDetail() {
             </section>
           )}
 
-          {!isAvailable && (
-            <section
-              className={`product-status-information product-status-information-${listingStatus.key}`}
-            >
-              <strong>
-                {listingStatus.label}
-              </strong>
+          {!isSold &&
+            isAvailable && (
+              <section className="mobile-demand-box">
+                <span>
+                  🔥
+                </span>
 
-              <p>
-                {listingStatus.message}
-              </p>
-            </section>
-          )}
-
-          {isAvailable && (
-            <section className="mobile-demand-box">
-              <span>
-                🔥
-              </span>
-
-              <p>
-                In demand! Buyers recently
-                viewed or saved similar items.
-              </p>
-            </section>
-          )}
+                <p>
+                  In demand! Buyers recently viewed
+                  or saved similar items.
+                </p>
+              </section>
+            )}
 
           <section className="product-description-card">
             <h2>
@@ -1423,11 +1519,15 @@ export default function ListingDetail() {
                       size={15}
                       fill="currentColor"
                     />{" "}
+
                     {seller.rating ||
                       5}{" "}
+
                     ·{" "}
+
                     {seller.total_sales ||
                       0}{" "}
+
                     sales
                   </p>
 
@@ -1469,20 +1569,15 @@ export default function ListingDetail() {
 
                 <div>
                   <span>
-                    Seller preferred
-                    Meet-Up point
+                    Seller preferred Meet-Up point
                   </span>
 
                   <strong>
-                    {
-                      sellerMeetupSpot.name
-                    }
+                    {sellerMeetupSpot.name}
                   </strong>
 
                   <p>
-                    {
-                      sellerMeetupSpot.address
-                    }
+                    {sellerMeetupSpot.address}
                   </p>
                 </div>
               </div>
@@ -1490,16 +1585,12 @@ export default function ListingDetail() {
               <div className="product-seller-meetup-meta">
                 <span>
                   Safety Score{" "}
-                  {
-                    sellerMeetupSpot.score
-                  }
+                  {sellerMeetupSpot.score}
                   /100
                 </span>
 
                 <span>
-                  {
-                    sellerMeetupSpot.type
-                  }
+                  {sellerMeetupSpot.type}
                 </span>
               </div>
 
@@ -1512,9 +1603,11 @@ export default function ListingDetail() {
                   !isAvailable
                 }
               >
-                {isAvailable
-                  ? "View Meet-Up option"
-                  : listingStatus.label}
+                {isSold
+                  ? "Sold"
+                  : isReserved
+                  ? "Reserved"
+                  : "View Meet-Up option"}
               </button>
             </section>
           )}
@@ -1532,12 +1625,11 @@ export default function ListingDetail() {
               </strong>
 
               <p>
-                Your payment is secured by
-                TindaHan until the item is
-                delivered. If there is an
-                issue with your order, our
-                protection helps support a
-                fair resolution.
+                Your payment is secured by TindaHan
+                until the item is delivered. If
+                there is an issue with your order,
+                our protection helps support a fair
+                resolution.
               </p>
             </div>
           </section>
@@ -1557,10 +1649,9 @@ export default function ListingDetail() {
 
           <section className="product-legal-note">
             <p>
-              Buyer Protection includes
-              secure payment support and
-              issue handling if the item is
-              not delivered as expected.
+              Buyer Protection includes secure
+              payment support and issue handling if
+              the item is not delivered as expected.
             </p>
           </section>
 
@@ -1629,9 +1720,11 @@ export default function ListingDetail() {
                 !isAvailable
               }
             >
-              {isAvailable
-                ? "Make an offer"
-                : listingStatus.label}
+              {isSold
+                ? "Sold"
+                : isReserved
+                ? "Reserved"
+                : "Make an offer"}
             </button>
 
             <button
@@ -1644,9 +1737,11 @@ export default function ListingDetail() {
                 !isAvailable
               }
             >
-              {isAvailable
-                ? "Buy"
-                : listingStatus.label}
+              {isSold
+                ? "Sold"
+                : isReserved
+                ? "Reserved"
+                : "Buy"}
             </button>
 
             <button
@@ -1816,9 +1911,11 @@ export default function ListingDetail() {
             !isAvailable
           }
         >
-          {isAvailable
-            ? "Make an offer"
-            : listingStatus.label}
+          {isSold
+            ? "Sold"
+            : isReserved
+            ? "Reserved"
+            : "Make an offer"}
         </button>
 
         <button
@@ -1831,9 +1928,11 @@ export default function ListingDetail() {
             !isAvailable
           }
         >
-          {isAvailable
-            ? "Buy"
-            : listingStatus.label}
+          {isSold
+            ? "Sold"
+            : isReserved
+            ? "Reserved"
+            : "Buy"}
         </button>
       </div>
     </main>
