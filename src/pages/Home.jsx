@@ -27,8 +27,7 @@ import {
   readMultiParam
 } from "../lib/searchFilters";
 
-const SUPABASE_TIMEOUT_MS =
-  9000;
+const SUPABASE_TIMEOUT_MS = 9000;
 
 function ListingSkeleton() {
   return (
@@ -43,91 +42,53 @@ function ListingSkeleton() {
 function HomeTrustCards() {
   const trustCards = [
     {
-      icon: (
-        <ShieldCheck
-          size={21}
-        />
-      ),
-      title:
-        "8% Buyer Protection",
-      text:
-        "Secure payment until delivery"
+      icon: <ShieldCheck size={21} />,
+      title: "8% Buyer Protection",
+      text: "Secure payment until delivery"
     },
     {
-      icon: (
-        <Tag
-          size={21}
-        />
-      ),
-      title:
-        "0% Seller Fees",
-      text:
-        "List for free, always"
+      icon: <Tag size={21} />,
+      title: "0% Seller Fees",
+      text: "List for free, always"
     },
     {
-      icon: (
-        <BadgeCheck
-          size={21}
-        />
-      ),
-      title:
-        "Trusted Marketplace",
-      text:
-        "Safer buying and selling on TindaHan"
+      icon: <BadgeCheck size={21} />,
+      title: "Trusted Marketplace",
+      text: "Safer buying and selling on TindaHan"
     },
     {
-      icon: (
-        <HeartHandshake
-          size={21}
-        />
-      ),
-      title:
-        "Made by Filipinos for Filipinos",
-      text:
-        "Local, simple and built for the Philippines"
+      icon: <HeartHandshake size={21} />,
+      title: "Made by Filipinos for Filipinos",
+      text: "Local, simple and built for the Philippines"
     }
   ];
 
   return (
     <section className="home-trust-section">
       <div className="container home-trust-inner home-trust-card-mobile-slider">
-        {trustCards.map(
-          (
-            card,
-            index
-          ) => (
-            <div
-              key={
-                card.title
-              }
-              className="home-trust-card"
-              style={{
-                "--trust-index":
-                  index
-              }}
-            >
-              <div className="home-trust-icon">
-                {
-                  card.icon
-                }
-              </div>
-
-              <div>
-                <strong>
-                  {
-                    card.title
-                  }
-                </strong>
-
-                <span>
-                  {
-                    card.text
-                  }
-                </span>
-              </div>
+        {trustCards.map((card, index) => (
+          <div
+            key={card.title}
+            className="home-trust-card"
+            style={{
+              "--trust-index": index
+            }}
+          >
+            <div className="home-trust-icon">
+              {card.icon}
             </div>
-          )
-        )}
+
+            <div>
+              <strong>
+                {card.title}
+              </strong>
+
+              <span>
+                {card.text}
+              </span>
+            </div>
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -138,52 +99,34 @@ async function fetchWithTimeout(
   options = {},
   timeoutMs = SUPABASE_TIMEOUT_MS
 ) {
-  const controller =
-    new AbortController();
+  const controller = new AbortController();
 
-  const timeoutId =
-    setTimeout(() => {
-      controller.abort();
-    }, timeoutMs);
+  const timeoutId = setTimeout(() => {
+    controller.abort();
+  }, timeoutMs);
 
   try {
-    return await fetch(
-      url,
-      {
-        ...options,
-        signal:
-          controller.signal
-      }
-    );
+    return await fetch(url, {
+      ...options,
+      signal: controller.signal
+    });
   } finally {
-    clearTimeout(
-      timeoutId
-    );
+    clearTimeout(timeoutId);
   }
 }
 
 function getSupabaseHeaders() {
   return {
-    apikey:
-      supabaseConfig.anonKey,
-    Authorization:
-      `Bearer ${supabaseConfig.anonKey}`,
-    "Content-Type":
-      "application/json"
+    apikey: supabaseConfig.anonKey,
+    Authorization: `Bearer ${supabaseConfig.anonKey}`,
+    "Content-Type": "application/json"
   };
 }
 
-function sanitizeSearchQuery(
-  value
-) {
-  return String(
-    value || ""
-  )
+function sanitizeSearchQuery(value) {
+  return String(value || "")
     .trim()
-    .replace(
-      /[(),]/g,
-      " "
-    );
+    .replace(/[(),]/g, " ");
 }
 
 function buildListingsUrl({
@@ -192,31 +135,23 @@ function buildListingsUrl({
   childCategory,
   query,
   sort,
-  minimumPrice,
-  maximumPrice
+  minimumPrice
 }) {
-  const params =
-    new URLSearchParams();
+  const params = new URLSearchParams();
 
-  params.set(
-    "select",
-    "*"
-  );
+  params.set("select", "*");
 
   /*
    * Public marketplace:
-   * available / active / reserved only.
-   * Sold items never return in feed/search.
+   * active / available / reserved are visible.
+   * Sold items are excluded.
    */
   params.set(
     "status",
     "in.(active,available,reserved)"
   );
 
-  params.set(
-    "limit",
-    "1000"
-  );
+  params.set("limit", "1000");
 
   if (
     category &&
@@ -244,9 +179,7 @@ function buildListingsUrl({
 
   if (query) {
     const cleanQuery =
-      sanitizeSearchQuery(
-        query
-      );
+      sanitizeSearchQuery(query);
 
     if (cleanQuery) {
       params.set(
@@ -257,20 +190,11 @@ function buildListingsUrl({
   }
 
   const parsedMinimum =
-    Number(
-      minimumPrice
-    );
-
-  const parsedMaximum =
-    Number(
-      maximumPrice
-    );
+    Number(minimumPrice);
 
   if (
     minimumPrice !== "" &&
-    Number.isFinite(
-      parsedMinimum
-    )
+    Number.isFinite(parsedMinimum)
   ) {
     params.set(
       "price",
@@ -278,31 +202,13 @@ function buildListingsUrl({
     );
   }
 
-  if (
-    maximumPrice !== "" &&
-    Number.isFinite(
-      parsedMaximum
-    )
-  ) {
-    /*
-     * PostgREST cannot use the same
-     * price query parameter twice via set().
-     * Maximum is therefore finalized
-     * client-side below.
-     */
-  }
-
-  if (
-    sort ===
-      "price-low"
-  ) {
+  if (sort === "price-low") {
     params.set(
       "order",
       "price.asc"
     );
   } else if (
-    sort ===
-      "price-high"
+    sort === "price-high"
   ) {
     params.set(
       "order",
@@ -318,12 +224,8 @@ function buildListingsUrl({
   return `${supabaseConfig.url}/rest/v1/listings?${params.toString()}`;
 }
 
-function normalizeText(
-  value
-) {
-  return String(
-    value || ""
-  )
+function normalizeText(value) {
+  return String(value || "")
     .trim()
     .toLowerCase();
 }
@@ -332,23 +234,17 @@ function matchesAnyExact(
   listingValue,
   selectedValues
 ) {
-  if (
-    !selectedValues.length
-  ) {
+  if (!selectedValues.length) {
     return true;
   }
 
   const cleanListingValue =
-    normalizeText(
-      listingValue
-    );
+    normalizeText(listingValue);
 
   return selectedValues.some(
     (value) =>
       cleanListingValue ===
-      normalizeText(
-        value
-      )
+      normalizeText(value)
   );
 }
 
@@ -356,23 +252,17 @@ function matchesAnyContained(
   listingValue,
   selectedValues
 ) {
-  if (
-    !selectedValues.length
-  ) {
+  if (!selectedValues.length) {
     return true;
   }
 
   const cleanListingValue =
-    normalizeText(
-      listingValue
-    );
+    normalizeText(listingValue);
 
   return selectedValues.some(
     (value) =>
       cleanListingValue.includes(
-        normalizeText(
-          value
-        )
+        normalizeText(value)
       )
   );
 }
@@ -389,19 +279,15 @@ function applySearchFilters(
     maximumPrice
   }
 ) {
-  const min =
-    Number(
-      minimumPrice
-    );
+  const min = Number(
+    minimumPrice
+  );
 
-  const max =
-    Number(
-      maximumPrice
-    );
+  const max = Number(
+    maximumPrice
+  );
 
-  return (
-    listings || []
-  ).filter(
+  return (listings || []).filter(
     (listing) => {
       if (
         !matchesAnyExact(
@@ -439,15 +325,20 @@ function applySearchFilters(
         return false;
       }
 
-      const materialText =
-        [
-          listing.material,
-          listing.description
-        ]
-          .filter(
-            Boolean
-          )
-          .join(" ");
+      /*
+       * NewListing currently keeps selected
+       * materials in the description.
+       *
+       * We also check listing.material so this
+       * will continue working if a material
+       * column is added later.
+       */
+      const materialText = [
+        listing.material,
+        listing.description
+      ]
+        .filter(Boolean)
+        .join(" ");
 
       if (
         !matchesAnyContained(
@@ -465,9 +356,7 @@ function applySearchFilters(
 
       if (
         minimumPrice !== "" &&
-        Number.isFinite(
-          min
-        ) &&
+        Number.isFinite(min) &&
         price < min
       ) {
         return false;
@@ -475,9 +364,7 @@ function applySearchFilters(
 
       if (
         maximumPrice !== "" &&
-        Number.isFinite(
-          max
-        ) &&
+        Number.isFinite(max) &&
         price > max
       ) {
         return false;
@@ -502,9 +389,7 @@ async function fetchListingsViaRest({
   minimumPrice,
   maximumPrice
 }) {
-  if (
-    !supabaseConfig.isReady
-  ) {
+  if (!supabaseConfig.isReady) {
     return {
       listings: [],
       warning:
@@ -519,8 +404,7 @@ async function fetchListingsViaRest({
       childCategory,
       query,
       sort,
-      minimumPrice,
-      maximumPrice
+      minimumPrice
     });
 
   const listingsResponse =
@@ -532,9 +416,7 @@ async function fetchListingsViaRest({
       }
     );
 
-  if (
-    !listingsResponse.ok
-  ) {
+  if (!listingsResponse.ok) {
     const text =
       await listingsResponse.text();
 
@@ -604,9 +486,7 @@ async function fetchListingsViaRest({
         }
       );
 
-    if (
-      !profilesResponse.ok
-    ) {
+    if (!profilesResponse.ok) {
       profilesUrl =
         `${supabaseConfig.url}/rest/v1/profiles` +
         `?select=id,username,avatar_url,rating,is_verified,total_sales` +
@@ -622,9 +502,7 @@ async function fetchListingsViaRest({
         );
     }
 
-    if (
-      !profilesResponse.ok
-    ) {
+    if (!profilesResponse.ok) {
       throw new Error(
         `Profiles request failed: ${profilesResponse.status}`
       );
@@ -656,8 +534,7 @@ async function fetchListingsViaRest({
               ...listing,
               profiles:
                 profilesById[
-                  listing
-                    .seller_id
+                  listing.seller_id
                 ] || null
             })
           )
@@ -668,18 +545,12 @@ async function fetchListingsViaRest({
           ),
       warning: ""
     };
-  } catch (
-    profileError
-  ) {
+  } catch (profileError) {
     console.warn(
       "Profiles loading skipped:",
       profileError.message
     );
 
-    /*
-     * Do not show an RLS warning
-     * to marketplace users.
-     */
     return {
       listings:
         filteredListings,
@@ -690,16 +561,12 @@ async function fetchListingsViaRest({
 
 function useMobileFeedZoomLock() {
   useEffect(() => {
-    const isMobileViewport =
-      () =>
-        window.innerWidth <=
-        760;
+    const isMobileViewport = () =>
+      window.innerWidth <= 760;
 
     let lastTouchEnd = 0;
 
-    function preventGesture(
-      event
-    ) {
+    function preventGesture(event) {
       if (
         isMobileViewport()
       ) {
@@ -707,9 +574,7 @@ function useMobileFeedZoomLock() {
       }
     }
 
-    function preventMultiTouch(
-      event
-    ) {
+    function preventMultiTouch(event) {
       if (
         !isMobileViewport()
       ) {
@@ -718,16 +583,13 @@ function useMobileFeedZoomLock() {
 
       if (
         event.touches &&
-        event.touches.length >
-          1
+        event.touches.length > 1
       ) {
         event.preventDefault();
       }
     }
 
-    function preventDoubleTapZoom(
-      event
-    ) {
+    function preventDoubleTapZoom(event) {
       if (
         !isMobileViewport()
       ) {
@@ -738,29 +600,22 @@ function useMobileFeedZoomLock() {
         Date.now();
 
       if (
-        now -
-          lastTouchEnd <=
-        320
+        now - lastTouchEnd <= 320
       ) {
         event.preventDefault();
       }
 
-      lastTouchEnd =
-        now;
+      lastTouchEnd = now;
     }
 
-    function preventCtrlWheelZoom(
-      event
-    ) {
+    function preventCtrlWheelZoom(event) {
       if (
         !isMobileViewport()
       ) {
         return;
       }
 
-      if (
-        event.ctrlKey
-      ) {
+      if (event.ctrlKey) {
         event.preventDefault();
       }
     }
@@ -990,15 +845,17 @@ export default function Home() {
     setLoadMessage
   ] = useState("");
 
+  /*
+   * This controls whether the page is considered
+   * a filtered/category/search results page.
+   */
   const isFilteredPage =
     Boolean(
       activeQuery ||
-        activeCategory !==
-          "all" ||
+        activeCategory !== "all" ||
         activeSubcategory ||
         activeChildCategory ||
-        activeFilterCount >
-          0
+        activeFilterCount > 0
     );
 
   const shouldShowGuestHero =
@@ -1006,13 +863,24 @@ export default function Home() {
     !user &&
     !isFilteredPage;
 
-  const shouldShowFilters =
+  /*
+   * IMPORTANT:
+   *
+   * Advanced filters appear ONLY after
+   * an actual text search.
+   *
+   * /?category=women
+   * -> NO advanced filter chips
+   *
+   * /?q=shirt
+   * -> advanced filter chips displayed
+   *
+   * /?q=shirt&category=women
+   * -> advanced filter chips displayed
+   */
+  const shouldShowSearchFilters =
     Boolean(
-      activeQuery ||
-        activeFilterCount >
-          0 ||
-        activeCategory !==
-          "all"
+      activeQuery.trim()
     );
 
   const pageTitle =
@@ -1037,39 +905,31 @@ export default function Home() {
 
       if (
         activeQuery &&
-        activeCategory !==
-          "all"
+        activeCategory !== "all"
       ) {
         return `${getCategoryLabel(
           activeCategory
         )} results for "${activeQuery}"`;
       }
 
-      if (
-        activeQuery
-      ) {
+      if (activeQuery) {
         return `Results for "${activeQuery}"`;
       }
 
-      if (
-        activeChildCategory
-      ) {
+      if (activeChildCategory) {
         return getChildCategoryLabel(
           activeChildCategory
         );
       }
 
-      if (
-        activeSubcategory
-      ) {
+      if (activeSubcategory) {
         return getSubcategoryLabel(
           activeSubcategory
         );
       }
 
       if (
-        activeCategory !==
-        "all"
+        activeCategory !== "all"
       ) {
         return getCategoryLabel(
           activeCategory
@@ -1086,25 +946,20 @@ export default function Home() {
 
   const pageSubtitle =
     useMemo(() => {
-      if (
-        activeChildCategory
-      ) {
+      if (activeChildCategory) {
         return `Explore second-hand ${getChildCategoryLabel(
           activeChildCategory
         ).toLowerCase()} items across the Philippines.`;
       }
 
-      if (
-        activeSubcategory
-      ) {
+      if (activeSubcategory) {
         return `Explore second-hand ${getSubcategoryLabel(
           activeSubcategory
         ).toLowerCase()} items across the Philippines.`;
       }
 
       if (
-        activeCategory !==
-        "all"
+        activeCategory !== "all"
       ) {
         return `Explore second-hand ${getCategoryLabel(
           activeCategory
@@ -1119,8 +974,7 @@ export default function Home() {
     ]);
 
   useEffect(() => {
-    let isMounted =
-      true;
+    let isMounted = true;
 
     async function loadListings() {
       setLoading(true);
@@ -1128,59 +982,49 @@ export default function Home() {
 
       try {
         const result =
-          await fetchListingsViaRest(
-            {
-              category:
-                activeCategory,
-              subcategory:
-                activeSubcategory,
-              childCategory:
-                activeChildCategory,
-              query:
-                activeQuery,
-              sort:
-                activeSort,
-              sizes:
-                activeSizes,
-              brands:
-                activeBrands,
-              conditions:
-                activeConditions,
-              colors:
-                activeColors,
-              materials:
-                activeMaterials,
-              minimumPrice,
-              maximumPrice
-            }
-          );
+          await fetchListingsViaRest({
+            category:
+              activeCategory,
+            subcategory:
+              activeSubcategory,
+            childCategory:
+              activeChildCategory,
+            query:
+              activeQuery,
+            sort:
+              activeSort,
+            sizes:
+              activeSizes,
+            brands:
+              activeBrands,
+            conditions:
+              activeConditions,
+            colors:
+              activeColors,
+            materials:
+              activeMaterials,
+            minimumPrice,
+            maximumPrice
+          });
 
-        if (
-          !isMounted
-        ) {
+        if (!isMounted) {
           return;
         }
 
         setListings(
-          result.listings ||
-            []
+          result.listings || []
         );
 
         setLoadMessage(
-          result.warning ||
-            ""
+          result.warning || ""
         );
-      } catch (
-        error
-      ) {
+      } catch (error) {
         console.error(
           "Home listings loading error:",
           error
         );
 
-        if (
-          !isMounted
-        ) {
+        if (!isMounted) {
           return;
         }
 
@@ -1191,9 +1035,7 @@ export default function Home() {
             "Unable to load listings from Supabase."
         );
       } finally {
-        if (
-          isMounted
-        ) {
+        if (isMounted) {
           setLoading(false);
         }
       }
@@ -1202,8 +1044,7 @@ export default function Home() {
     loadListings();
 
     return () => {
-      isMounted =
-        false;
+      isMounted = false;
     };
   }, [
     paramsKey
@@ -1221,8 +1062,7 @@ export default function Home() {
       );
 
     if (
-      nextSort ===
-      "newest"
+      nextSort === "newest"
     ) {
       nextParams.delete(
         "sort"
@@ -1244,7 +1084,6 @@ export default function Home() {
       {shouldShowGuestHero && (
         <>
           <GuestHero />
-
           <HomeTrustCards />
         </>
       )}
@@ -1257,7 +1096,16 @@ export default function Home() {
         }
       >
         <div className="container home-feed-container">
-          {shouldShowFilters && (
+
+          {/*
+           * IMPORTANT:
+           * Search advanced filters are displayed
+           * only when q exists.
+           *
+           * Category feed keeps only CategoryBar
+           * from App.jsx.
+           */}
+          {shouldShowSearchFilters && (
             <SearchFilterChips />
           )}
 
@@ -1295,16 +1143,19 @@ export default function Home() {
             </select>
           </div>
 
+          {/*
+           * Result count is mainly useful
+           * after a real search.
+           */}
           {!loading &&
-            listings.length >
-              0 && (
+            activeQuery &&
+            listings.length > 0 && (
               <div className="search-results-count">
                 {listings.length.toLocaleString(
                   "en-PH"
                 )}{" "}
                 result
-                {listings.length !==
-                1
+                {listings.length !== 1
                   ? "s"
                   : ""}
               </div>
@@ -1315,14 +1166,9 @@ export default function Home() {
               {Array.from({
                 length: 12
               }).map(
-                (
-                  _,
-                  index
-                ) => (
+                (_, index) => (
                   <ListingSkeleton
-                    key={
-                      index
-                    }
+                    key={index}
                   />
                 )
               )}
@@ -1331,46 +1177,41 @@ export default function Home() {
 
           {!loading &&
             loadMessage &&
-            listings.length ===
-              0 && (
+            listings.length === 0 && (
               <div className="empty-state home-error-state">
                 <h2>
                   Unable to load items
                 </h2>
 
                 <p>
-                  {
-                    loadMessage
-                  }
+                  {loadMessage}
                 </p>
               </div>
             )}
 
           {!loading &&
             !loadMessage &&
-            listings.length ===
-              0 && (
+            listings.length === 0 && (
               <div className="empty-state">
                 <h2>
                   No items found
                 </h2>
 
                 <p>
-                  {isFilteredPage
+                  {activeQuery
                     ? "Try changing or removing some filters."
+                    : isFilteredPage
+                    ? "There are no items in this category yet."
                     : "Be the first to list an item on TindaHan."}
                 </p>
               </div>
             )}
 
           {!loading &&
-            listings.length >
-              0 && (
+            listings.length > 0 && (
               <div className="grid home-feed-grid">
                 {listings.map(
-                  (
-                    listing
-                  ) => (
+                  (listing) => (
                     <ListingCard
                       key={
                         listing.id
