@@ -1,5 +1,13 @@
-import { useEffect, useState } from "react";
-import { Navigate, Route, Routes, useLocation } from "react-router-dom";
+import {
+  useEffect,
+  useState
+} from "react";
+import {
+  Navigate,
+  Route,
+  Routes,
+  useLocation
+} from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
 import Navbar from "./components/Navbar";
@@ -9,6 +17,8 @@ import MobileBottomNav from "./components/MobileBottomNav";
 
 import Home from "./pages/Home";
 import SearchPage from "./pages/Search";
+import SearchFilters from "./pages/SearchFilters";
+import SearchFilterPage from "./pages/SearchFilterPage";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import Welcome from "./pages/Welcome";
@@ -41,15 +51,34 @@ import HolidayMode from "./pages/HolidayMode";
 import BundleDiscounts from "./pages/BundleDiscounts";
 import Badges from "./pages/Badges";
 
-function isMobileDevice() {
-  if (typeof window === "undefined") return false;
+import "./styles/searchFilters.css";
 
-  return window.matchMedia("(max-width: 760px)").matches;
+function isMobileDevice() {
+  if (
+    typeof window ===
+    "undefined"
+  ) {
+    return false;
+  }
+
+  return window
+    .matchMedia(
+      "(max-width: 760px)"
+    )
+    .matches;
 }
 
-function AppLaunchLoader({ isLeaving }) {
+function AppLaunchLoader({
+  isLeaving
+}) {
   return (
-    <div className={isLeaving ? "app-launch-loader leaving" : "app-launch-loader"}>
+    <div
+      className={
+        isLeaving
+          ? "app-launch-loader leaving"
+          : "app-launch-loader"
+      }
+    >
       <div className="app-launch-loader-inner">
         <img
           src="/logo-tindahan.png"
@@ -57,89 +86,220 @@ function AppLaunchLoader({ isLeaving }) {
           className="app-launch-logo-image"
         />
 
-        <div className="app-launch-spinner" aria-label="Loading TindaHan" />
+        <div
+          className="app-launch-spinner"
+          aria-label="Loading TindaHan"
+        />
       </div>
     </div>
   );
 }
 
-function ProtectedRoute({ children }) {
-  const { user, loadingAuth } = useAuth();
+function ProtectedRoute({
+  children
+}) {
+  const {
+    user,
+    loadingAuth
+  } = useAuth();
 
   if (loadingAuth) {
     return (
       <div className="page">
         <div className="container">
-          <p>Loading...</p>
+          <p>
+            Loading...
+          </p>
         </div>
       </div>
     );
   }
 
   if (!user) {
-    return <Navigate to="/login" replace />;
+    return (
+      <Navigate
+        to="/login"
+        replace
+      />
+    );
   }
 
   return children;
 }
 
 export default function App() {
-  const location = useLocation();
+  const location =
+    useLocation();
 
-  const [showLaunchLoader, setShowLaunchLoader] = useState(() => {
-    if (!isMobileDevice()) return false;
+  const [
+    showLaunchLoader,
+    setShowLaunchLoader
+  ] = useState(() => {
+    if (
+      !isMobileDevice()
+    ) {
+      return false;
+    }
 
-    return sessionStorage.getItem("tindahan_mobile_launch_loader_seen") !== "true";
+    return (
+      sessionStorage.getItem(
+        "tindahan_mobile_launch_loader_seen"
+      ) !== "true"
+    );
   });
 
-  const [loaderLeaving, setLoaderLeaving] = useState(false);
+  const [
+    loaderLeaving,
+    setLoaderLeaving
+  ] = useState(false);
 
   useEffect(() => {
-    if (!showLaunchLoader) return;
+    if (
+      !showLaunchLoader
+    ) {
+      return;
+    }
 
-    const leaveTimer = setTimeout(() => {
-      setLoaderLeaving(true);
-    }, 2200);
+    const leaveTimer =
+      setTimeout(() => {
+        setLoaderLeaving(
+          true
+        );
+      }, 2200);
 
-    const hideTimer = setTimeout(() => {
-      sessionStorage.setItem("tindahan_mobile_launch_loader_seen", "true");
-      setShowLaunchLoader(false);
-    }, 2550);
+    const hideTimer =
+      setTimeout(() => {
+        sessionStorage.setItem(
+          "tindahan_mobile_launch_loader_seen",
+          "true"
+        );
+
+        setShowLaunchLoader(
+          false
+        );
+      }, 2550);
 
     return () => {
-      clearTimeout(leaveTimer);
-      clearTimeout(hideTimer);
+      clearTimeout(
+        leaveTimer
+      );
+
+      clearTimeout(
+        hideTimer
+      );
     };
-  }, [showLaunchLoader]);
+  }, [
+    showLaunchLoader
+  ]);
 
   const isProductPage =
-    location.pathname.startsWith("/item/") ||
-    location.pathname.startsWith("/listing/") ||
-    location.pathname.startsWith("/listings/") ||
-    location.pathname.startsWith("/checkout/") ||
-    location.pathname.startsWith("/safe-meetup/") ||
-    location.pathname.startsWith("/offer/") ||
-    location.pathname.startsWith("/tracking/") ||
-    location.pathname.startsWith("/shipping-label/") ||
-    location.pathname.startsWith("/refund-request/") ||
-    location.pathname.startsWith("/welcome");
+    location.pathname.startsWith(
+      "/item/"
+    ) ||
+    location.pathname.startsWith(
+      "/listing/"
+    ) ||
+    location.pathname.startsWith(
+      "/listings/"
+    ) ||
+    location.pathname.startsWith(
+      "/checkout/"
+    ) ||
+    location.pathname.startsWith(
+      "/safe-meetup/"
+    ) ||
+    location.pathname.startsWith(
+      "/offer/"
+    ) ||
+    location.pathname.startsWith(
+      "/tracking/"
+    ) ||
+    location.pathname.startsWith(
+      "/shipping-label/"
+    ) ||
+    location.pathname.startsWith(
+      "/refund-request/"
+    ) ||
+    location.pathname.startsWith(
+      "/welcome"
+    );
 
-  const shouldShowMobileBottomNav = !isProductPage;
+  const isSearchFilterPage =
+    location.pathname ===
+      "/search/filters" ||
+    location.pathname.startsWith(
+      "/search/filter/"
+    );
+
+  const shouldShowGlobalChrome =
+    !isSearchFilterPage;
+
+  const shouldShowMobileBottomNav =
+    !isProductPage &&
+    !isSearchFilterPage;
 
   return (
     <>
-      {showLaunchLoader && <AppLaunchLoader isLeaving={loaderLeaving} />}
+      {showLaunchLoader && (
+        <AppLaunchLoader
+          isLeaving={
+            loaderLeaving
+          }
+        />
+      )}
 
-      <Navbar />
-      <CategoryBar />
+      {shouldShowGlobalChrome && (
+        <>
+          <Navbar />
+          <CategoryBar />
+        </>
+      )}
 
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/search" element={<SearchPage />} />
-        <Route path="/how-it-works" element={<HowItWorks />} />
+        <Route
+          path="/"
+          element={<Home />}
+        />
 
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
+        <Route
+          path="/search"
+          element={
+            <SearchPage />
+          }
+        />
+
+        <Route
+          path="/search/filters"
+          element={
+            <SearchFilters />
+          }
+        />
+
+        <Route
+          path="/search/filter/:filterType"
+          element={
+            <SearchFilterPage />
+          }
+        />
+
+        <Route
+          path="/how-it-works"
+          element={
+            <HowItWorks />
+          }
+        />
+
+        <Route
+          path="/login"
+          element={<Login />}
+        />
+
+        <Route
+          path="/register"
+          element={
+            <Register />
+          }
+        />
 
         <Route
           path="/welcome"
@@ -343,7 +503,10 @@ export default function App() {
           path="/settings"
           element={
             <ProtectedRoute>
-              <Navigate to="/settings/profile" replace />
+              <Navigate
+                to="/settings/profile"
+                replace
+              />
             </ProtectedRoute>
           }
         />
@@ -357,35 +520,164 @@ export default function App() {
           }
         />
 
-        <Route path="/item/:id" element={<ListingDetail />} />
-        <Route path="/listing/:id" element={<ListingDetail />} />
-        <Route path="/listings/:id" element={<ListingDetail />} />
+        <Route
+          path="/item/:id"
+          element={
+            <ListingDetail />
+          }
+        />
 
-        <Route path="/profile/:username" element={<Profile />} />
+        <Route
+          path="/listing/:id"
+          element={
+            <ListingDetail />
+          }
+        />
 
-        <Route path="/about" element={<StaticPage title="About TindaHan" />} />
-        <Route path="/sustainability" element={<StaticPage title="Sustainability" />} />
-        <Route path="/press" element={<StaticPage title="Press" />} />
-        <Route path="/advertising" element={<StaticPage title="Advertising" />} />
-        <Route path="/accessibility" element={<StaticPage title="Accessibility" />} />
-        <Route path="/item-verification" element={<StaticPage title="Item verification" />} />
-        <Route path="/mobile-apps" element={<StaticPage title="Mobile apps" />} />
-        <Route path="/dashboard" element={<StaticPage title="Dashboard" />} />
-        <Route path="/help-center" element={<StaticPage title="Help Center" />} />
-        <Route path="/buy" element={<StaticPage title="Buy" />} />
-        <Route path="/trust-and-safety" element={<StaticPage title="Trust and safety" />} />
-        <Route path="/privacy" element={<StaticPage title="Privacy Center" />} />
-        <Route path="/cookies" element={<StaticPage title="Cookie Policy" />} />
-        <Route path="/cookie-settings" element={<StaticPage title="Cookie Settings" />} />
-        <Route path="/terms" element={<StaticPage title="Terms and Conditions" />} />
-        <Route path="/platform" element={<StaticPage title="Our platform" />} />
+        <Route
+          path="/listings/:id"
+          element={
+            <ListingDetail />
+          }
+        />
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route
+          path="/profile/:username"
+          element={
+            <Profile />
+          }
+        />
+
+        <Route
+          path="/about"
+          element={
+            <StaticPage title="About TindaHan" />
+          }
+        />
+
+        <Route
+          path="/sustainability"
+          element={
+            <StaticPage title="Sustainability" />
+          }
+        />
+
+        <Route
+          path="/press"
+          element={
+            <StaticPage title="Press" />
+          }
+        />
+
+        <Route
+          path="/advertising"
+          element={
+            <StaticPage title="Advertising" />
+          }
+        />
+
+        <Route
+          path="/accessibility"
+          element={
+            <StaticPage title="Accessibility" />
+          }
+        />
+
+        <Route
+          path="/item-verification"
+          element={
+            <StaticPage title="Item verification" />
+          }
+        />
+
+        <Route
+          path="/mobile-apps"
+          element={
+            <StaticPage title="Mobile apps" />
+          }
+        />
+
+        <Route
+          path="/dashboard"
+          element={
+            <StaticPage title="Dashboard" />
+          }
+        />
+
+        <Route
+          path="/help-center"
+          element={
+            <StaticPage title="Help Center" />
+          }
+        />
+
+        <Route
+          path="/buy"
+          element={
+            <StaticPage title="Buy" />
+          }
+        />
+
+        <Route
+          path="/trust-and-safety"
+          element={
+            <StaticPage title="Trust and safety" />
+          }
+        />
+
+        <Route
+          path="/privacy"
+          element={
+            <StaticPage title="Privacy Center" />
+          }
+        />
+
+        <Route
+          path="/cookies"
+          element={
+            <StaticPage title="Cookie Policy" />
+          }
+        />
+
+        <Route
+          path="/cookie-settings"
+          element={
+            <StaticPage title="Cookie Settings" />
+          }
+        />
+
+        <Route
+          path="/terms"
+          element={
+            <StaticPage title="Terms and Conditions" />
+          }
+        />
+
+        <Route
+          path="/platform"
+          element={
+            <StaticPage title="Our platform" />
+          }
+        />
+
+        <Route
+          path="*"
+          element={
+            <Navigate
+              to="/"
+              replace
+            />
+          }
+        />
       </Routes>
 
-      <Footer />
+      {shouldShowGlobalChrome && (
+        <Footer />
+      )}
 
-      {shouldShowMobileBottomNav && <MobileBottomNav />}
+      {shouldShowMobileBottomNav && (
+        <MobileBottomNav />
+      )}
     </>
   );
 }
