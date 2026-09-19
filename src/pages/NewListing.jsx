@@ -28,6 +28,11 @@ import {
 } from "../lib/categories";
 import { supabase } from "../lib/supabase";
 import { BRAND_OPTIONS } from "../lib/brands";
+import {
+  COLOR_FILTER_OPTIONS,
+  MATERIAL_FILTER_OPTIONS,
+  getListingSizeOptions
+} from "../lib/searchFilters";
 
 const MAX_LISTING_PHOTOS = 20;
 const MAX_LISTING_COLORS = 5;
@@ -36,12 +41,14 @@ const conditionOptions = [
   {
     id: "new",
     label: "New with tags",
-    description: "Brand new, never worn or used, with original tags or packaging."
+    description:
+      "Brand new, never worn or used, with original tags or packaging."
   },
   {
     id: "new_without_tags",
     label: "New without tags",
-    description: "Brand new, never worn or used, without original tags or packaging."
+    description:
+      "Brand new, never worn or used, without original tags or packaging."
   },
   {
     id: "very_good",
@@ -63,127 +70,17 @@ const conditionOptions = [
   }
 ];
 
-const clothingSizes = ["XXS", "XS", "S", "M", "L", "XL", "XXL", "One size"];
+const materialOptions =
+  MATERIAL_FILTER_OPTIONS;
 
-const shoeSizes = [
-  "US 4",
-  "US 4.5",
-  "US 5",
-  "US 5.5",
-  "US 6",
-  "US 6.5",
-  "US 7",
-  "US 7.5",
-  "US 8",
-  "US 8.5",
-  "US 9",
-  "US 9.5",
-  "US 10",
-  "US 10.5",
-  "US 11",
-  "US 11.5",
-  "US 12",
-  "US 13"
-];
-
-const kidShoeSizes = [
-  "US Kids 5",
-  "US Kids 6",
-  "US Kids 7",
-  "US Kids 8",
-  "US Kids 9",
-  "US Kids 10",
-  "US Kids 11",
-  "US Kids 12",
-  "US Kids 13",
-  "US Youth 1",
-  "US Youth 2",
-  "US Youth 3",
-  "US Youth 4",
-  "US Youth 5",
-  "US Youth 6"
-];
-
-const bagSizes = ["Mini", "Small", "Medium", "Large", "Oversized"];
-
-const accessorySizes = ["One size", "Adjustable", "Small", "Medium", "Large"];
-
-const materialOptions = [
-  "Acetate",
-  "Acrylic",
-  "Alpaca",
-  "Bamboo",
-  "Canvas",
-  "Cashmere",
-  "Ceramic",
-  "Chiffon",
-  "Corduroy",
-  "Cotton",
-  "Denim",
-  "Down",
-  "Elastane",
-  "Faux fur",
-  "Faux leather",
-  "Felt",
-  "Fleece",
-  "Glass",
-  "Gold",
-  "Hemp",
-  "Jersey",
-  "Lace",
-  "Leather",
-  "Linen",
-  "Lyocell",
-  "Mesh",
-  "Metal",
-  "Microfiber",
-  "Mohair",
-  "Nylon",
-  "Paper",
-  "Plastic",
-  "Polyamide",
-  "Polyester",
-  "Polyurethane",
-  "Rayon",
-  "Rubber",
-  "Satin",
-  "Sequin",
-  "Silk",
-  "Silver",
-  "Stainless steel",
-  "Suede",
-  "Synthetic",
-  "Terrycloth",
-  "Tweed",
-  "Velour",
-  "Velvet",
-  "Viscose",
-  "Wood",
-  "Wool"
-];
-
-const allColors = [
-  { id: "Black", label: "Black", hex: "#000000" },
-  { id: "White", label: "White", hex: "#ffffff" },
-  { id: "Grey", label: "Grey", hex: "#8e8e8e" },
-  { id: "Blue", label: "Blue", hex: "#2f80ed" },
-  { id: "Navy", label: "Navy", hex: "#14213d" },
-  { id: "Red", label: "Red", hex: "#d62828" },
-  { id: "Pink", label: "Pink", hex: "#ff8fab" },
-  { id: "Orange", label: "Orange", hex: "#ff6b2c" },
-  { id: "Yellow", label: "Yellow", hex: "#f6c945" },
-  { id: "Green", label: "Green", hex: "#2a9d8f" },
-  { id: "Brown", label: "Brown", hex: "#7f5539" },
-  { id: "Beige", label: "Beige", hex: "#d6c3a5" },
-  { id: "Purple", label: "Purple", hex: "#8e5cf7" },
-  { id: "Gold", label: "Gold", hex: "#d4af37" },
-  { id: "Silver", label: "Silver", hex: "#c0c0c0" },
-  {
-    id: "Multicolor",
-    label: "Multicolor",
-    hex: "linear-gradient(135deg, #ff6b2c, #2f80ed, #2a9d8f)"
-  }
-];
+const allColors =
+  COLOR_FILTER_OPTIONS.map(
+    (color) => ({
+      id: color.value,
+      label: color.label,
+      hex: color.color
+    })
+  );
 
 const parcelOptions = [
   {
@@ -213,7 +110,8 @@ const sellerMeetupSpots = [
     city: "Metro Manila",
     district: "Mandaluyong",
     name: "Starbucks - SM Megamall",
-    address: "SM Megamall, Mandaluyong, Metro Manila",
+    address:
+      "SM Megamall, Mandaluyong, Metro Manila",
     type: "Coffee Shop",
     score: 95,
     time: "3:00 PM",
@@ -227,7 +125,8 @@ const sellerMeetupSpots = [
     city: "Metro Manila",
     district: "Taguig",
     name: "Jollibee - BGC High Street",
-    address: "Bonifacio Global City, Taguig, Metro Manila",
+    address:
+      "Bonifacio Global City, Taguig, Metro Manila",
     type: "Fast Food",
     score: 92,
     time: "3:00 PM",
@@ -241,7 +140,8 @@ const sellerMeetupSpots = [
     city: "Metro Manila",
     district: "Paranaque",
     name: "Ayala Malls Manila Bay",
-    address: "Paranaque, Metro Manila",
+    address:
+      "Paranaque, Metro Manila",
     type: "Mall",
     score: 94,
     time: "3:00 PM",
@@ -255,7 +155,8 @@ const sellerMeetupSpots = [
     city: "Metro Manila",
     district: "Makati",
     name: "BDO - Makati Avenue",
-    address: "Makati Avenue, Makati City, Metro Manila",
+    address:
+      "Makati Avenue, Makati City, Metro Manila",
     type: "Bank",
     score: 90,
     time: "3:00 PM",
@@ -269,7 +170,8 @@ const sellerMeetupSpots = [
     city: "Metro Manila",
     district: "Pasig",
     name: "7-Eleven - Ortigas Center",
-    address: "Ortigas Center, Pasig, Metro Manila",
+    address:
+      "Ortigas Center, Pasig, Metro Manila",
     type: "Convenience Store",
     score: 87,
     time: "3:00 PM",
@@ -283,7 +185,8 @@ const sellerMeetupSpots = [
     city: "Cebu City",
     district: "Cebu Business Park",
     name: "Ayala Center Cebu",
-    address: "Cebu Business Park, Cebu City",
+    address:
+      "Cebu Business Park, Cebu City",
     type: "Mall",
     score: 93,
     time: "3:00 PM",
@@ -297,7 +200,8 @@ const sellerMeetupSpots = [
     city: "Cebu City",
     district: "IT Park",
     name: "Starbucks - Cebu IT Park",
-    address: "Cebu IT Park, Lahug, Cebu City",
+    address:
+      "Cebu IT Park, Lahug, Cebu City",
     type: "Coffee Shop",
     score: 91,
     time: "3:00 PM",
@@ -311,7 +215,8 @@ const sellerMeetupSpots = [
     city: "Davao City",
     district: "Ecoland",
     name: "SM City Davao Meet-Up Area",
-    address: "Ecoland, Davao City",
+    address:
+      "Ecoland, Davao City",
     type: "Mall",
     score: 92,
     time: "3:00 PM",
@@ -325,7 +230,8 @@ const sellerMeetupSpots = [
     city: "Davao City",
     district: "Bajada",
     name: "Abreeza Mall Davao",
-    address: "J.P. Laurel Avenue, Davao City",
+    address:
+      "J.P. Laurel Avenue, Davao City",
     type: "Mall",
     score: 94,
     time: "3:00 PM",
@@ -338,107 +244,264 @@ const sellerMeetupSpots = [
 
 const authenticityGuides = {
   shoes: {
-    title: "How to prove your shoes are authentic?",
+    title:
+      "How to prove your shoes are authentic?",
     intro:
       "Selling counterfeit items is not allowed on TindaHan. Add as many authenticity proof photos as possible. This helps buyers trust your listing and can prevent your item from being hidden during review.",
-    requiredTitle: "Essential photos to add",
-    optionalTitle: "Extra photos you can add",
+    requiredTitle:
+      "Essential photos to add",
+    optionalTitle:
+      "Extra photos you can add",
     required: [
-      { label: "Inside label", icon: "🏷️" },
-      { label: "Soles", icon: "👣" },
-      { label: "Serial number", icon: "🔢" }
+      {
+        label: "Inside label",
+        icon: "🏷️"
+      },
+      {
+        label: "Soles",
+        icon: "👣"
+      },
+      {
+        label: "Serial number",
+        icon: "🔢"
+      }
     ],
     optional: [
-      { label: "Front view", icon: "👟" },
-      { label: "Back view", icon: "↩️" },
-      { label: "Side view", icon: "↪️" },
-      { label: "Size tag", icon: "🏷️" },
-      { label: "Box", icon: "📦" },
-      { label: "Receipt or proof", icon: "🧾" }
+      {
+        label: "Front view",
+        icon: "👟"
+      },
+      {
+        label: "Back view",
+        icon: "↩️"
+      },
+      {
+        label: "Side view",
+        icon: "↪️"
+      },
+      {
+        label: "Size tag",
+        icon: "🏷️"
+      },
+      {
+        label: "Box",
+        icon: "📦"
+      },
+      {
+        label: "Receipt or proof",
+        icon: "🧾"
+      }
     ]
   },
 
   clothing: {
-    title: "How to prove your clothing item is authentic?",
+    title:
+      "How to prove your clothing item is authentic?",
     intro:
       "For branded clothing, add clear photos of the labels, stitching, logo and material details. This reassures buyers and helps show that the item is genuine.",
-    requiredTitle: "Essential photos to add",
-    optionalTitle: "Extra photos you can add",
+    requiredTitle:
+      "Essential photos to add",
+    optionalTitle:
+      "Extra photos you can add",
     required: [
-      { label: "Brand label", icon: "🏷️" },
-      { label: "Size label", icon: "📏" },
-      { label: "Logo details", icon: "🔍" }
+      {
+        label: "Brand label",
+        icon: "🏷️"
+      },
+      {
+        label: "Size label",
+        icon: "📏"
+      },
+      {
+        label: "Logo details",
+        icon: "🔍"
+      }
     ],
     optional: [
-      { label: "Front view", icon: "👕" },
-      { label: "Back view", icon: "↩️" },
-      { label: "Stitching", icon: "🧵" },
-      { label: "Material tag", icon: "📄" },
-      { label: "Care label", icon: "🧺" },
-      { label: "Receipt or proof", icon: "🧾" }
+      {
+        label: "Front view",
+        icon: "👕"
+      },
+      {
+        label: "Back view",
+        icon: "↩️"
+      },
+      {
+        label: "Stitching",
+        icon: "🧵"
+      },
+      {
+        label: "Material tag",
+        icon: "📄"
+      },
+      {
+        label: "Care label",
+        icon: "🧺"
+      },
+      {
+        label: "Receipt or proof",
+        icon: "🧾"
+      }
     ]
   },
 
   bags: {
-    title: "How to prove your bag is authentic?",
+    title:
+      "How to prove your bag is authentic?",
     intro:
       "For bags, add photos of the logo, inside label, stitching, lining, hardware and any serial number. These details help buyers verify authenticity.",
-    requiredTitle: "Essential photos to add",
-    optionalTitle: "Extra photos you can add",
+    requiredTitle:
+      "Essential photos to add",
+    optionalTitle:
+      "Extra photos you can add",
     required: [
-      { label: "Logo", icon: "🔍" },
-      { label: "Inside label", icon: "🏷️" },
-      { label: "Serial number", icon: "🔢" }
+      {
+        label: "Logo",
+        icon: "🔍"
+      },
+      {
+        label: "Inside label",
+        icon: "🏷️"
+      },
+      {
+        label: "Serial number",
+        icon: "🔢"
+      }
     ],
     optional: [
-      { label: "Front view", icon: "👜" },
-      { label: "Inside lining", icon: "🧵" },
-      { label: "Zippers", icon: "🤐" },
-      { label: "Straps", icon: "〰️" },
-      { label: "Dust bag", icon: "🛍️" },
-      { label: "Receipt or proof", icon: "🧾" }
+      {
+        label: "Front view",
+        icon: "👜"
+      },
+      {
+        label: "Inside lining",
+        icon: "🧵"
+      },
+      {
+        label: "Zippers",
+        icon: "🤐"
+      },
+      {
+        label: "Straps",
+        icon: "〰️"
+      },
+      {
+        label: "Dust bag",
+        icon: "🛍️"
+      },
+      {
+        label: "Receipt or proof",
+        icon: "🧾"
+      }
     ]
   },
 
   accessories: {
-    title: "How to prove your accessory is authentic?",
+    title:
+      "How to prove your accessory is authentic?",
     intro:
       "For accessories, add close-up photos of labels, logos, engravings, packaging and proof of purchase whenever possible.",
-    requiredTitle: "Essential photos to add",
-    optionalTitle: "Extra photos you can add",
+    requiredTitle:
+      "Essential photos to add",
+    optionalTitle:
+      "Extra photos you can add",
     required: [
-      { label: "Logo", icon: "🔍" },
-      { label: "Engraving or label", icon: "🏷️" },
-      { label: "Packaging", icon: "📦" }
+      {
+        label: "Logo",
+        icon: "🔍"
+      },
+      {
+        label:
+          "Engraving or label",
+        icon: "🏷️"
+      },
+      {
+        label: "Packaging",
+        icon: "📦"
+      }
     ],
     optional: [
-      { label: "Front view", icon: "✨" },
-      { label: "Back view", icon: "↩️" },
-      { label: "Close-up detail", icon: "🔎" },
-      { label: "Serial number", icon: "🔢" },
-      { label: "Certificate", icon: "📜" },
-      { label: "Receipt or proof", icon: "🧾" }
+      {
+        label: "Front view",
+        icon: "✨"
+      },
+      {
+        label: "Back view",
+        icon: "↩️"
+      },
+      {
+        label:
+          "Close-up detail",
+        icon: "🔎"
+      },
+      {
+        label:
+          "Serial number",
+        icon: "🔢"
+      },
+      {
+        label: "Certificate",
+        icon: "📜"
+      },
+      {
+        label:
+          "Receipt or proof",
+        icon: "🧾"
+      }
     ]
   },
 
   default: {
-    title: "How to prove your item is authentic?",
+    title:
+      "How to prove your item is authentic?",
     intro:
       "If your item is branded, add clear photos of labels, logos, packaging, serial numbers and proof of purchase. This helps buyers trust your listing.",
-    requiredTitle: "Essential photos to add",
-    optionalTitle: "Extra photos you can add",
+    requiredTitle:
+      "Essential photos to add",
+    optionalTitle:
+      "Extra photos you can add",
     required: [
-      { label: "Brand label", icon: "🏷️" },
-      { label: "Logo details", icon: "🔍" },
-      { label: "Proof of purchase", icon: "🧾" }
+      {
+        label: "Brand label",
+        icon: "🏷️"
+      },
+      {
+        label: "Logo details",
+        icon: "🔍"
+      },
+      {
+        label:
+          "Proof of purchase",
+        icon: "🧾"
+      }
     ],
     optional: [
-      { label: "Front view", icon: "✨" },
-      { label: "Back view", icon: "↩️" },
-      { label: "Close-up detail", icon: "🔎" },
-      { label: "Packaging", icon: "📦" },
-      { label: "Serial number", icon: "🔢" },
-      { label: "Certificate", icon: "📜" }
+      {
+        label: "Front view",
+        icon: "✨"
+      },
+      {
+        label: "Back view",
+        icon: "↩️"
+      },
+      {
+        label:
+          "Close-up detail",
+        icon: "🔎"
+      },
+      {
+        label: "Packaging",
+        icon: "📦"
+      },
+      {
+        label:
+          "Serial number",
+        icon: "🔢"
+      },
+      {
+        label: "Certificate",
+        icon: "📜"
+      }
     ]
   }
 };
@@ -453,17 +516,24 @@ function createPhotoItem(file) {
   return {
     id: createPhotoId(file),
     file,
-    previewUrl: URL.createObjectURL(file),
+    previewUrl:
+      URL.createObjectURL(file),
     name: file.name,
     size: file.size,
-    lastModified: file.lastModified
+    lastModified:
+      file.lastModified
   };
 }
 
 function getItemType(form) {
-  const text = `${form.category || ""} ${form.subcategory || ""} ${
-    form.child_category || ""
-  } ${form.title || ""}`.toLowerCase();
+  const text =
+    `${form.category || ""} ${
+      form.subcategory || ""
+    } ${
+      form.child_category || ""
+    } ${
+      form.title || ""
+    }`.toLowerCase();
 
   if (
     text.includes("shoe") ||
@@ -490,7 +560,9 @@ function getItemType(form) {
     return "clothing";
   }
 
-  if (text.includes("bag")) return "bags";
+  if (text.includes("bag")) {
+    return "bags";
+  }
 
   if (
     text.includes("accessories") ||
@@ -506,96 +578,175 @@ function getItemType(form) {
 }
 
 function getAuthenticityGuide(form) {
-  const itemType = getItemType(form);
-  return authenticityGuides[itemType] || authenticityGuides.default;
+  const itemType =
+    getItemType(form);
+
+  return (
+    authenticityGuides[
+      itemType
+    ] ||
+    authenticityGuides.default
+  );
 }
 
 function getSizeOptions(form) {
-  const itemType = getItemType(form);
-  const text = `${form.category || ""} ${form.subcategory || ""}`.toLowerCase();
-
-  if (itemType === "shoes" && text.includes("kids")) return kidShoeSizes;
-  if (itemType === "shoes") return shoeSizes;
-  if (itemType === "clothing") return clothingSizes;
-  if (itemType === "bags") return bagSizes;
-  if (itemType === "accessories") return accessorySizes;
-
-  return ["One size", "Small", "Medium", "Large"];
+  return getListingSizeOptions(
+    form
+  );
 }
 
 function getSuggestedColors(form) {
-  const text = `${form.title || ""} ${form.description || ""} ${
-    form.brand || ""
-  }`.toLowerCase();
+  const text =
+    `${form.title || ""} ${
+      form.description || ""
+    } ${
+      form.brand || ""
+    }`.toLowerCase();
 
-  const suggestions = allColors.filter((color) =>
-    text.includes(color.label.toLowerCase())
-  );
+  const suggestions =
+    allColors.filter((color) =>
+      text.includes(
+        color.label.toLowerCase()
+      )
+    );
 
-  if (suggestions.length > 0) return suggestions.slice(0, 4);
-
-  if (getItemType(form) === "shoes") {
-    return allColors.filter((color) =>
-      ["Black", "White", "Grey", "Blue"].includes(color.id)
+  if (
+    suggestions.length > 0
+  ) {
+    return suggestions.slice(
+      0,
+      4
     );
   }
 
-  if (getItemType(form) === "clothing") {
-    return allColors.filter((color) =>
-      ["Black", "White", "Grey", "Beige"].includes(color.id)
+  if (
+    getItemType(form) ===
+    "shoes"
+  ) {
+    return allColors.filter(
+      (color) =>
+        [
+          "Black",
+          "White",
+          "Grey",
+          "Blue"
+        ].includes(color.id)
     );
   }
 
-  return allColors.filter((color) =>
-    ["Black", "White", "Grey", "Brown"].includes(color.id)
+  if (
+    getItemType(form) ===
+    "clothing"
+  ) {
+    return allColors.filter(
+      (color) =>
+        [
+          "Black",
+          "White",
+          "Grey",
+          "Beige"
+        ].includes(color.id)
+    );
+  }
+
+  return allColors.filter(
+    (color) =>
+      [
+        "Black",
+        "White",
+        "Grey",
+        "Brown"
+      ].includes(color.id)
   );
 }
 
 function formatColorValue(colors) {
-  if (!colors.length) return "";
+  if (!colors.length) {
+    return "";
+  }
+
   return colors.join(", ");
 }
 
-function formatMaterialValue(materials) {
-  if (!materials.length) return "";
+function formatMaterialValue(
+  materials
+) {
+  if (!materials.length) {
+    return "";
+  }
+
   return materials.join(", ");
 }
 
-function buildDescriptionWithExtras(form) {
-  const cleanDescription = form.description?.trim() || "";
+function buildDescriptionWithExtras(
+  form
+) {
+  const cleanDescription =
+    form.description?.trim() ||
+    "";
+
   const extraBlocks = [];
 
-  if (form.selectedMaterials.length > 0) {
-    extraBlocks.push(`Materials:\n${form.selectedMaterials.join(", ")}`);
+  if (
+    form.selectedMaterials
+      .length > 0
+  ) {
+    extraBlocks.push(
+      `Materials:\n${form.selectedMaterials.join(
+        ", "
+      )}`
+    );
   }
 
-  const conditionDetails = form.condition_details?.trim();
+  const conditionDetails =
+    form.condition_details?.trim();
 
   if (conditionDetails) {
     const conditionLabel =
-      conditionOptions.find((condition) => condition.id === form.condition)
-        ?.label || form.condition;
+      conditionOptions.find(
+        (condition) =>
+          condition.id ===
+          form.condition
+      )?.label ||
+      form.condition;
 
-    extraBlocks.push(`Condition details:\n${conditionLabel} — ${conditionDetails}`);
+    extraBlocks.push(
+      `Condition details:\n${conditionLabel} — ${conditionDetails}`
+    );
   }
 
-  if (getItemType(form) === "clothing") {
+  if (
+    getItemType(form) ===
+    "clothing"
+  ) {
     const dimensions = [];
 
     if (form.shoulder_width) {
-      dimensions.push(`Shoulder width: ${form.shoulder_width} cm`);
+      dimensions.push(
+        `Shoulder width: ${form.shoulder_width} cm`
+      );
     }
 
     if (form.item_length) {
-      dimensions.push(`Length: ${form.item_length} cm`);
+      dimensions.push(
+        `Length: ${form.item_length} cm`
+      );
     }
 
-    if (dimensions.length > 0) {
-      extraBlocks.push(`Dimensions:\n${dimensions.join("\n")}`);
+    if (
+      dimensions.length > 0
+    ) {
+      extraBlocks.push(
+        `Dimensions:\n${dimensions.join(
+          "\n"
+        )}`
+      );
     }
   }
 
-  if (extraBlocks.length === 0) {
+  if (
+    extraBlocks.length === 0
+  ) {
     return cleanDescription;
   }
 
@@ -604,8 +755,12 @@ function buildDescriptionWithExtras(form) {
 ${extraBlocks.join("\n\n")}`;
 }
 
-function prepareSellerMeetupSpot(spot) {
-  if (!spot) return null;
+function prepareSellerMeetupSpot(
+  spot
+) {
+  if (!spot) {
+    return null;
+  }
 
   return {
     id: spot.id,
@@ -620,419 +775,813 @@ function prepareSellerMeetupSpot(spot) {
     mapX: spot.mapX,
     mapY: spot.mapY,
     selectedBy: "seller",
-    selectedAt: new Date().toISOString()
+    selectedAt:
+      new Date().toISOString()
   };
 }
 
 function getMeetupCityOptions() {
-  return Array.from(new Set(sellerMeetupSpots.map((spot) => spot.city)));
+  return Array.from(
+    new Set(
+      sellerMeetupSpots.map(
+        (spot) => spot.city
+      )
+    )
+  );
 }
 
 function normaliseSmartText(value) {
   return String(value || "")
     .toLowerCase()
     .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "");
+    .replace(
+      /[\u0300-\u036f]/g,
+      ""
+    );
 }
 
-function smartTextIncludes(text, words) {
-  return words.some((word) => text.includes(normaliseSmartText(word)));
+function smartTextIncludes(
+  text,
+  words
+) {
+  return words.some((word) =>
+    text.includes(
+      normaliseSmartText(word)
+    )
+  );
 }
 
-function findCategoryPath(categoryId, subcategoryId, childCategoryId = "") {
-  const category = getCategoryById(categoryId);
-  const subcategory = getSubcategoryById(subcategoryId);
+function findCategoryPath(
+  categoryId,
+  subcategoryId,
+  childCategoryId = ""
+) {
+  const category =
+    getCategoryById(categoryId);
 
-  if (!category || !subcategory) return null;
+  const subcategory =
+    getSubcategoryById(
+      subcategoryId
+    );
+
+  if (
+    !category ||
+    !subcategory
+  ) {
+    return null;
+  }
 
   const child =
-    childCategoryId && subcategory.children
-      ? subcategory.children.find((item) => item.id === childCategoryId)
+    childCategoryId &&
+    subcategory.children
+      ? subcategory.children.find(
+          (item) =>
+            item.id ===
+            childCategoryId
+        )
       : null;
 
   return {
     categoryId,
     subcategoryId,
-    childCategoryId: child?.id || "",
+    childCategoryId:
+      child?.id || "",
     label: child
       ? `${category.label} > ${subcategory.label} > ${child.label}`
       : `${category.label} > ${subcategory.label}`
   };
 }
 
-function getSmartCategorySuggestion(form) {
-  const text = normaliseSmartText(
-    `${form.title || ""} ${form.description || ""} ${form.brand || ""}`
-  );
+function getSmartCategorySuggestion(
+  form
+) {
+  const text =
+    normaliseSmartText(
+      `${form.title || ""} ${
+        form.description ||
+        ""
+      } ${form.brand || ""}`
+    );
 
-  if (!text.trim()) return null;
-
-  if (
-    smartTextIncludes(text, [
-      "iphone",
-      "samsung galaxy",
-      "phone",
-      "smartphone",
-      "mobile",
-      "cellphone",
-      "redmi",
-      "oppo",
-      "vivo",
-      "realme",
-      "huawei",
-      "xiaomi"
-    ])
-  ) {
-    return findCategoryPath("electronics", "electronics_phones");
+  if (!text.trim()) {
+    return null;
   }
 
   if (
-    smartTextIncludes(text, [
-      "ipad",
-      "tablet",
-      "galaxy tab",
-      "tab s",
-      "lenovo tab"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "iphone",
+        "samsung galaxy",
+        "phone",
+        "smartphone",
+        "mobile",
+        "cellphone",
+        "redmi",
+        "oppo",
+        "vivo",
+        "realme",
+        "huawei",
+        "xiaomi"
+      ]
+    )
   ) {
-    return findCategoryPath("electronics", "electronics_tablets");
+    return findCategoryPath(
+      "electronics",
+      "electronics_phones"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "macbook",
-      "laptop",
-      "computer",
-      "pc",
-      "notebook",
-      "chromebook",
-      "thinkpad",
-      "vivobook",
-      "aspire"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "ipad",
+        "tablet",
+        "galaxy tab",
+        "tab s",
+        "lenovo tab"
+      ]
+    )
   ) {
-    return findCategoryPath("electronics", "electronics_computers");
+    return findCategoryPath(
+      "electronics",
+      "electronics_tablets"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "camera",
-      "dslr",
-      "mirrorless",
-      "canon",
-      "nikon",
-      "sony alpha",
-      "fujifilm",
-      "gopro"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "macbook",
+        "laptop",
+        "computer",
+        "pc",
+        "notebook",
+        "chromebook",
+        "thinkpad",
+        "vivobook",
+        "aspire"
+      ]
+    )
   ) {
-    return findCategoryPath("electronics", "electronics_cameras");
+    return findCategoryPath(
+      "electronics",
+      "electronics_computers"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "airpods",
-      "headphones",
-      "earbuds",
-      "speaker",
-      "jbl",
-      "marshall",
-      "bose",
-      "sony wh",
-      "audio"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "camera",
+        "dslr",
+        "mirrorless",
+        "canon",
+        "nikon",
+        "sony alpha",
+        "fujifilm",
+        "gopro"
+      ]
+    )
   ) {
-    return findCategoryPath("electronics", "electronics_audio");
+    return findCategoryPath(
+      "electronics",
+      "electronics_cameras"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "ps4",
-      "ps5",
-      "playstation",
-      "xbox",
-      "nintendo",
-      "switch",
-      "console"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "airpods",
+        "headphones",
+        "earbuds",
+        "speaker",
+        "jbl",
+        "marshall",
+        "bose",
+        "sony wh",
+        "audio"
+      ]
+    )
   ) {
-    return findCategoryPath("electronics", "electronics_gaming");
+    return findCategoryPath(
+      "electronics",
+      "electronics_audio"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "watch",
-      "smartwatch",
-      "apple watch",
-      "galaxy watch",
-      "garmin",
-      "g-shock",
-      "casio"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "ps4",
+        "ps5",
+        "playstation",
+        "xbox",
+        "nintendo",
+        "switch",
+        "console"
+      ]
+    )
   ) {
-    return smartTextIncludes(text, ["luxury", "rolex", "omega", "tag heuer"])
-      ? findCategoryPath("designer", "designer_watches")
-      : findCategoryPath("electronics", "electronics_smartwatches");
+    return findCategoryPath(
+      "electronics",
+      "electronics_gaming"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "shoe",
-      "shoes",
-      "sneaker",
-      "sneakers",
-      "air force",
-      "air max",
-      "dunk",
-      "jordan",
-      "yeezy",
-      "vans",
-      "converse",
-      "crocs",
-      "sandals",
-      "heels",
-      "boots"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "watch",
+        "smartwatch",
+        "apple watch",
+        "galaxy watch",
+        "garmin",
+        "g-shock",
+        "casio"
+      ]
+    )
   ) {
-    if (smartTextIncludes(text, ["kid", "kids", "child", "children", "baby", "youth"])) {
-      return findCategoryPath("kids", "kids_shoes");
+    return smartTextIncludes(
+      text,
+      [
+        "luxury",
+        "rolex",
+        "omega",
+        "tag heuer"
+      ]
+    )
+      ? findCategoryPath(
+          "designer",
+          "designer_watches"
+        )
+      : findCategoryPath(
+          "electronics",
+          "electronics_smartwatches"
+        );
+  }
+
+  if (
+    smartTextIncludes(
+      text,
+      [
+        "shoe",
+        "shoes",
+        "sneaker",
+        "sneakers",
+        "air force",
+        "air max",
+        "dunk",
+        "jordan",
+        "yeezy",
+        "vans",
+        "converse",
+        "crocs",
+        "sandals",
+        "heels",
+        "boots"
+      ]
+    )
+  ) {
+    if (
+      smartTextIncludes(
+        text,
+        [
+          "kid",
+          "kids",
+          "child",
+          "children",
+          "baby",
+          "youth"
+        ]
+      )
+    ) {
+      return findCategoryPath(
+        "kids",
+        "kids_shoes"
+      );
     }
 
     if (
-      smartTextIncludes(text, [
-        "gucci",
-        "prada",
-        "dior",
-        "balenciaga",
-        "louis vuitton",
-        "designer"
-      ])
+      smartTextIncludes(
+        text,
+        [
+          "gucci",
+          "prada",
+          "dior",
+          "balenciaga",
+          "louis vuitton",
+          "designer"
+        ]
+      )
     ) {
-      return findCategoryPath("designer", "designer_shoes");
+      return findCategoryPath(
+        "designer",
+        "designer_shoes"
+      );
     }
 
-    if (smartTextIncludes(text, ["men", "mens", "man", "male", "boyfriend"])) {
-      return findCategoryPath("men", "men_shoes");
+    if (
+      smartTextIncludes(
+        text,
+        [
+          "men",
+          "mens",
+          "man",
+          "male",
+          "boyfriend"
+        ]
+      )
+    ) {
+      return findCategoryPath(
+        "men",
+        "men_shoes"
+      );
     }
 
-    return findCategoryPath("women", "women_shoes");
+    return findCategoryPath(
+      "women",
+      "women_shoes"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "bag",
-      "handbag",
-      "shoulder bag",
-      "tote",
-      "backpack",
-      "pouch",
-      "wallet",
-      "crossbody",
-      "sling bag"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "bag",
+        "handbag",
+        "shoulder bag",
+        "tote",
+        "backpack",
+        "pouch",
+        "wallet",
+        "crossbody",
+        "sling bag"
+      ]
+    )
   ) {
     if (
-      smartTextIncludes(text, [
-        "gucci",
-        "prada",
-        "dior",
-        "chanel",
-        "louis vuitton",
-        "coach",
-        "kate spade",
-        "designer"
-      ])
+      smartTextIncludes(
+        text,
+        [
+          "gucci",
+          "prada",
+          "dior",
+          "chanel",
+          "louis vuitton",
+          "coach",
+          "kate spade",
+          "designer"
+        ]
+      )
     ) {
-      return findCategoryPath("designer", "designer_bags");
+      return findCategoryPath(
+        "designer",
+        "designer_bags"
+      );
     }
 
-    if (smartTextIncludes(text, ["travel", "luggage", "suitcase", "duffel"])) {
-      return findCategoryPath("travel_motorbike", "travel_bags");
+    if (
+      smartTextIncludes(
+        text,
+        [
+          "travel",
+          "luggage",
+          "suitcase",
+          "duffel"
+        ]
+      )
+    ) {
+      return findCategoryPath(
+        "travel_motorbike",
+        "travel_bags"
+      );
     }
 
-    if (smartTextIncludes(text, ["men", "mens", "man", "male"])) {
-      return findCategoryPath("men", "men_bags");
+    if (
+      smartTextIncludes(
+        text,
+        [
+          "men",
+          "mens",
+          "man",
+          "male"
+        ]
+      )
+    ) {
+      return findCategoryPath(
+        "men",
+        "men_bags"
+      );
     }
 
-    return findCategoryPath("women", "women_bags");
+    return findCategoryPath(
+      "women",
+      "women_bags"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "dress",
-      "skirt",
-      "blouse",
-      "top",
-      "shirt",
-      "t-shirt",
-      "tshirt",
-      "hoodie",
-      "jacket",
-      "coat",
-      "pants",
-      "jeans",
-      "shorts",
-      "sweater",
-      "cardigan",
-      "polo",
-      "barong",
-      "filipiniana",
-      "uniform"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "dress",
+        "skirt",
+        "blouse",
+        "top",
+        "shirt",
+        "t-shirt",
+        "tshirt",
+        "hoodie",
+        "jacket",
+        "coat",
+        "pants",
+        "jeans",
+        "shorts",
+        "sweater",
+        "cardigan",
+        "polo",
+        "barong",
+        "filipiniana",
+        "uniform"
+      ]
+    )
   ) {
-    if (smartTextIncludes(text, ["barong"])) {
-      return findCategoryPath("local_cultural", "local_barong");
+    if (
+      smartTextIncludes(
+        text,
+        ["barong"]
+      )
+    ) {
+      return findCategoryPath(
+        "local_cultural",
+        "local_barong"
+      );
     }
 
-    if (smartTextIncludes(text, ["filipiniana"])) {
-      return findCategoryPath("local_cultural", "local_filipiniana");
+    if (
+      smartTextIncludes(
+        text,
+        ["filipiniana"]
+      )
+    ) {
+      return findCategoryPath(
+        "local_cultural",
+        "local_filipiniana"
+      );
     }
 
-    if (smartTextIncludes(text, ["uniform", "school uniform"])) {
-      return findCategoryPath("school_office", "school_uniforms");
+    if (
+      smartTextIncludes(
+        text,
+        [
+          "uniform",
+          "school uniform"
+        ]
+      )
+    ) {
+      return findCategoryPath(
+        "school_office",
+        "school_uniforms"
+      );
     }
 
-    if (smartTextIncludes(text, ["kid", "kids", "baby", "girl", "boy", "child"])) {
-      if (smartTextIncludes(text, ["baby"])) {
-        return findCategoryPath("kids", "kids_baby_clothing");
+    if (
+      smartTextIncludes(
+        text,
+        [
+          "kid",
+          "kids",
+          "baby",
+          "girl",
+          "boy",
+          "child"
+        ]
+      )
+    ) {
+      if (
+        smartTextIncludes(
+          text,
+          ["baby"]
+        )
+      ) {
+        return findCategoryPath(
+          "kids",
+          "kids_baby_clothing"
+        );
       }
 
-      if (smartTextIncludes(text, ["boy"])) {
-        return findCategoryPath("kids", "kids_boys_clothing");
+      if (
+        smartTextIncludes(
+          text,
+          ["boy"]
+        )
+      ) {
+        return findCategoryPath(
+          "kids",
+          "kids_boys_clothing"
+        );
       }
 
-      return findCategoryPath("kids", "kids_girls_clothing");
+      return findCategoryPath(
+        "kids",
+        "kids_girls_clothing"
+      );
     }
 
     if (
-      smartTextIncludes(text, [
-        "gucci",
-        "prada",
-        "dior",
-        "chanel",
-        "balenciaga",
-        "louis vuitton",
-        "designer"
-      ])
+      smartTextIncludes(
+        text,
+        [
+          "gucci",
+          "prada",
+          "dior",
+          "chanel",
+          "balenciaga",
+          "louis vuitton",
+          "designer"
+        ]
+      )
     ) {
-      return findCategoryPath("designer", "designer_clothing");
+      return findCategoryPath(
+        "designer",
+        "designer_clothing"
+      );
     }
 
-    if (smartTextIncludes(text, ["men", "mens", "man", "male"])) {
-      return findCategoryPath("men", "men_clothing");
+    if (
+      smartTextIncludes(
+        text,
+        [
+          "men",
+          "mens",
+          "man",
+          "male"
+        ]
+      )
+    ) {
+      return findCategoryPath(
+        "men",
+        "men_clothing"
+      );
     }
 
-    return findCategoryPath("women", "women_clothing");
+    return findCategoryPath(
+      "women",
+      "women_clothing"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "makeup",
-      "lipstick",
-      "foundation",
-      "concealer",
-      "blush",
-      "mascara",
-      "eyeshadow",
-      "powder"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "makeup",
+        "lipstick",
+        "foundation",
+        "concealer",
+        "blush",
+        "mascara",
+        "eyeshadow",
+        "powder"
+      ]
+    )
   ) {
-    return findCategoryPath("beauty", "beauty_makeup");
+    return findCategoryPath(
+      "beauty",
+      "beauty_makeup"
+    );
   }
 
   if (
-    smartTextIncludes(text, [
-      "skincare",
-      "serum",
-      "cleanser",
-      "toner",
-      "moisturizer",
-      "sunscreen",
-      "cream"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "skincare",
+        "serum",
+        "cleanser",
+        "toner",
+        "moisturizer",
+        "sunscreen",
+        "cream"
+      ]
+    )
   ) {
-    return findCategoryPath("beauty", "beauty_skincare");
+    return findCategoryPath(
+      "beauty",
+      "beauty_skincare"
+    );
   }
 
-  if (smartTextIncludes(text, ["perfume", "fragrance", "cologne"])) {
-    return findCategoryPath("beauty", "beauty_fragrance");
+  if (
+    smartTextIncludes(
+      text,
+      [
+        "perfume",
+        "fragrance",
+        "cologne"
+      ]
+    )
+  ) {
+    return findCategoryPath(
+      "beauty",
+      "beauty_fragrance"
+    );
   }
 
-  if (smartTextIncludes(text, ["book", "novel", "textbook"])) {
-    return findCategoryPath("entertainment", "entertainment_books");
+  if (
+    smartTextIncludes(
+      text,
+      [
+        "book",
+        "novel",
+        "textbook"
+      ]
+    )
+  ) {
+    return findCategoryPath(
+      "entertainment",
+      "entertainment_books"
+    );
   }
 
-  if (smartTextIncludes(text, ["manga", "comic", "comics"])) {
-    return findCategoryPath("entertainment", "entertainment_comics_manga");
+  if (
+    smartTextIncludes(
+      text,
+      [
+        "manga",
+        "comic",
+        "comics"
+      ]
+    )
+  ) {
+    return findCategoryPath(
+      "entertainment",
+      "entertainment_comics_manga"
+    );
   }
 
-  if (smartTextIncludes(text, ["video game", "game cartridge", "nintendo game"])) {
-    return findCategoryPath("entertainment", "entertainment_video_games");
+  if (
+    smartTextIncludes(
+      text,
+      [
+        "video game",
+        "game cartridge",
+        "nintendo game"
+      ]
+    )
+  ) {
+    return findCategoryPath(
+      "entertainment",
+      "entertainment_video_games"
+    );
   }
 
-  if (smartTextIncludes(text, ["rice cooker"])) {
-    return findCategoryPath("home", "home_appliances", "home_rice_cookers");
+  if (
+    smartTextIncludes(
+      text,
+      ["rice cooker"]
+    )
+  ) {
+    return findCategoryPath(
+      "home",
+      "home_appliances",
+      "home_rice_cookers"
+    );
   }
 
-  if (smartTextIncludes(text, ["electric fan", "stand fan", "desk fan"])) {
-    return findCategoryPath("home", "home_appliances", "home_electric_fans");
+  if (
+    smartTextIncludes(
+      text,
+      [
+        "electric fan",
+        "stand fan",
+        "desk fan"
+      ]
+    )
+  ) {
+    return findCategoryPath(
+      "home",
+      "home_appliances",
+      "home_electric_fans"
+    );
   }
 
-  if (smartTextIncludes(text, ["kettle", "electric kettle"])) {
-    return findCategoryPath("home", "home_appliances", "home_kettles");
+  if (
+    smartTextIncludes(
+      text,
+      [
+        "kettle",
+        "electric kettle"
+      ]
+    )
+  ) {
+    return findCategoryPath(
+      "home",
+      "home_appliances",
+      "home_kettles"
+    );
   }
 
-  if (smartTextIncludes(text, ["helmet", "motorcycle helmet"])) {
-    return findCategoryPath("travel_motorbike", "motorbike_helmets");
+  if (
+    smartTextIncludes(
+      text,
+      [
+        "helmet",
+        "motorcycle helmet"
+      ]
+    )
+  ) {
+    return findCategoryPath(
+      "travel_motorbike",
+      "motorbike_helmets"
+    );
   }
 
-  if (smartTextIncludes(text, ["raincoat", "riding jacket"])) {
-    return findCategoryPath("travel_motorbike", "motorbike_jackets");
+  if (
+    smartTextIncludes(
+      text,
+      [
+        "raincoat",
+        "riding jacket"
+      ]
+    )
+  ) {
+    return findCategoryPath(
+      "travel_motorbike",
+      "motorbike_jackets"
+    );
   }
 
   return null;
 }
 
-function getSmartParcelSize(form, categorySuggestion) {
-  const text = normaliseSmartText(
-    `${form.title || ""} ${form.description || ""} ${form.subcategory || ""} ${
-      categorySuggestion?.subcategoryId || ""
-    }`
-  );
+function getSmartParcelSize(
+  form,
+  categorySuggestion
+) {
+  const text =
+    normaliseSmartText(
+      `${form.title || ""} ${
+        form.description ||
+        ""
+      } ${
+        form.subcategory ||
+        ""
+      } ${
+        categorySuggestion
+          ?.subcategoryId ||
+        ""
+      }`
+    );
 
   if (
-    smartTextIncludes(text, [
-      "furniture",
-      "chair",
-      "table",
-      "cabinet",
-      "drawer",
-      "electric fan",
-      "rice cooker",
-      "air cooler",
-      "large",
-      "bulky"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "furniture",
+        "chair",
+        "table",
+        "cabinet",
+        "drawer",
+        "electric fan",
+        "rice cooker",
+        "air cooler",
+        "large",
+        "bulky"
+      ]
+    )
   ) {
     return "large";
   }
 
   if (
-    smartTextIncludes(text, [
-      "shoes",
-      "sneaker",
-      "sneakers",
-      "bag",
-      "handbag",
-      "hoodie",
-      "jacket",
-      "coat",
-      "helmet",
-      "camera",
-      "console",
-      "laptop",
-      "tablet"
-    ])
+    smartTextIncludes(
+      text,
+      [
+        "shoes",
+        "sneaker",
+        "sneakers",
+        "bag",
+        "handbag",
+        "hoodie",
+        "jacket",
+        "coat",
+        "helmet",
+        "camera",
+        "console",
+        "laptop",
+        "tablet"
+      ]
+    )
   ) {
     return "medium";
   }
@@ -1040,53 +1589,408 @@ function getSmartParcelSize(form, categorySuggestion) {
   return "small";
 }
 
-function getSmartMaterialSuggestions(form) {
-  const text = normaliseSmartText(`${form.title || ""} ${form.description || ""}`);
+function getSmartMaterialSuggestions(
+  form
+) {
+  const text =
+    normaliseSmartText(
+      `${form.title || ""} ${
+        form.description ||
+        ""
+      }`
+    );
 
   return materialOptions
-    .filter((material) => text.includes(normaliseSmartText(material)))
+    .filter((material) =>
+      text.includes(
+        normaliseSmartText(
+          material
+        )
+      )
+    )
     .slice(0, 3);
 }
 
-function getSmartBrandSuggestion(form) {
-  const text = normaliseSmartText(`${form.title || ""} ${form.description || ""}`);
+function getSmartBrandSuggestion(
+  form
+) {
+  const text =
+    normaliseSmartText(
+      `${form.title || ""} ${
+        form.description ||
+        ""
+      }`
+    );
 
-  if (!text.trim() || form.brand?.trim()) return "";
+  if (
+    !text.trim() ||
+    form.brand?.trim()
+  ) {
+    return "";
+  }
 
-  const sortedBrands = [...BRAND_OPTIONS].sort((a, b) => b.length - a.length);
+  const sortedBrands = [
+    ...BRAND_OPTIONS
+  ].sort(
+    (a, b) =>
+      b.length - a.length
+  );
 
   return (
-    sortedBrands.find((brand) => {
-      const normalizedBrand = normaliseSmartText(brand);
-      return new RegExp(`(^|[^a-z0-9])${normalizedBrand.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^a-z0-9]|$)`).test(text);
-    }) || ""
+    sortedBrands.find(
+      (brand) => {
+        const normalizedBrand =
+          normaliseSmartText(
+            brand
+          );
+
+        return new RegExp(
+          `(^|[^a-z0-9])${normalizedBrand.replace(
+            /[.*+?^${}()|[\]\\]/g,
+            "\\$&"
+          )}([^a-z0-9]|$)`
+        ).test(text);
+      }
+    ) || ""
   );
 }
 
-function getSmartSizeSuggestion(form) {
-  const text = normaliseSmartText(`${form.title || ""} ${form.description || ""}`);
+function getSmartSizeSuggestion(
+  form
+) {
+  const text =
+    normaliseSmartText(
+      `${form.title || ""} ${
+        form.description ||
+        ""
+      }`
+    );
 
-  if (smartTextIncludes(text, ["xxs"])) return "XXS";
-  if (smartTextIncludes(text, ["xs", "extra small"])) return "XS";
-  if (smartTextIncludes(text, ["small", " size s", " s "])) return "S";
-  if (smartTextIncludes(text, ["medium", " size m", " m "])) return "M";
-  if (smartTextIncludes(text, ["large", " size l", " l "])) return "L";
-  if (smartTextIncludes(text, ["xl", "extra large"])) return "XL";
-  if (smartTextIncludes(text, ["xxl"])) return "XXL";
-  if (smartTextIncludes(text, ["one size", "free size"])) return "One size";
+  const availableSizes =
+    getSizeOptions(form);
 
-  const shoeSizeMatch = text.match(/\b(us\s*)?(kids\s*)?([4-9]|1[0-3])(\.5)?\b/);
+  if (
+    !text.trim() ||
+    !availableSizes.length
+  ) {
+    return "";
+  }
 
-  if (shoeSizeMatch && getItemType(form) === "shoes") {
-    return `US ${shoeSizeMatch[3]}${shoeSizeMatch[4] || ""}`;
+  const directPatterns = [
+    [
+      "XXS",
+      [
+        "xxs",
+        "extra extra small"
+      ]
+    ],
+    [
+      "XS",
+      [
+        "xs",
+        "extra small"
+      ]
+    ],
+    [
+      "S",
+      [
+        "size s",
+        "small"
+      ]
+    ],
+    [
+      "M",
+      [
+        "size m",
+        "medium"
+      ]
+    ],
+    [
+      "L",
+      [
+        "size l",
+        "large"
+      ]
+    ],
+    [
+      "XL",
+      [
+        "xl",
+        "extra large"
+      ]
+    ],
+    [
+      "XXL",
+      [
+        "xxl",
+        "2xl"
+      ]
+    ],
+    [
+      "3XL",
+      [
+        "3xl",
+        "xxxl"
+      ]
+    ],
+    [
+      "4XL",
+      ["4xl"]
+    ],
+    [
+      "5XL",
+      ["5xl"]
+    ],
+    [
+      "6XL",
+      ["6xl"]
+    ],
+    [
+      "7XL",
+      ["7xl"]
+    ],
+    [
+      "8XL",
+      ["8xl"]
+    ],
+    [
+      "One size",
+      [
+        "one size",
+        "free size"
+      ]
+    ],
+    [
+      "Adjustable",
+      ["adjustable"]
+    ],
+    [
+      "Newborn",
+      [
+        "newborn",
+        "new born"
+      ]
+    ],
+    [
+      "Preemie",
+      [
+        "preemie",
+        "premature"
+      ]
+    ],
+    [
+      "0-3M",
+      [
+        "0-3m",
+        "0 3 months",
+        "0 to 3 months"
+      ]
+    ],
+    [
+      "3-6M",
+      [
+        "3-6m",
+        "3 6 months",
+        "3 to 6 months"
+      ]
+    ],
+    [
+      "6-9M",
+      [
+        "6-9m",
+        "6 9 months",
+        "6 to 9 months"
+      ]
+    ],
+    [
+      "9-12M",
+      [
+        "9-12m",
+        "9 12 months",
+        "9 to 12 months"
+      ]
+    ],
+    [
+      "12-18M",
+      [
+        "12-18m",
+        "12 18 months",
+        "12 to 18 months"
+      ]
+    ],
+    [
+      "18-24M",
+      [
+        "18-24m",
+        "18 24 months",
+        "18 to 24 months"
+      ]
+    ],
+    [
+      "2T",
+      ["2t"]
+    ],
+    [
+      "3T",
+      ["3t"]
+    ],
+    [
+      "4T",
+      ["4t"]
+    ],
+    [
+      "5T",
+      ["5t"]
+    ]
+  ];
+
+  for (
+    const [
+      value,
+      patterns
+    ] of directPatterns
+  ) {
+    if (
+      availableSizes.includes(
+        value
+      ) &&
+      smartTextIncludes(
+        text,
+        patterns
+      )
+    ) {
+      return value;
+    }
+  }
+
+  const waistMatch =
+    text.match(
+      /\bw\s?(23|24|25|26|27|28|29|30|31|32|33|34|35|36|38|40|42|44|46|48|50|52)\b/i
+    );
+
+  if (waistMatch) {
+    const value =
+      `W${waistMatch[1]}`;
+
+    if (
+      availableSizes.includes(
+        value
+      )
+    ) {
+      return value;
+    }
+  }
+
+  const usRingMatch =
+    text.match(
+      /\b(?:us\s*)?ring\s*(4(?:\.5)?|5(?:\.5)?|6(?:\.5)?|7(?:\.5)?|8(?:\.5)?|9(?:\.5)?|10(?:\.5)?|11(?:\.5)?|12(?:\.5)?|13)\b/i
+    );
+
+  if (usRingMatch) {
+    const value =
+      `US Ring ${usRingMatch[1]}`;
+
+    if (
+      availableSizes.includes(
+        value
+      )
+    ) {
+      return value;
+    }
+  }
+
+  const usShoeMatch =
+    text.match(
+      /\bus\s*(4(?:\.5)?|5(?:\.5)?|6(?:\.5)?|7(?:\.5)?|8(?:\.5)?|9(?:\.5)?|10(?:\.5)?|11(?:\.5)?|12(?:\.5)?|13|14|15|16)\b/i
+    );
+
+  if (usShoeMatch) {
+    const value =
+      `US ${usShoeMatch[1]}`;
+
+    if (
+      availableSizes.includes(
+        value
+      )
+    ) {
+      return value;
+    }
+  }
+
+  const youthMatch =
+    text.match(
+      /\b(?:us\s*)?(?:youth|kids?)\s*(1(?:\.5)?|2(?:\.5)?|3(?:\.5)?|4(?:\.5)?|5(?:\.5)?|6(?:\.5)?|7|8|9|10|11|12|13)\b/i
+    );
+
+  if (youthMatch) {
+    const number =
+      youthMatch[1];
+
+    const youthValue =
+      `US Youth ${number}`;
+
+    const kidsValue =
+      `US Kids ${number}`;
+
+    if (
+      availableSizes.includes(
+        youthValue
+      )
+    ) {
+      return youthValue;
+    }
+
+    if (
+      availableSizes.includes(
+        kidsValue
+      )
+    ) {
+      return kidsValue;
+    }
+  }
+
+  const braMatch =
+    text.match(
+      /\b(28|30|32|34|36|38|40|42|44|46)\s*(aa|a|b|c|d|dd|ddd\/?f|g)\b/i
+    );
+
+  if (braMatch) {
+    const cup =
+      braMatch[2].toUpperCase();
+
+    const value =
+      `${braMatch[1]}${
+        cup === "DDD/F"
+          ? "DDD/F"
+          : cup
+      }`;
+
+    if (
+      availableSizes.includes(
+        value
+      )
+    ) {
+      return value;
+    }
   }
 
   return "";
 }
 
-function buildSmartProductSuggestions(form) {
-  const sourceText = `${form.title || ""} ${form.description || ""} ${form.brand || ""}`;
-  const text = normaliseSmartText(sourceText);
+function buildSmartProductSuggestions(
+  form
+) {
+  const sourceText =
+    `${form.title || ""} ${
+      form.description || ""
+    } ${
+      form.brand || ""
+    }`;
+
+  const text =
+    normaliseSmartText(
+      sourceText
+    );
 
   if (!text.trim()) {
     return {
@@ -1096,14 +2000,45 @@ function buildSmartProductSuggestions(form) {
     };
   }
 
-  const categorySuggestion = getSmartCategorySuggestion(form);
-  const parcelSuggestion = getSmartParcelSize(form, categorySuggestion);
-  const brandSuggestion = getSmartBrandSuggestion(form);
-  const detectedColors = allColors
-    .filter((color) => text.includes(normaliseSmartText(color.label)))
-    .slice(0, MAX_LISTING_COLORS);
-  const materialSuggestions = getSmartMaterialSuggestions(form);
-  const sizeSuggestion = getSmartSizeSuggestion(form);
+  const categorySuggestion =
+    getSmartCategorySuggestion(
+      form
+    );
+
+  const parcelSuggestion =
+    getSmartParcelSize(
+      form,
+      categorySuggestion
+    );
+
+  const brandSuggestion =
+    getSmartBrandSuggestion(
+      form
+    );
+
+  const detectedColors =
+    allColors
+      .filter((color) =>
+        text.includes(
+          normaliseSmartText(
+            color.label
+          )
+        )
+      )
+      .slice(
+        0,
+        MAX_LISTING_COLORS
+      );
+
+  const materialSuggestions =
+    getSmartMaterialSuggestions(
+      form
+    );
+
+  const sizeSuggestion =
+    getSmartSizeSuggestion(
+      form
+    );
 
   const chips = [];
   const features = [];
@@ -1112,102 +2047,199 @@ function buildSmartProductSuggestions(form) {
     chips.push({
       id: "category",
       type: "category",
-      label: categorySuggestion.label,
-      value: categorySuggestion
+      label:
+        categorySuggestion.label,
+      value:
+        categorySuggestion
     });
-    features.push(`Suggested category: ${categorySuggestion.label}`);
+
+    features.push(
+      `Suggested category: ${categorySuggestion.label}`
+    );
   }
 
   if (brandSuggestion) {
     chips.push({
       id: "brand",
       type: "brand",
-      label: `Brand: ${brandSuggestion}`,
+      label:
+        `Brand: ${brandSuggestion}`,
       value: brandSuggestion
     });
-    features.push(`Detected brand: ${brandSuggestion}`);
+
+    features.push(
+      `Detected brand: ${brandSuggestion}`
+    );
   }
 
-  if (sizeSuggestion && !form.size) {
+  if (
+    sizeSuggestion &&
+    !form.size
+  ) {
     chips.push({
       id: "size",
       type: "size",
-      label: `Size: ${sizeSuggestion}`,
-      value: sizeSuggestion
+      label:
+        `Size: ${sizeSuggestion}`,
+      value:
+        sizeSuggestion
     });
   }
 
   detectedColors
-    .filter((color) => !form.selectedColors.includes(color.id))
+    .filter(
+      (color) =>
+        !form.selectedColors.includes(
+          color.id
+        )
+    )
     .forEach((color) => {
       chips.push({
-        id: `color-${color.id}`,
+        id:
+          `color-${color.id}`,
         type: "color",
-        label: `Color: ${color.label}`,
+        label:
+          `Color: ${color.label}`,
         value: color.id
       });
     });
 
   materialSuggestions
-    .filter((material) => !form.selectedMaterials.includes(material))
-    .forEach((material) => {
-      chips.push({
-        id: `material-${material}`,
-        type: "material",
-        label: `Material: ${material}`,
-        value: material
-      });
-    });
+    .filter(
+      (material) =>
+        !form.selectedMaterials.includes(
+          material
+        )
+    )
+    .forEach(
+      (material) => {
+        chips.push({
+          id:
+            `material-${material}`,
+          type: "material",
+          label:
+            `Material: ${material}`,
+          value: material
+        });
+      }
+    );
 
-  if (parcelSuggestion && form.parcel_size !== parcelSuggestion) {
+  if (
+    parcelSuggestion &&
+    form.parcel_size !==
+      parcelSuggestion
+  ) {
     chips.push({
       id: "parcel",
       type: "parcel",
-      label: `Recommended parcel: ${parcelSuggestion}`,
-      value: parcelSuggestion
+      label:
+        `Recommended parcel: ${parcelSuggestion}`,
+      value:
+        parcelSuggestion
     });
-    features.push(`Recommended parcel size: ${parcelSuggestion}`);
+
+    features.push(
+      `Recommended parcel size: ${parcelSuggestion}`
+    );
   }
 
-  if (getItemType(form) === "shoes") {
-    features.push("Authenticity focus: soles, inside label, serial number and box.");
+  if (
+    getItemType(form) ===
+    "shoes"
+  ) {
+    features.push(
+      "Authenticity focus: soles, inside label, serial number and box."
+    );
   }
 
-  if (getItemType(form) === "bags") {
-    features.push("Authenticity focus: logo, inside label, stitching and serial number.");
+  if (
+    getItemType(form) ===
+    "bags"
+  ) {
+    features.push(
+      "Authenticity focus: logo, inside label, stitching and serial number."
+    );
   }
 
-  if (getItemType(form) === "clothing") {
-    features.push("Recommended details: size label, material tag and dimensions.");
+  if (
+    getItemType(form) ===
+    "clothing"
+  ) {
+    features.push(
+      "Recommended details: size label, material tag and dimensions."
+    );
   }
 
   return {
     hasInput: true,
-    chips: chips.slice(0, 10),
-    features: Array.from(new Set(features)).slice(0, 5)
+    chips:
+      chips.slice(0, 10),
+    features:
+      Array.from(
+        new Set(features)
+      ).slice(0, 5)
   };
 }
 
 export default function NewListing() {
-  const navigate = useNavigate();
-  const { user } = useAuth();
+  const navigate =
+    useNavigate();
 
-  const [files, setFiles] = useState([]);
-  const [photoError, setPhotoError] = useState("");
-  const [draggedPhotoId, setDraggedPhotoId] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [showAuthenticityModal, setShowAuthenticityModal] = useState(false);
-  const [showDimensionsModal, setShowDimensionsModal] = useState(false);
-  const [openDropdown, setOpenDropdown] = useState("");
-  const [showBrandSuggestions, setShowBrandSuggestions] = useState(false);
+  const { user } =
+    useAuth();
 
-  const [form, setForm] = useState({
+  const [
+    files,
+    setFiles
+  ] = useState([]);
+
+  const [
+    photoError,
+    setPhotoError
+  ] = useState("");
+
+  const [
+    draggedPhotoId,
+    setDraggedPhotoId
+  ] = useState("");
+
+  const [
+    loading,
+    setLoading
+  ] = useState(false);
+
+  const [
+    showAuthenticityModal,
+    setShowAuthenticityModal
+  ] = useState(false);
+
+  const [
+    showDimensionsModal,
+    setShowDimensionsModal
+  ] = useState(false);
+
+  const [
+    openDropdown,
+    setOpenDropdown
+  ] = useState("");
+
+  const [
+    showBrandSuggestions,
+    setShowBrandSuggestions
+  ] = useState(false);
+
+  const [
+    form,
+    setForm
+  ] = useState({
     title: "",
     description: "",
     category: "women",
-    subcategory: "women_clothing",
+    subcategory:
+      "women_clothing",
     child_category: "",
-    condition: "like_new",
+    condition:
+      "very_good",
     condition_details: "",
     price: "",
     brand: "",
@@ -1222,128 +2254,262 @@ export default function NewListing() {
     parcel_size: "medium",
     is_negotiable: false,
     meetup_enabled: false,
-    seller_meetup_spot: null,
-    meetup_city_search: "Metro Manila"
+    seller_meetup_spot:
+      null,
+    meetup_city_search:
+      "Metro Manila"
   });
 
-  const selectedCategory = getCategoryById(form.category);
-  const selectedSubcategory = getSubcategoryById(form.subcategory);
-  const authenticityGuide = getAuthenticityGuide(form);
-  const sizeOptions = getSizeOptions(form);
-  const suggestedColors = getSuggestedColors(form);
-  const smartProductSuggestions = useMemo(
-    () => buildSmartProductSuggestions(form),
-    [
+  const selectedCategory =
+    getCategoryById(
+      form.category
+    );
+
+  const selectedSubcategory =
+    getSubcategoryById(
+      form.subcategory
+    );
+
+  const authenticityGuide =
+    getAuthenticityGuide(
+      form
+    );
+
+  const sizeOptions =
+    getSizeOptions(form);
+
+  const suggestedColors =
+    getSuggestedColors(form);
+
+  const smartProductSuggestions =
+    useMemo(
+      () =>
+        buildSmartProductSuggestions(
+          form
+        ),
+      [
+        form.title,
+        form.description,
+        form.brand,
+        form.category,
+        form.subcategory,
+        form.child_category,
+        form.size,
+        form.parcel_size,
+        form.selectedColors,
+        form.selectedMaterials
+      ]
+    );
+
+  const recommendedParcelSize =
+    useMemo(() => {
+      const sourceText =
+        `${form.title || ""} ${
+          form.description ||
+          ""
+        } ${
+          form.brand || ""
+        }`.trim();
+
+      if (!sourceText) {
+        return "medium";
+      }
+
+      const categorySuggestion =
+        getSmartCategorySuggestion(
+          form
+        );
+
+      return (
+        getSmartParcelSize(
+          form,
+          categorySuggestion
+        ) ||
+        "medium"
+      );
+    }, [
       form.title,
       form.description,
       form.brand,
       form.category,
       form.subcategory,
-      form.child_category,
-      form.size,
-      form.parcel_size,
-      form.selectedColors,
-      form.selectedMaterials
-    ]
-  );
+      form.child_category
+    ]);
 
-  const recommendedParcelSize = useMemo(() => {
-    const sourceText = `${form.title || ""} ${form.description || ""} ${
-      form.brand || ""
-    }`.trim();
+  const filteredBrandOptions =
+    useMemo(() => {
+      const query =
+        String(
+          form.brand || ""
+        )
+          .trim()
+          .toLowerCase();
 
-    if (!sourceText) return "medium";
+      if (!query) {
+        return BRAND_OPTIONS.slice(
+          0,
+          18
+        );
+      }
 
-    const categorySuggestion = getSmartCategorySuggestion(form);
-    return getSmartParcelSize(form, categorySuggestion) || "medium";
-  }, [
-    form.title,
-    form.description,
-    form.brand,
-    form.category,
-    form.subcategory,
-    form.child_category
-  ]);
+      const startsWithMatches =
+        BRAND_OPTIONS.filter(
+          (brand) =>
+            brand
+              .toLowerCase()
+              .startsWith(query)
+        );
 
-  const filteredBrandOptions = useMemo(() => {
-    const query = String(form.brand || "").trim().toLowerCase();
+      const includesMatches =
+        BRAND_OPTIONS.filter(
+          (brand) =>
+            !brand
+              .toLowerCase()
+              .startsWith(
+                query
+              ) &&
+            brand
+              .toLowerCase()
+              .includes(query)
+        );
 
-    if (!query) {
-      return BRAND_OPTIONS.slice(0, 18);
-    }
+      return [
+        ...startsWithMatches,
+        ...includesMatches
+      ].slice(0, 24);
+    }, [form.brand]);
 
-    const startsWithMatches = BRAND_OPTIONS.filter((brand) =>
-      brand.toLowerCase().startsWith(query)
+  const selectedCondition =
+    conditionOptions.find(
+      (condition) =>
+        condition.id ===
+        form.condition
     );
 
-    const includesMatches = BRAND_OPTIONS.filter(
-      (brand) =>
-        !brand.toLowerCase().startsWith(query) &&
-        brand.toLowerCase().includes(query)
+  const buyerProtection =
+    useMemo(() => {
+      const price =
+        Number(
+          form.price || 0
+        );
+
+      return price * 0.08;
+    }, [form.price]);
+
+  const totalPreview =
+    useMemo(() => {
+      const price =
+        Number(
+          form.price || 0
+        );
+
+      return (
+        price +
+        buyerProtection
+      );
+    }, [
+      form.price,
+      buyerProtection
+    ]);
+
+  const meetupCityOptions =
+    useMemo(
+      () =>
+        getMeetupCityOptions(),
+      []
     );
 
-    return [...startsWithMatches, ...includesMatches].slice(0, 24);
-  }, [form.brand]);
+  const visibleSellerMeetupSpots =
+    useMemo(() => {
+      const query =
+        String(
+          form.meetup_city_search ||
+            ""
+        )
+          .trim()
+          .toLowerCase();
 
-  const selectedCondition = conditionOptions.find(
-    (condition) => condition.id === form.condition
-  );
+      if (!query) {
+        return sellerMeetupSpots.filter(
+          (spot) =>
+            spot.city ===
+            "Metro Manila"
+        );
+      }
 
-  const buyerProtection = useMemo(() => {
-    const price = Number(form.price || 0);
-    return price * 0.08;
-  }, [form.price]);
+      const cityMatches =
+        sellerMeetupSpots.filter(
+          (spot) =>
+            spot.city
+              .toLowerCase()
+              .includes(
+                query
+              )
+        );
 
-  const totalPreview = useMemo(() => {
-    const price = Number(form.price || 0);
-    return price + buyerProtection;
-  }, [form.price, buyerProtection]);
+      if (
+        cityMatches.length > 0
+      ) {
+        return cityMatches;
+      }
 
-  const meetupCityOptions = useMemo(() => getMeetupCityOptions(), []);
+      return sellerMeetupSpots.filter(
+        (spot) => {
+          const searchable =
+            `${spot.name} ${spot.address} ${spot.city} ${spot.district} ${spot.type}`.toLowerCase();
 
-  const visibleSellerMeetupSpots = useMemo(() => {
-    const query = String(form.meetup_city_search || "")
-      .trim()
-      .toLowerCase();
-
-    if (!query) {
-      return sellerMeetupSpots.filter((spot) => spot.city === "Metro Manila");
-    }
-
-    const cityMatches = sellerMeetupSpots.filter((spot) =>
-      spot.city.toLowerCase().includes(query)
-    );
-
-    if (cityMatches.length > 0) {
-      return cityMatches;
-    }
-
-    return sellerMeetupSpots.filter((spot) => {
-      const searchable = `${spot.name} ${spot.address} ${spot.city} ${spot.district} ${spot.type}`.toLowerCase();
-      return searchable.includes(query);
-    });
-  }, [form.meetup_city_search]);
+          return searchable.includes(
+            query
+          );
+        }
+      );
+    }, [
+      form.meetup_city_search
+    ]);
 
   const selectedMeetupCity =
-    form.seller_meetup_spot?.city ||
-    visibleSellerMeetupSpots[0]?.city ||
+    form.seller_meetup_spot
+      ?.city ||
+    visibleSellerMeetupSpots[
+      0
+    ]?.city ||
     form.meetup_city_search ||
     "your area";
 
-  const remainingPhotoSlots = MAX_LISTING_PHOTOS - files.length;
+  const remainingPhotoSlots =
+    MAX_LISTING_PHOTOS -
+    files.length;
 
   function updateField(e) {
-    const { name, value, type, checked } = e.target;
+    const {
+      name,
+      value,
+      type,
+      checked
+    } = e.target;
 
-    if (name === "category") {
-      const firstSubcategory = getFirstSubcategory(value);
-      const firstChildCategory = firstSubcategory?.children?.[0] || null;
+    if (
+      name === "category"
+    ) {
+      const firstSubcategory =
+        getFirstSubcategory(
+          value
+        );
+
+      const firstChildCategory =
+        firstSubcategory
+          ?.children?.[0] ||
+        null;
 
       setForm((prev) => ({
         ...prev,
         category: value,
-        subcategory: firstSubcategory?.id || "",
-        child_category: firstChildCategory?.id || "",
+        subcategory:
+          firstSubcategory
+            ?.id || "",
+        child_category:
+          firstChildCategory
+            ?.id || "",
         size: "",
         selectedColors: [],
         color: "",
@@ -1356,13 +2522,21 @@ export default function NewListing() {
       return;
     }
 
-    if (name === "subcategory") {
-      const firstChildCategory = getFirstChildCategory(value);
+    if (
+      name ===
+      "subcategory"
+    ) {
+      const firstChildCategory =
+        getFirstChildCategory(
+          value
+        );
 
       setForm((prev) => ({
         ...prev,
         subcategory: value,
-        child_category: firstChildCategory?.id || "",
+        child_category:
+          firstChildCategory
+            ?.id || "",
         size: "",
         selectedMaterials: [],
         material: "",
@@ -1373,15 +2547,27 @@ export default function NewListing() {
       return;
     }
 
-    if (name === "meetup_enabled") {
-      const firstVisibleSpot = visibleSellerMeetupSpots[0] || sellerMeetupSpots[0];
+    if (
+      name ===
+      "meetup_enabled"
+    ) {
+      const firstVisibleSpot =
+        visibleSellerMeetupSpots[
+          0
+        ] ||
+        sellerMeetupSpots[0];
 
       setForm((prev) => ({
         ...prev,
-        meetup_enabled: checked,
-        seller_meetup_spot: checked
-          ? prev.seller_meetup_spot || prepareSellerMeetupSpot(firstVisibleSpot)
-          : null
+        meetup_enabled:
+          checked,
+        seller_meetup_spot:
+          checked
+            ? prev.seller_meetup_spot ||
+              prepareSellerMeetupSpot(
+                firstVisibleSpot
+              )
+            : null
       }));
 
       return;
@@ -1389,44 +2575,76 @@ export default function NewListing() {
 
     setForm((prev) => ({
       ...prev,
-      [name]: type === "checkbox" ? checked : value
+      [name]:
+        type === "checkbox"
+          ? checked
+          : value
     }));
   }
 
-  function updateBrandValue(value) {
+  function updateBrandValue(
+    value
+  ) {
     setForm((prev) => ({
       ...prev,
       brand: value
     }));
 
-    setShowBrandSuggestions(true);
+    setShowBrandSuggestions(
+      true
+    );
   }
 
-  function selectBrand(brand) {
+  function selectBrand(
+    brand
+  ) {
     setForm((prev) => ({
       ...prev,
       brand
     }));
 
-    setShowBrandSuggestions(false);
+    setShowBrandSuggestions(
+      false
+    );
   }
 
-  function applySmartSuggestion(suggestion) {
-    if (!suggestion) return;
+  function applySmartSuggestion(
+    suggestion
+  ) {
+    if (!suggestion) {
+      return;
+    }
 
-    if (suggestion.type === "category") {
-      const categoryPath = suggestion.value;
-      const nextSubcategory = getSubcategoryById(categoryPath.subcategoryId);
+    if (
+      suggestion.type ===
+      "category"
+    ) {
+      const categoryPath =
+        suggestion.value;
+
+      const nextSubcategory =
+        getSubcategoryById(
+          categoryPath
+            .subcategoryId
+        );
+
       const nextChildCategory =
-        categoryPath.childCategoryId ||
-        nextSubcategory?.children?.[0]?.id ||
+        categoryPath
+          .childCategoryId ||
+        nextSubcategory
+          ?.children?.[0]?.id ||
         "";
 
       setForm((prev) => ({
         ...prev,
-        category: categoryPath.categoryId,
-        subcategory: categoryPath.subcategoryId,
-        child_category: nextChildCategory,
+        category:
+          categoryPath
+            .categoryId,
+        subcategory:
+          categoryPath
+            .subcategoryId,
+        child_category:
+          nextChildCategory,
         size: "",
         selectedMaterials: [],
         material: "",
@@ -1437,70 +2655,133 @@ export default function NewListing() {
       return;
     }
 
-    if (suggestion.type === "brand") {
+    if (
+      suggestion.type ===
+      "brand"
+    ) {
       setForm((prev) => ({
         ...prev,
-        brand: suggestion.value
+        brand:
+          suggestion.value
       }));
 
       return;
     }
 
-    if (suggestion.type === "size") {
+    if (
+      suggestion.type ===
+      "size"
+    ) {
       setForm((prev) => ({
         ...prev,
-        size: suggestion.value
+        size:
+          suggestion.value
       }));
 
       return;
     }
 
-    if (suggestion.type === "color") {
+    if (
+      suggestion.type ===
+      "color"
+    ) {
       setForm((prev) => {
-        if (prev.selectedColors.includes(suggestion.value)) return prev;
-        if (prev.selectedColors.length >= MAX_LISTING_COLORS) return prev;
+        if (
+          prev.selectedColors.includes(
+            suggestion.value
+          )
+        ) {
+          return prev;
+        }
 
-        const nextColors = [...prev.selectedColors, suggestion.value];
+        if (
+          prev.selectedColors
+            .length >=
+          MAX_LISTING_COLORS
+        ) {
+          return prev;
+        }
+
+        const nextColors = [
+          ...prev.selectedColors,
+          suggestion.value
+        ];
 
         return {
           ...prev,
-          selectedColors: nextColors,
-          color: formatColorValue(nextColors)
+          selectedColors:
+            nextColors,
+          color:
+            formatColorValue(
+              nextColors
+            )
         };
       });
 
       return;
     }
 
-    if (suggestion.type === "material") {
+    if (
+      suggestion.type ===
+      "material"
+    ) {
       setForm((prev) => {
-        if (prev.selectedMaterials.includes(suggestion.value)) return prev;
-        if (prev.selectedMaterials.length >= 3) return prev;
+        if (
+          prev.selectedMaterials.includes(
+            suggestion.value
+          )
+        ) {
+          return prev;
+        }
 
-        const nextMaterials = [...prev.selectedMaterials, suggestion.value];
+        if (
+          prev.selectedMaterials
+            .length >= 3
+        ) {
+          return prev;
+        }
+
+        const nextMaterials = [
+          ...prev.selectedMaterials,
+          suggestion.value
+        ];
 
         return {
           ...prev,
-          selectedMaterials: nextMaterials,
-          material: formatMaterialValue(nextMaterials)
+          selectedMaterials:
+            nextMaterials,
+          material:
+            formatMaterialValue(
+              nextMaterials
+            )
         };
       });
 
       return;
     }
 
-    if (suggestion.type === "parcel") {
+    if (
+      suggestion.type ===
+      "parcel"
+    ) {
       setForm((prev) => ({
         ...prev,
-        parcel_size: suggestion.value
+        parcel_size:
+          suggestion.value
       }));
     }
   }
 
   function applyAllSmartSuggestions() {
-    smartProductSuggestions.chips.forEach((suggestion) => {
-      applySmartSuggestion(suggestion);
-    });
+    smartProductSuggestions
+      .chips
+      .forEach(
+        (suggestion) => {
+          applySmartSuggestion(
+            suggestion
+          );
+        }
+      );
   }
 
   function selectSize(size) {
@@ -1512,190 +2793,376 @@ export default function NewListing() {
     setOpenDropdown("");
   }
 
-  function selectCondition(conditionId) {
+  function selectCondition(
+    conditionId
+  ) {
     setForm((prev) => ({
       ...prev,
-      condition: conditionId
+      condition:
+        conditionId
     }));
 
     setOpenDropdown("");
   }
 
-  function toggleColor(colorId) {
+  function toggleColor(
+    colorId
+  ) {
     setForm((prev) => {
-      const exists = prev.selectedColors.includes(colorId);
+      const exists =
+        prev.selectedColors.includes(
+          colorId
+        );
 
       let nextColors;
 
       if (exists) {
-        nextColors = prev.selectedColors.filter((item) => item !== colorId);
+        nextColors =
+          prev.selectedColors.filter(
+            (item) =>
+              item !== colorId
+          );
       } else {
-        if (prev.selectedColors.length >= MAX_LISTING_COLORS) {
+        if (
+          prev.selectedColors
+            .length >=
+          MAX_LISTING_COLORS
+        ) {
           return prev;
         }
 
-        nextColors = [...prev.selectedColors, colorId];
+        nextColors = [
+          ...prev.selectedColors,
+          colorId
+        ];
       }
 
       return {
         ...prev,
-        selectedColors: nextColors,
-        color: formatColorValue(nextColors)
+        selectedColors:
+          nextColors,
+        color:
+          formatColorValue(
+            nextColors
+          )
       };
     });
   }
 
-  function toggleMaterial(material) {
+  function toggleMaterial(
+    material
+  ) {
     setForm((prev) => {
-      const exists = prev.selectedMaterials.includes(material);
+      const exists =
+        prev.selectedMaterials.includes(
+          material
+        );
 
       let nextMaterials;
 
       if (exists) {
-        nextMaterials = prev.selectedMaterials.filter((item) => item !== material);
+        nextMaterials =
+          prev.selectedMaterials.filter(
+            (item) =>
+              item !== material
+          );
       } else {
-        if (prev.selectedMaterials.length >= 3) return prev;
-        nextMaterials = [...prev.selectedMaterials, material];
+        if (
+          prev.selectedMaterials
+            .length >= 3
+        ) {
+          return prev;
+        }
+
+        nextMaterials = [
+          ...prev.selectedMaterials,
+          material
+        ];
       }
 
       return {
         ...prev,
-        selectedMaterials: nextMaterials,
-        material: formatMaterialValue(nextMaterials)
+        selectedMaterials:
+          nextMaterials,
+        material:
+          formatMaterialValue(
+            nextMaterials
+          )
       };
     });
   }
 
-  function selectParcelSize(parcelSize) {
+  function selectParcelSize(
+    parcelSize
+  ) {
     setForm((prev) => ({
       ...prev,
-      parcel_size: parcelSize
+      parcel_size:
+        parcelSize
     }));
   }
 
-  function selectSellerMeetupSpot(spot) {
+  function selectSellerMeetupSpot(
+    spot
+  ) {
     setForm((prev) => ({
       ...prev,
       meetup_enabled: true,
-      seller_meetup_spot: prepareSellerMeetupSpot(spot)
+      seller_meetup_spot:
+        prepareSellerMeetupSpot(
+          spot
+        )
     }));
   }
 
-  function updateMeetupCitySearch(value) {
+  function updateMeetupCitySearch(
+    value
+  ) {
     setForm((prev) => ({
       ...prev,
-      meetup_city_search: value
+      meetup_city_search:
+        value
     }));
   }
 
   function handleFiles(e) {
-    const selected = Array.from(e.target.files || []).filter((file) =>
-      file.type.startsWith("image/")
-    );
+    const selected =
+      Array.from(
+        e.target.files || []
+      ).filter((file) =>
+        file.type.startsWith(
+          "image/"
+        )
+      );
 
-    if (selected.length === 0) {
+    if (
+      selected.length === 0
+    ) {
       e.target.value = "";
       return;
     }
 
-    setFiles((currentFiles) => {
-      const availableSlots = MAX_LISTING_PHOTOS - currentFiles.length;
+    setFiles(
+      (currentFiles) => {
+        const availableSlots =
+          MAX_LISTING_PHOTOS -
+          currentFiles.length;
 
-      if (availableSlots <= 0) {
-        setPhotoError(`You can upload up to ${MAX_LISTING_PHOTOS} photos.`);
-        return currentFiles;
+        if (
+          availableSlots <= 0
+        ) {
+          setPhotoError(
+            `You can upload up to ${MAX_LISTING_PHOTOS} photos.`
+          );
+
+          return currentFiles;
+        }
+
+        const acceptedFiles =
+          selected.slice(
+            0,
+            availableSlots
+          );
+
+        const nextPhotoItems =
+          acceptedFiles.map(
+            createPhotoItem
+          );
+
+        if (
+          selected.length >
+          availableSlots
+        ) {
+          setPhotoError(
+            `Only ${availableSlots} more photo${
+              availableSlots >
+              1
+                ? "s"
+                : ""
+            } can be added. Maximum is ${MAX_LISTING_PHOTOS}.`
+          );
+        } else {
+          setPhotoError("");
+        }
+
+        return [
+          ...currentFiles,
+          ...nextPhotoItems
+        ];
       }
-
-      const acceptedFiles = selected.slice(0, availableSlots);
-      const nextPhotoItems = acceptedFiles.map(createPhotoItem);
-
-      if (selected.length > availableSlots) {
-        setPhotoError(
-          `Only ${availableSlots} more photo${
-            availableSlots > 1 ? "s" : ""
-          } can be added. Maximum is ${MAX_LISTING_PHOTOS}.`
-        );
-      } else {
-        setPhotoError("");
-      }
-
-      return [...currentFiles, ...nextPhotoItems];
-    });
+    );
 
     e.target.value = "";
   }
 
-  function removePhoto(photoId) {
-    setFiles((currentFiles) => {
-      const photoToRemove = currentFiles.find((photo) => photo.id === photoId);
+  function removePhoto(
+    photoId
+  ) {
+    setFiles(
+      (currentFiles) => {
+        const photoToRemove =
+          currentFiles.find(
+            (photo) =>
+              photo.id ===
+              photoId
+          );
 
-      if (photoToRemove?.previewUrl) {
-        URL.revokeObjectURL(photoToRemove.previewUrl);
+        if (
+          photoToRemove
+            ?.previewUrl
+        ) {
+          URL.revokeObjectURL(
+            photoToRemove
+              .previewUrl
+          );
+        }
+
+        return currentFiles.filter(
+          (photo) =>
+            photo.id !==
+            photoId
+        );
       }
-
-      return currentFiles.filter((photo) => photo.id !== photoId);
-    });
+    );
 
     setPhotoError("");
   }
 
-  function movePhoto(photoId, direction) {
-    setFiles((currentFiles) => {
-      const currentIndex = currentFiles.findIndex((photo) => photo.id === photoId);
+  function movePhoto(
+    photoId,
+    direction
+  ) {
+    setFiles(
+      (currentFiles) => {
+        const currentIndex =
+          currentFiles.findIndex(
+            (photo) =>
+              photo.id ===
+              photoId
+          );
 
-      if (currentIndex === -1) return currentFiles;
+        if (
+          currentIndex === -1
+        ) {
+          return currentFiles;
+        }
 
-      const nextIndex = currentIndex + direction;
+        const nextIndex =
+          currentIndex +
+          direction;
 
-      if (nextIndex < 0 || nextIndex >= currentFiles.length) {
-        return currentFiles;
+        if (
+          nextIndex < 0 ||
+          nextIndex >=
+            currentFiles.length
+        ) {
+          return currentFiles;
+        }
+
+        const nextFiles = [
+          ...currentFiles
+        ];
+
+        const [movedPhoto] =
+          nextFiles.splice(
+            currentIndex,
+            1
+          );
+
+        nextFiles.splice(
+          nextIndex,
+          0,
+          movedPhoto
+        );
+
+        return nextFiles;
       }
-
-      const nextFiles = [...currentFiles];
-      const [movedPhoto] = nextFiles.splice(currentIndex, 1);
-      nextFiles.splice(nextIndex, 0, movedPhoto);
-
-      return nextFiles;
-    });
+    );
   }
 
-  function movePhotoToIndex(photoId, targetIndex) {
-    setFiles((currentFiles) => {
-      const currentIndex = currentFiles.findIndex((photo) => photo.id === photoId);
+  function movePhotoToIndex(
+    photoId,
+    targetIndex
+  ) {
+    setFiles(
+      (currentFiles) => {
+        const currentIndex =
+          currentFiles.findIndex(
+            (photo) =>
+              photo.id ===
+              photoId
+          );
 
-      if (
-        currentIndex === -1 ||
-        targetIndex < 0 ||
-        targetIndex >= currentFiles.length ||
-        currentIndex === targetIndex
-      ) {
-        return currentFiles;
+        if (
+          currentIndex === -1 ||
+          targetIndex < 0 ||
+          targetIndex >=
+            currentFiles.length ||
+          currentIndex ===
+            targetIndex
+        ) {
+          return currentFiles;
+        }
+
+        const nextFiles = [
+          ...currentFiles
+        ];
+
+        const [movedPhoto] =
+          nextFiles.splice(
+            currentIndex,
+            1
+          );
+
+        nextFiles.splice(
+          targetIndex,
+          0,
+          movedPhoto
+        );
+
+        return nextFiles;
       }
-
-      const nextFiles = [...currentFiles];
-      const [movedPhoto] = nextFiles.splice(currentIndex, 1);
-      nextFiles.splice(targetIndex, 0, movedPhoto);
-
-      return nextFiles;
-    });
+    );
   }
 
-  function handlePhotoDragStart(photoId) {
-    setDraggedPhotoId(photoId);
+  function handlePhotoDragStart(
+    photoId
+  ) {
+    setDraggedPhotoId(
+      photoId
+    );
   }
 
-  function handlePhotoDragOver(event) {
+  function handlePhotoDragOver(
+    event
+  ) {
     event.preventDefault();
   }
 
-  function handlePhotoDrop(targetPhotoId) {
-    if (!draggedPhotoId || draggedPhotoId === targetPhotoId) {
+  function handlePhotoDrop(
+    targetPhotoId
+  ) {
+    if (
+      !draggedPhotoId ||
+      draggedPhotoId ===
+        targetPhotoId
+    ) {
       setDraggedPhotoId("");
       return;
     }
 
-    const targetIndex = files.findIndex((photo) => photo.id === targetPhotoId);
-    movePhotoToIndex(draggedPhotoId, targetIndex);
+    const targetIndex =
+      files.findIndex(
+        (photo) =>
+          photo.id ===
+          targetPhotoId
+      );
+
+    movePhotoToIndex(
+      draggedPhotoId,
+      targetIndex
+    );
+
     setDraggedPhotoId("");
   }
 
@@ -1706,27 +3173,54 @@ export default function NewListing() {
   async function uploadPhotos() {
     const urls = [];
 
-    for (const photo of files) {
-      const file = photo.file;
-      const extension = file.name.split(".").pop();
-      const filePath = `${user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+    for (
+      const photo of files
+    ) {
+      const file =
+        photo.file;
 
-      const { error } = await supabase.storage
-        .from("listings")
-        .upload(filePath, file, {
-          cacheControl: "3600",
-          upsert: false
-        });
+      const extension =
+        file.name
+          .split(".")
+          .pop();
+
+      const filePath =
+        `${user.id}/${Date.now()}-${crypto.randomUUID()}.${extension}`;
+
+      const { error } =
+        await supabase.storage
+          .from("listings")
+          .upload(
+            filePath,
+            file,
+            {
+              cacheControl:
+                "3600",
+              upsert: false
+            }
+          );
 
       if (error) {
-        console.error("Upload error:", error);
+        console.error(
+          "Upload error:",
+          error
+        );
+
         throw new Error(
           "Impossible d'envoyer la photo. Vérifie que le bucket Supabase 'listings' existe bien dans Storage."
         );
       }
 
-      const { data } = supabase.storage.from("listings").getPublicUrl(filePath);
-      urls.push(data.publicUrl);
+      const { data } =
+        supabase.storage
+          .from("listings")
+          .getPublicUrl(
+            filePath
+          );
+
+      urls.push(
+        data.publicUrl
+      );
     }
 
     return urls;
@@ -1736,50 +3230,93 @@ export default function NewListing() {
     e.preventDefault();
 
     if (!user) {
-      alert("You must be logged in.");
+      alert(
+        "You must be logged in."
+      );
       return;
     }
 
-    if (files.length === 0) {
-      alert("Please upload at least one photo.");
+    if (
+      files.length === 0
+    ) {
+      alert(
+        "Please upload at least one photo."
+      );
       return;
     }
 
     setLoading(true);
 
     try {
-      const photoUrls = await uploadPhotos();
+      const photoUrls =
+        await uploadPhotos();
 
-      const { data, error } = await supabase
+      const {
+        data,
+        error
+      } = await supabase
         .from("listings")
         .insert({
           seller_id: user.id,
           title: form.title,
-          description: buildDescriptionWithExtras(form),
-          category: form.category,
-          subcategory: form.subcategory,
-          child_category: form.child_category || null,
-          condition: form.condition,
-          price: Number(form.price),
+          description:
+            buildDescriptionWithExtras(
+              form
+            ),
+          category:
+            form.category,
+          subcategory:
+            form.subcategory,
+          child_category:
+            form.child_category ||
+            null,
+          condition:
+            form.condition,
+          price: Number(
+            form.price
+          ),
           photos: photoUrls,
-          brand: form.brand || null,
-          size: form.size || null,
-          color: form.color || null,
-          location: form.location || null,
-          is_negotiable: form.is_negotiable,
-          shipping_options: form.parcel_size ? [form.parcel_size] : [],
-          meetup_enabled: Boolean(form.meetup_enabled && form.seller_meetup_spot),
+          brand:
+            form.brand ||
+            null,
+          size:
+            form.size ||
+            null,
+          color:
+            form.color ||
+            null,
+          location:
+            form.location ||
+            null,
+          is_negotiable:
+            form.is_negotiable,
+          shipping_options:
+            form.parcel_size
+              ? [
+                  form.parcel_size
+                ]
+              : [],
+          meetup_enabled:
+            Boolean(
+              form.meetup_enabled &&
+                form.seller_meetup_spot
+            ),
           seller_meetup_spot:
-            form.meetup_enabled && form.seller_meetup_spot
+            form.meetup_enabled &&
+            form.seller_meetup_spot
               ? form.seller_meetup_spot
               : null
         })
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        throw error;
+      }
 
-      navigate(`/item/${data.id}`);
+      navigate(
+        `/item/${data.id}`
+      );
     } catch (error) {
       alert(error.message);
     } finally {
@@ -1792,119 +3329,258 @@ export default function NewListing() {
       <div className="container narrow">
         <div className="page-header">
           <div>
-            <h1>Sell an item</h1>
-            <p>List for free. Buyers pay the protection fee.</p>
+            <h1>
+              Sell an item
+            </h1>
+
+            <p>
+              List for free. Buyers pay the protection fee.
+            </p>
           </div>
         </div>
 
-        <form className="form-card new-listing-form" onSubmit={handleSubmit}>
+        <form
+          className="form-card new-listing-form"
+          onSubmit={
+            handleSubmit
+          }
+        >
           <section className="form-section">
             <h2>Photos</h2>
 
             <label className="upload-box listing-photo-upload-box">
-              <Camera size={32} />
-              <strong>Add up to {MAX_LISTING_PHOTOS} photos</strong>
+              <Camera
+                size={32}
+              />
+
+              <strong>
+                Add up to{" "}
+                {
+                  MAX_LISTING_PHOTOS
+                }{" "}
+                photos
+              </strong>
+
               <span>
-                Photos keep the order in which you add them. The first photo is
-                the cover photo.
+                Photos keep the order in which you add them. The first photo is the cover photo.
               </span>
+
               <small>
-                {files.length}/{MAX_LISTING_PHOTOS} selected ·{" "}
-                {remainingPhotoSlots} remaining
+                {
+                  files.length
+                }
+                /
+                {
+                  MAX_LISTING_PHOTOS
+                }{" "}
+                selected ·{" "}
+                {
+                  remainingPhotoSlots
+                }{" "}
+                remaining
               </small>
+
               <input
                 type="file"
                 accept="image/*"
                 multiple
-                onChange={handleFiles}
+                onChange={
+                  handleFiles
+                }
               />
             </label>
 
-            {photoError && <p className="listing-photo-error">{photoError}</p>}
+            {photoError && (
+              <p className="listing-photo-error">
+                {photoError}
+              </p>
+            )}
 
-            {files.length > 0 && (
+            {files.length >
+              0 && (
               <div className="listing-photo-preview-section">
                 <div className="listing-photo-preview-header">
-                  <strong>Photo order</strong>
+                  <strong>
+                    Photo order
+                  </strong>
+
                   <span>
-                    Drag photos to reorder them, or use the arrows on mobile.
-                    The first photo is always the cover photo.
+                    Drag photos to reorder them, or use the arrows on mobile. The first photo is always the cover photo.
                   </span>
                 </div>
 
                 <div className="preview-grid listing-photo-order-grid">
-                  {files.map((photo, index) => (
-                    <div
-                      key={photo.id}
-                      className={[
-                        "listing-photo-preview-card",
-                        index === 0 ? "cover" : "",
-                        draggedPhotoId === photo.id ? "dragging" : ""
-                      ]
-                        .filter(Boolean)
-                        .join(" ")}
-                      draggable
-                      onDragStart={() => handlePhotoDragStart(photo.id)}
-                      onDragOver={handlePhotoDragOver}
-                      onDrop={() => handlePhotoDrop(photo.id)}
-                      onDragEnd={handlePhotoDragEnd}
-                    >
-                      <img src={photo.previewUrl} alt={`Preview ${index + 1}`} />
-
-                      <div className="listing-photo-order-badge">{index + 1}</div>
-
-                      <div className="listing-photo-drag-handle" aria-hidden="true">
-                        <GripVertical size={15} />
-                      </div>
-
-                      {index === 0 && (
-                        <div className="listing-photo-cover-badge">Cover</div>
-                      )}
-
-                      <button
-                        type="button"
-                        className="listing-photo-remove-button"
-                        onClick={() => removePhoto(photo.id)}
-                        aria-label={`Remove photo ${index + 1}`}
+                  {files.map(
+                    (
+                      photo,
+                      index
+                    ) => (
+                      <div
+                        key={
+                          photo.id
+                        }
+                        className={[
+                          "listing-photo-preview-card",
+                          index ===
+                          0
+                            ? "cover"
+                            : "",
+                          draggedPhotoId ===
+                          photo.id
+                            ? "dragging"
+                            : ""
+                        ]
+                          .filter(
+                            Boolean
+                          )
+                          .join(
+                            " "
+                          )}
+                        draggable
+                        onDragStart={() =>
+                          handlePhotoDragStart(
+                            photo.id
+                          )
+                        }
+                        onDragOver={
+                          handlePhotoDragOver
+                        }
+                        onDrop={() =>
+                          handlePhotoDrop(
+                            photo.id
+                          )
+                        }
+                        onDragEnd={
+                          handlePhotoDragEnd
+                        }
                       >
-                        <Trash2 size={15} />
-                      </button>
+                        <img
+                          src={
+                            photo.previewUrl
+                          }
+                          alt={`Preview ${
+                            index +
+                            1
+                          }`}
+                        />
 
-                      <div className="listing-photo-reorder-actions">
+                        <div className="listing-photo-order-badge">
+                          {index +
+                            1}
+                        </div>
+
+                        <div
+                          className="listing-photo-drag-handle"
+                          aria-hidden="true"
+                        >
+                          <GripVertical
+                            size={
+                              15
+                            }
+                          />
+                        </div>
+
+                        {index ===
+                          0 && (
+                          <div className="listing-photo-cover-badge">
+                            Cover
+                          </div>
+                        )}
+
                         <button
                           type="button"
-                          disabled={index === 0}
-                          onClick={() => movePhoto(photo.id, -1)}
-                          aria-label={`Move photo ${index + 1} left`}
+                          className="listing-photo-remove-button"
+                          onClick={() =>
+                            removePhoto(
+                              photo.id
+                            )
+                          }
+                          aria-label={`Remove photo ${
+                            index +
+                            1
+                          }`}
                         >
-                          <ArrowLeft size={14} />
+                          <Trash2
+                            size={
+                              15
+                            }
+                          />
                         </button>
 
-                        <button
-                          type="button"
-                          disabled={index === files.length - 1}
-                          onClick={() => movePhoto(photo.id, 1)}
-                          aria-label={`Move photo ${index + 1} right`}
-                        >
-                          <ArrowRight size={14} />
-                        </button>
+                        <div className="listing-photo-reorder-actions">
+                          <button
+                            type="button"
+                            disabled={
+                              index ===
+                              0
+                            }
+                            onClick={() =>
+                              movePhoto(
+                                photo.id,
+                                -1
+                              )
+                            }
+                            aria-label={`Move photo ${
+                              index +
+                              1
+                            } left`}
+                          >
+                            <ArrowLeft
+                              size={
+                                14
+                              }
+                            />
+                          </button>
+
+                          <button
+                            type="button"
+                            disabled={
+                              index ===
+                              files.length -
+                                1
+                            }
+                            onClick={() =>
+                              movePhoto(
+                                photo.id,
+                                1
+                              )
+                            }
+                            aria-label={`Move photo ${
+                              index +
+                              1
+                            } right`}
+                          >
+                            <ArrowRight
+                              size={
+                                14
+                              }
+                            />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  ))}
+                    )
+                  )}
                 </div>
               </div>
             )}
           </section>
 
           <section className="form-section">
-            <h2>Item details</h2>
+            <h2>
+              Item details
+            </h2>
 
             <label>
               Title
+
               <input
                 name="title"
-                value={form.title}
-                onChange={updateField}
+                value={
+                  form.title
+                }
+                onChange={
+                  updateField
+                }
                 required
                 placeholder="ex: Nike Air Force 1"
               />
@@ -1912,10 +3588,15 @@ export default function NewListing() {
 
             <label>
               Description
+
               <textarea
                 name="description"
-                value={form.description}
-                onChange={updateField}
+                value={
+                  form.description
+                }
+                onChange={
+                  updateField
+                }
                 rows="5"
                 placeholder="Describe your item, condition, flaws, dimensions..."
               />
@@ -1927,13 +3608,32 @@ export default function NewListing() {
               <div className="brand-autocomplete">
                 <input
                   name="brand"
-                  value={form.brand}
-                  onChange={(event) => updateBrandValue(event.target.value)}
-                  onFocus={() => setShowBrandSuggestions(true)}
+                  value={
+                    form.brand
+                  }
+                  onChange={(
+                    event
+                  ) =>
+                    updateBrandValue(
+                      event
+                        .target
+                        .value
+                    )
+                  }
+                  onFocus={() =>
+                    setShowBrandSuggestions(
+                      true
+                    )
+                  }
                   onBlur={() => {
-                    window.setTimeout(() => {
-                      setShowBrandSuggestions(false);
-                    }, 140);
+                    window.setTimeout(
+                      () => {
+                        setShowBrandSuggestions(
+                          false
+                        );
+                      },
+                      140
+                    );
                   }}
                   placeholder="ex: Nike, Bench, Uniqlo..."
                   autoComplete="off"
@@ -1943,9 +3643,14 @@ export default function NewListing() {
                   <button
                     type="button"
                     className="brand-clear-button"
-                    onMouseDown={(event) => {
+                    onMouseDown={(
+                      event
+                    ) => {
                       event.preventDefault();
-                      updateBrandValue("");
+
+                      updateBrandValue(
+                        ""
+                      );
                     }}
                     aria-label="Clear brand"
                   >
@@ -1962,37 +3667,72 @@ export default function NewListing() {
                           : "Popular brands in the Philippines"}
                       </span>
 
-                      <small>{filteredBrandOptions.length} results</small>
+                      <small>
+                        {
+                          filteredBrandOptions.length
+                        }{" "}
+                        results
+                      </small>
                     </div>
 
-                    {filteredBrandOptions.length > 0 ? (
+                    {filteredBrandOptions.length >
+                    0 ? (
                       <div className="brand-suggestions-list">
-                        {filteredBrandOptions.map((brand) => (
-                          <button
-                            key={brand}
-                            type="button"
-                            className={
-                              form.brand === brand
-                                ? "brand-suggestion-option active"
-                                : "brand-suggestion-option"
-                            }
-                            onMouseDown={(event) => {
-                              event.preventDefault();
-                              selectBrand(brand);
-                            }}
-                          >
-                            <span>{brand}</span>
+                        {filteredBrandOptions.map(
+                          (
+                            brand
+                          ) => (
+                            <button
+                              key={
+                                brand
+                              }
+                              type="button"
+                              className={
+                                form.brand ===
+                                brand
+                                  ? "brand-suggestion-option active"
+                                  : "brand-suggestion-option"
+                              }
+                              onMouseDown={(
+                                event
+                              ) => {
+                                event.preventDefault();
 
-                            {form.brand === brand && <Check size={16} />}
-                          </button>
-                        ))}
+                                selectBrand(
+                                  brand
+                                );
+                              }}
+                            >
+                              <span>
+                                {
+                                  brand
+                                }
+                              </span>
+
+                              {form.brand ===
+                                brand && (
+                                <Check
+                                  size={
+                                    16
+                                  }
+                                />
+                              )}
+                            </button>
+                          )
+                        )}
                       </div>
                     ) : (
                       <div className="brand-suggestions-empty">
-                        <strong>No saved brand found</strong>
+                        <strong>
+                          No saved brand found
+                        </strong>
+
                         <p>
-                          You can keep “{form.brand}” as a custom brand if it is
-                          correct.
+                          You can keep “
+                          {
+                            form.brand
+                          }
+                          ” as a custom brand if it is correct.
                         </p>
                       </div>
                     )}
@@ -2007,10 +3747,15 @@ export default function NewListing() {
 
             <label>
               Location
+
               <input
                 name="location"
-                value={form.location}
-                onChange={updateField}
+                value={
+                  form.location
+                }
+                onChange={
+                  updateField
+                }
                 placeholder="ex: Manila, Cebu, Davao"
               />
             </label>
@@ -2019,33 +3764,59 @@ export default function NewListing() {
               <div className="smart-product-suggestions">
                 <div className="smart-product-suggestions-header">
                   <div>
-                    <strong>Smart product suggestions</strong>
+                    <strong>
+                      Smart product suggestions
+                    </strong>
+
                     <p>
-                      TindaHan detected possible characteristics from your title and
-                      description. Nothing is pre-filled automatically.
+                      TindaHan detected possible characteristics from your title and description. Nothing is pre-filled automatically.
                     </p>
                   </div>
 
-                  {smartProductSuggestions.chips.length > 0 && (
-                    <button type="button" onClick={applyAllSmartSuggestions}>
+                  {smartProductSuggestions.chips.length >
+                    0 && (
+                    <button
+                      type="button"
+                      onClick={
+                        applyAllSmartSuggestions
+                      }
+                    >
                       Apply all
                     </button>
                   )}
                 </div>
 
-                {smartProductSuggestions.chips.length > 0 ? (
+                {smartProductSuggestions.chips.length >
+                0 ? (
                   <div className="smart-product-chip-list">
-                    {smartProductSuggestions.chips.map((suggestion) => (
-                      <button
-                        key={suggestion.id}
-                        type="button"
-                        className={`smart-product-chip ${suggestion.type}`}
-                        onClick={() => applySmartSuggestion(suggestion)}
-                      >
-                        <Check size={14} />
-                        {suggestion.label}
-                      </button>
-                    ))}
+                    {smartProductSuggestions.chips.map(
+                      (
+                        suggestion
+                      ) => (
+                        <button
+                          key={
+                            suggestion.id
+                          }
+                          type="button"
+                          className={`smart-product-chip ${suggestion.type}`}
+                          onClick={() =>
+                            applySmartSuggestion(
+                              suggestion
+                            )
+                          }
+                        >
+                          <Check
+                            size={
+                              14
+                            }
+                          />
+
+                          {
+                            suggestion.label
+                          }
+                        </button>
+                      )
+                    )}
                   </div>
                 ) : (
                   <p className="smart-product-no-result">
@@ -2053,11 +3824,24 @@ export default function NewListing() {
                   </p>
                 )}
 
-                {smartProductSuggestions.features.length > 0 && (
+                {smartProductSuggestions.features.length >
+                  0 && (
                   <div className="smart-product-feature-list">
-                    {smartProductSuggestions.features.map((feature) => (
-                      <span key={feature}>{feature}</span>
-                    ))}
+                    {smartProductSuggestions.features.map(
+                      (
+                        feature
+                      ) => (
+                        <span
+                          key={
+                            feature
+                          }
+                        >
+                          {
+                            feature
+                          }
+                        </span>
+                      )
+                    )}
                   </div>
                 )}
               </div>
@@ -2067,24 +3851,32 @@ export default function NewListing() {
           <section className="form-section seller-meetup-form-section">
             <div className="seller-meetup-title-row">
               <div>
-                <h2>Safe Meet-Up point</h2>
+                <h2>
+                  Safe Meet-Up point
+                </h2>
+
                 <p>
-                  Optional. TindaHan suggests safe public Meet-Up places based on
-                  your location. You can also search another city if you prefer
-                  to meet the buyer somewhere farther away.
+                  Optional. TindaHan suggests safe public Meet-Up places based on your location. You can also search another city if you prefer to meet the buyer somewhere farther away.
                 </p>
               </div>
 
-              <ShieldCheck size={26} />
+              <ShieldCheck
+                size={26}
+              />
             </div>
 
             <label className="toggle-row seller-meetup-toggle">
               <input
                 type="checkbox"
                 name="meetup_enabled"
-                checked={form.meetup_enabled}
-                onChange={updateField}
+                checked={
+                  form.meetup_enabled
+                }
+                onChange={
+                  updateField
+                }
               />
+
               I want to offer a Meet-Up option for this item
             </label>
 
@@ -2092,42 +3884,72 @@ export default function NewListing() {
               <>
                 <div className="seller-meetup-location-helper">
                   <div>
-                    <strong>Meet-Up places near your location</strong>
+                    <strong>
+                      Meet-Up places near your location
+                    </strong>
+
                     <p>
-                      These places are suggested from your current selling area.
-                      To choose a farther Meet-Up place, enter another city below.
+                      These places are suggested from your current selling area. To choose a farther Meet-Up place, enter another city below.
                     </p>
                   </div>
 
-                  <span>{selectedMeetupCity}</span>
+                  <span>
+                    {
+                      selectedMeetupCity
+                    }
+                  </span>
                 </div>
 
                 <div className="seller-meetup-search-card">
                   <label>
                     Search another city
+
                     <input
                       type="text"
-                      value={form.meetup_city_search}
-                      onChange={(event) =>
-                        updateMeetupCitySearch(event.target.value)
+                      value={
+                        form.meetup_city_search
+                      }
+                      onChange={(
+                        event
+                      ) =>
+                        updateMeetupCitySearch(
+                          event
+                            .target
+                            .value
+                        )
                       }
                       placeholder="Example: Cebu City, Davao City, Makati..."
                     />
                   </label>
 
                   <div className="seller-meetup-city-chips">
-                    {meetupCityOptions.map((city) => (
-                      <button
-                        key={city}
-                        type="button"
-                        className={
-                          form.meetup_city_search === city ? "active" : ""
-                        }
-                        onClick={() => updateMeetupCitySearch(city)}
-                      >
-                        {city}
-                      </button>
-                    ))}
+                    {meetupCityOptions.map(
+                      (
+                        city
+                      ) => (
+                        <button
+                          key={
+                            city
+                          }
+                          type="button"
+                          className={
+                            form.meetup_city_search ===
+                            city
+                              ? "active"
+                              : ""
+                          }
+                          onClick={() =>
+                            updateMeetupCitySearch(
+                              city
+                            )
+                          }
+                        >
+                          {
+                            city
+                          }
+                        </button>
+                      )
+                    )}
                   </div>
                 </div>
 
@@ -2139,51 +3961,100 @@ export default function NewListing() {
                   <div className="seller-meetup-map-road road-three" />
 
                   <div className="seller-meetup-area-label">
-                    <MapPin size={16} />
-                    <span>{selectedMeetupCity}</span>
+                    <MapPin
+                      size={
+                        16
+                      }
+                    />
+
+                    <span>
+                      {
+                        selectedMeetupCity
+                      }
+                    </span>
                   </div>
 
-                  {visibleSellerMeetupSpots.map((spot) => {
-                    const Icon = spot.icon || MapPin;
-                    const isActive = form.seller_meetup_spot?.id === spot.id;
+                  {visibleSellerMeetupSpots.map(
+                    (spot) => {
+                      const Icon =
+                        spot.icon ||
+                        MapPin;
 
-                    return (
-                      <button
-                        key={spot.id}
-                        type="button"
-                        className={
-                          isActive
-                            ? "seller-meetup-map-pin active"
-                            : "seller-meetup-map-pin"
-                        }
-                        style={{
-                          "--pin-x": `${spot.mapX}%`,
-                          "--pin-y": `${spot.mapY}%`
-                        }}
-                        onClick={() => selectSellerMeetupSpot(spot)}
-                        aria-label={spot.name}
-                      >
-                        <Icon size={17} />
-                      </button>
-                    );
-                  })}
+                      const isActive =
+                        form
+                          .seller_meetup_spot
+                          ?.id ===
+                        spot.id;
+
+                      return (
+                        <button
+                          key={
+                            spot.id
+                          }
+                          type="button"
+                          className={
+                            isActive
+                              ? "seller-meetup-map-pin active"
+                              : "seller-meetup-map-pin"
+                          }
+                          style={{
+                            "--pin-x": `${spot.mapX}%`,
+                            "--pin-y": `${spot.mapY}%`
+                          }}
+                          onClick={() =>
+                            selectSellerMeetupSpot(
+                              spot
+                            )
+                          }
+                          aria-label={
+                            spot.name
+                          }
+                        >
+                          <Icon
+                            size={
+                              17
+                            }
+                          />
+                        </button>
+                      );
+                    }
+                  )}
 
                   <div className="seller-meetup-map-card improved">
-                    <MapPin size={24} />
+                    <MapPin
+                      size={24}
+                    />
 
                     <div>
-                      <span>Selected Meet-Up point</span>
+                      <span>
+                        Selected Meet-Up point
+                      </span>
+
                       <strong>
-                        {form.seller_meetup_spot?.name || "Choose a location"}
+                        {form
+                          .seller_meetup_spot
+                          ?.name ||
+                          "Choose a location"}
                       </strong>
+
                       <p>
-                        {form.seller_meetup_spot?.address ||
+                        {form
+                          .seller_meetup_spot
+                          ?.address ||
                           "Select one of the suggested public places below."}
                       </p>
 
-                      {form.seller_meetup_spot?.score && (
+                      {form
+                        .seller_meetup_spot
+                        ?.score && (
                         <em>
-                          Safety Score {form.seller_meetup_spot.score}/100
+                          Safety Score{" "}
+                          {
+                            form
+                              .seller_meetup_spot
+                              .score
+                          }
+                          /100
                         </em>
                       )}
                     </div>
@@ -2191,59 +4062,110 @@ export default function NewListing() {
                 </div>
 
                 <div className="seller-meetup-spot-grid improved">
-                  {visibleSellerMeetupSpots.length === 0 ? (
+                  {visibleSellerMeetupSpots.length ===
+                  0 ? (
                     <div className="seller-meetup-empty-results">
-                      <strong>No Meet-Up place found</strong>
+                      <strong>
+                        No Meet-Up place found
+                      </strong>
+
                       <p>
-                        Try another city such as Metro Manila, Cebu City or Davao
-                        City.
+                        Try another city such as Metro Manila, Cebu City or Davao City.
                       </p>
                     </div>
                   ) : (
-                    visibleSellerMeetupSpots.map((spot) => {
-                      const Icon = spot.icon || MapPin;
-                      const isActive = form.seller_meetup_spot?.id === spot.id;
+                    visibleSellerMeetupSpots.map(
+                      (
+                        spot
+                      ) => {
+                        const Icon =
+                          spot.icon ||
+                          MapPin;
 
-                      return (
-                        <button
-                          key={spot.id}
-                          type="button"
-                          className={
-                            isActive
-                              ? "seller-meetup-spot-card active"
-                              : "seller-meetup-spot-card"
-                          }
-                          onClick={() => selectSellerMeetupSpot(spot)}
-                        >
-                          <div className="seller-meetup-spot-icon">
-                            <Icon size={22} />
-                          </div>
+                        const isActive =
+                          form
+                            .seller_meetup_spot
+                            ?.id ===
+                          spot.id;
 
-                          <div>
-                            <div className="seller-meetup-card-topline">
-                              <strong>{spot.name}</strong>
-                              <span>{spot.city}</span>
+                        return (
+                          <button
+                            key={
+                              spot.id
+                            }
+                            type="button"
+                            className={
+                              isActive
+                                ? "seller-meetup-spot-card active"
+                                : "seller-meetup-spot-card"
+                            }
+                            onClick={() =>
+                              selectSellerMeetupSpot(
+                                spot
+                              )
+                            }
+                          >
+                            <div className="seller-meetup-spot-icon">
+                              <Icon
+                                size={
+                                  22
+                                }
+                              />
                             </div>
 
-                            <small>{spot.address}</small>
+                            <div>
+                              <div className="seller-meetup-card-topline">
+                                <strong>
+                                  {
+                                    spot.name
+                                  }
+                                </strong>
 
-                            <p>
-                              {spot.type} · {spot.district}
-                            </p>
+                                <span>
+                                  {
+                                    spot.city
+                                  }
+                                </span>
+                              </div>
 
-                            <span className="seller-meetup-spot-badge">
-                              Safety Score {spot.score}/100
-                            </span>
-                          </div>
+                              <small>
+                                {
+                                  spot.address
+                                }
+                              </small>
 
-                          {isActive && (
-                            <div className="seller-meetup-selected-check">
-                              <Check size={16} />
+                              <p>
+                                {
+                                  spot.type
+                                }{" "}
+                                ·{" "}
+                                {
+                                  spot.district
+                                }
+                              </p>
+
+                              <span className="seller-meetup-spot-badge">
+                                Safety Score{" "}
+                                {
+                                  spot.score
+                                }
+                                /100
+                              </span>
                             </div>
-                          )}
-                        </button>
-                      );
-                    })
+
+                            {isActive && (
+                              <div className="seller-meetup-selected-check">
+                                <Check
+                                  size={
+                                    16
+                                  }
+                                />
+                              </div>
+                            )}
+                          </button>
+                        );
+                      }
+                    )
                   )}
                 </div>
               </>
@@ -2251,137 +4173,263 @@ export default function NewListing() {
           </section>
 
           <section className="form-section">
-            <h2>Category</h2>
+            <h2>
+              Category
+            </h2>
 
             <div className="choice-grid">
-              {CATEGORIES.map((category) => (
-                <label
-                  key={category.id}
-                  className={form.category === category.id ? "choice active" : "choice"}
-                >
-                  <input
-                    type="radio"
-                    name="category"
-                    value={category.id}
-                    checked={form.category === category.id}
-                    onChange={updateField}
-                  />
-                  <span>{category.icon}</span>
-                  <strong>{category.label}</strong>
-                </label>
-              ))}
-            </div>
-          </section>
-
-          <section className="form-section">
-            <h2>Subcategory</h2>
-
-            <div className="subcategory-choice-grid">
-              {selectedCategory?.subcategories.map((subcategory) => (
-                <label
-                  key={subcategory.id}
-                  className={
-                    form.subcategory === subcategory.id
-                      ? "subcategory-choice active"
-                      : "subcategory-choice"
-                  }
-                >
-                  <input
-                    type="radio"
-                    name="subcategory"
-                    value={subcategory.id}
-                    checked={form.subcategory === subcategory.id}
-                    onChange={updateField}
-                  />
-                  <strong>{subcategory.label}</strong>
-                </label>
-              ))}
-            </div>
-          </section>
-
-          {selectedSubcategory?.children?.length > 0 && (
-            <section className="form-section">
-              <h2>{selectedSubcategory.label} type</h2>
-
-              <div className="child-choice-grid">
-                {selectedSubcategory.children.map((child) => (
+              {CATEGORIES.map(
+                (
+                  category
+                ) => (
                   <label
-                    key={child.id}
+                    key={
+                      category.id
+                    }
                     className={
-                      form.child_category === child.id
-                        ? "child-choice active"
-                        : "child-choice"
+                      form.category ===
+                      category.id
+                        ? "choice active"
+                        : "choice"
                     }
                   >
                     <input
                       type="radio"
-                      name="child_category"
-                      value={child.id}
-                      checked={form.child_category === child.id}
-                      onChange={updateField}
+                      name="category"
+                      value={
+                        category.id
+                      }
+                      checked={
+                        form.category ===
+                        category.id
+                      }
+                      onChange={
+                        updateField
+                      }
                     />
-                    <strong>{child.label}</strong>
+
+                    <span>
+                      {
+                        category.icon
+                      }
+                    </span>
+
+                    <strong>
+                      {
+                        category.label
+                      }
+                    </strong>
                   </label>
-                ))}
+                )
+              )}
+            </div>
+          </section>
+
+          <section className="form-section">
+            <h2>
+              Subcategory
+            </h2>
+
+            <div className="subcategory-choice-grid">
+              {selectedCategory
+                ?.subcategories
+                .map(
+                  (
+                    subcategory
+                  ) => (
+                    <label
+                      key={
+                        subcategory.id
+                      }
+                      className={
+                        form.subcategory ===
+                        subcategory.id
+                          ? "subcategory-choice active"
+                          : "subcategory-choice"
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name="subcategory"
+                        value={
+                          subcategory.id
+                        }
+                        checked={
+                          form.subcategory ===
+                          subcategory.id
+                        }
+                        onChange={
+                          updateField
+                        }
+                      />
+
+                      <strong>
+                        {
+                          subcategory.label
+                        }
+                      </strong>
+                    </label>
+                  )
+                )}
+            </div>
+          </section>
+
+          {selectedSubcategory
+            ?.children
+            ?.length >
+            0 && (
+            <section className="form-section">
+              <h2>
+                {
+                  selectedSubcategory.label
+                }{" "}
+                type
+              </h2>
+
+              <div className="child-choice-grid">
+                {selectedSubcategory.children.map(
+                  (
+                    child
+                  ) => (
+                    <label
+                      key={
+                        child.id
+                      }
+                      className={
+                        form.child_category ===
+                        child.id
+                          ? "child-choice active"
+                          : "child-choice"
+                      }
+                    >
+                      <input
+                        type="radio"
+                        name="child_category"
+                        value={
+                          child.id
+                        }
+                        checked={
+                          form.child_category ===
+                          child.id
+                        }
+                        onChange={
+                          updateField
+                        }
+                      />
+
+                      <strong>
+                        {
+                          child.label
+                        }
+                      </strong>
+                    </label>
+                  )
+                )}
               </div>
             </section>
           )}
 
           <section className="listing-detail-fields">
             <div className="listing-detail-row">
-              <div className="listing-detail-label">Size</div>
+              <div className="listing-detail-label">
+                Size
+              </div>
 
               <div className="listing-detail-control">
                 <button
                   type="button"
                   className={`listing-dropdown-trigger ${
-                    openDropdown === "size" ? "active" : ""
+                    openDropdown ===
+                    "size"
+                      ? "active"
+                      : ""
                   }`}
                   onClick={() =>
-                    setOpenDropdown(openDropdown === "size" ? "" : "size")
+                    setOpenDropdown(
+                      openDropdown ===
+                        "size"
+                        ? ""
+                        : "size"
+                    )
                   }
                 >
-                  <span>{form.size || "Select a size"}</span>
-                  <ChevronDown size={18} />
+                  <span>
+                    {form.size ||
+                      "Select a size"}
+                  </span>
+
+                  <ChevronDown
+                    size={18}
+                  />
                 </button>
 
-                {openDropdown === "size" && (
+                {openDropdown ===
+                  "size" && (
                   <div className="listing-dropdown-panel">
                     <p className="listing-dropdown-help">
                       Choose the size that matches the item's label.
                     </p>
 
                     <div className="listing-dropdown-subtitle">
-                      {getItemType(form) === "shoes"
+                      {getItemType(
+                        form
+                      ) ===
+                      "shoes"
                         ? "US sizes"
-                        : getItemType(form) === "clothing"
+                        : getItemType(
+                            form
+                          ) ===
+                          "clothing"
                         ? "Clothing sizes"
                         : "Available sizes"}
                     </div>
 
-                    {sizeOptions.map((size) => (
-                      <button
-                        key={size}
-                        type="button"
-                        className="listing-option-row"
-                        onClick={() => selectSize(size)}
-                      >
-                        <strong>{size}</strong>
-                        <span
-                          className={`listing-radio ${
-                            form.size === size ? "active" : ""
-                          }`}
-                        />
-                      </button>
-                    ))}
+                    {sizeOptions.map(
+                      (
+                        size
+                      ) => (
+                        <button
+                          key={
+                            size
+                          }
+                          type="button"
+                          className="listing-option-row"
+                          onClick={() =>
+                            selectSize(
+                              size
+                            )
+                          }
+                        >
+                          <strong>
+                            {
+                              size
+                            }
+                          </strong>
+
+                          <span
+                            className={`listing-radio ${
+                              form.size ===
+                              size
+                                ? "active"
+                                : ""
+                            }`}
+                          />
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
-            {getItemType(form) === "clothing" && (
+            {getItemType(
+              form
+            ) ===
+              "clothing" && (
               <div className="listing-detail-row dimensions-detail-row">
-                <div className="listing-detail-label">Dimensions recommended</div>
+                <div className="listing-detail-label">
+                  Dimensions recommended
+                </div>
 
                 <div className="listing-detail-control">
                   <div className="dimensions-inline-fields">
@@ -2391,11 +4439,18 @@ export default function NewListing() {
                         type="number"
                         min="0"
                         step="1"
-                        value={form.shoulder_width}
-                        onChange={updateField}
+                        value={
+                          form.shoulder_width
+                        }
+                        onChange={
+                          updateField
+                        }
                         placeholder="Shoulder width, e.g. 42"
                       />
-                      <span>cm</span>
+
+                      <span>
+                        cm
+                      </span>
                     </label>
 
                     <label className="dimension-inline-input">
@@ -2404,11 +4459,18 @@ export default function NewListing() {
                         type="number"
                         min="0"
                         step="1"
-                        value={form.item_length}
-                        onChange={updateField}
+                        value={
+                          form.item_length
+                        }
+                        onChange={
+                          updateField
+                        }
                         placeholder="Length, e.g. 68"
                       />
-                      <span>cm</span>
+
+                      <span>
+                        cm
+                      </span>
                     </label>
 
                     <p className="dimensions-inline-help">
@@ -2416,7 +4478,11 @@ export default function NewListing() {
                       <button
                         type="button"
                         className="dimensions-guide-link"
-                        onClick={() => setShowDimensionsModal(true)}
+                        onClick={() =>
+                          setShowDimensionsModal(
+                            true
+                          )
+                        }
                       >
                         dimensions guide
                       </button>
@@ -2428,43 +4494,83 @@ export default function NewListing() {
             )}
 
             <div className="listing-detail-row">
-              <div className="listing-detail-label">Condition</div>
+              <div className="listing-detail-label">
+                Condition
+              </div>
 
               <div className="listing-detail-control">
                 <button
                   type="button"
                   className={`listing-dropdown-trigger ${
-                    openDropdown === "condition" ? "active" : ""
+                    openDropdown ===
+                    "condition"
+                      ? "active"
+                      : ""
                   }`}
                   onClick={() =>
-                    setOpenDropdown(openDropdown === "condition" ? "" : "condition")
+                    setOpenDropdown(
+                      openDropdown ===
+                        "condition"
+                        ? ""
+                        : "condition"
+                    )
                   }
                 >
-                  <span>{selectedCondition?.label || "Select a condition"}</span>
-                  <ChevronDown size={18} />
+                  <span>
+                    {selectedCondition
+                      ?.label ||
+                      "Select a condition"}
+                  </span>
+
+                  <ChevronDown
+                    size={18}
+                  />
                 </button>
 
-                {openDropdown === "condition" && (
+                {openDropdown ===
+                  "condition" && (
                   <div className="listing-dropdown-panel large">
-                    {conditionOptions.map((condition) => (
-                      <button
-                        key={condition.id}
-                        type="button"
-                        className="listing-option-row tall"
-                        onClick={() => selectCondition(condition.id)}
-                      >
-                        <span>
-                          <strong>{condition.label}</strong>
-                          <small>{condition.description}</small>
-                        </span>
+                    {conditionOptions.map(
+                      (
+                        condition
+                      ) => (
+                        <button
+                          key={
+                            condition.id
+                          }
+                          type="button"
+                          className="listing-option-row tall"
+                          onClick={() =>
+                            selectCondition(
+                              condition.id
+                            )
+                          }
+                        >
+                          <span>
+                            <strong>
+                              {
+                                condition.label
+                              }
+                            </strong>
 
-                        <span
-                          className={`listing-radio ${
-                            form.condition === condition.id ? "active" : ""
-                          }`}
-                        />
-                      </button>
-                    ))}
+                            <small>
+                              {
+                                condition.description
+                              }
+                            </small>
+                          </span>
+
+                          <span
+                            className={`listing-radio ${
+                              form.condition ===
+                              condition.id
+                                ? "active"
+                                : ""
+                            }`}
+                          />
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
               </div>
@@ -2473,145 +4579,253 @@ export default function NewListing() {
             <div className="listing-detail-row condition-extra-detail-row">
               <div className="listing-detail-label">
                 Condition details
-                <span>Optional</span>
+
+                <span>
+                  Optional
+                </span>
               </div>
 
               <div className="listing-detail-control">
                 <div className="condition-details-box">
                   <textarea
                     name="condition_details"
-                    value={form.condition_details}
-                    onChange={updateField}
+                    value={
+                      form.condition_details
+                    }
+                    onChange={
+                      updateField
+                    }
                     rows="4"
                     maxLength="500"
                     placeholder="Add useful details about the condition, e.g. small stain near the collar, light scratches, worn twice, no visible flaws..."
                   />
 
-                  <small>{form.condition_details.length}/500</small>
+                  <small>
+                    {
+                      form
+                        .condition_details
+                        .length
+                    }
+                    /500
+                  </small>
 
                   <p>
-                    Add extra details only if needed. This helps the buyer understand
-                    the real condition of the item before purchasing.
+                    Add extra details only if needed. This helps the buyer understand the real condition of the item before purchasing.
                   </p>
                 </div>
               </div>
             </div>
 
             <div className="listing-detail-row">
-              <div className="listing-detail-label">Colors</div>
+              <div className="listing-detail-label">
+                Colors
+              </div>
 
               <div className="listing-detail-control">
                 <button
                   type="button"
                   className={`listing-dropdown-trigger ${
-                    openDropdown === "color" ? "active" : ""
+                    openDropdown ===
+                    "color"
+                      ? "active"
+                      : ""
                   }`}
                   onClick={() =>
-                    setOpenDropdown(openDropdown === "color" ? "" : "color")
+                    setOpenDropdown(
+                      openDropdown ===
+                        "color"
+                        ? ""
+                        : "color"
+                    )
                   }
                 >
-                  <span>{form.color || `Select up to ${MAX_LISTING_COLORS} colors`}</span>
-                  <ChevronDown size={18} />
+                  <span>
+                    {form.color ||
+                      `Select up to ${MAX_LISTING_COLORS} colors`}
+                  </span>
+
+                  <ChevronDown
+                    size={18}
+                  />
                 </button>
 
-                {openDropdown === "color" && (
+                {openDropdown ===
+                  "color" && (
                   <div className="listing-dropdown-panel large">
-                    <div className="listing-dropdown-subtitle">Suggestions</div>
+                    <div className="listing-dropdown-subtitle">
+                      Suggestions
+                    </div>
 
-                    {suggestedColors.map((color) => (
-                      <button
-                        key={`suggested-${color.id}`}
-                        type="button"
-                        className="listing-option-row"
-                        onClick={() => toggleColor(color.id)}
-                      >
-                        <span className="color-option-left">
+                    {suggestedColors.map(
+                      (
+                        color
+                      ) => (
+                        <button
+                          key={`suggested-${color.id}`}
+                          type="button"
+                          className="listing-option-row"
+                          onClick={() =>
+                            toggleColor(
+                              color.id
+                            )
+                          }
+                        >
+                          <span className="color-option-left">
+                            <span
+                              className="color-dot"
+                              style={{
+                                background:
+                                  color.hex
+                              }}
+                            />
+
+                            <strong>
+                              {
+                                color.label
+                              }
+                            </strong>
+                          </span>
+
                           <span
-                            className="color-dot"
-                            style={{ background: color.hex }}
+                            className={`listing-checkbox ${
+                              form.selectedColors.includes(
+                                color.id
+                              )
+                                ? "active"
+                                : ""
+                            }`}
                           />
-                          <strong>{color.label}</strong>
-                        </span>
-
-                        <span
-                          className={`listing-checkbox ${
-                            form.selectedColors.includes(color.id) ? "active" : ""
-                          }`}
-                        />
-                      </button>
-                    ))}
+                        </button>
+                      )
+                    )}
 
                     <div className="listing-dropdown-subtitle with-border">
                       All colors
                     </div>
 
-                    {allColors.map((color) => (
-                      <button
-                        key={color.id}
-                        type="button"
-                        className="listing-option-row"
-                        onClick={() => toggleColor(color.id)}
-                      >
-                        <span className="color-option-left">
-                          <span
-                            className="color-dot"
-                            style={{ background: color.hex }}
-                          />
-                          <strong>{color.label}</strong>
-                        </span>
+                    {allColors.map(
+                      (
+                        color
+                      ) => (
+                        <button
+                          key={
+                            color.id
+                          }
+                          type="button"
+                          className="listing-option-row"
+                          onClick={() =>
+                            toggleColor(
+                              color.id
+                            )
+                          }
+                        >
+                          <span className="color-option-left">
+                            <span
+                              className="color-dot"
+                              style={{
+                                background:
+                                  color.hex
+                              }}
+                            />
 
-                        <span
-                          className={`listing-checkbox ${
-                            form.selectedColors.includes(color.id) ? "active" : ""
-                          }`}
-                        />
-                      </button>
-                    ))}
+                            <strong>
+                              {
+                                color.label
+                              }
+                            </strong>
+                          </span>
+
+                          <span
+                            className={`listing-checkbox ${
+                              form.selectedColors.includes(
+                                color.id
+                              )
+                                ? "active"
+                                : ""
+                            }`}
+                          />
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             <div className="listing-detail-row">
-              <div className="listing-detail-label">Material (recommended)</div>
+              <div className="listing-detail-label">
+                Material (recommended)
+              </div>
 
               <div className="listing-detail-control">
                 <button
                   type="button"
                   className={`listing-dropdown-trigger ${
-                    openDropdown === "material" ? "active" : ""
+                    openDropdown ===
+                    "material"
+                      ? "active"
+                      : ""
                   }`}
                   onClick={() =>
-                    setOpenDropdown(openDropdown === "material" ? "" : "material")
+                    setOpenDropdown(
+                      openDropdown ===
+                        "material"
+                        ? ""
+                        : "material"
+                    )
                   }
                 >
-                  <span>{form.material || "Select up to 3 materials"}</span>
-                  <ChevronDown size={18} />
+                  <span>
+                    {form.material ||
+                      "Select up to 3 materials"}
+                  </span>
+
+                  <ChevronDown
+                    size={18}
+                  />
                 </button>
 
-                {openDropdown === "material" && (
+                {openDropdown ===
+                  "material" && (
                   <div className="listing-dropdown-panel large">
                     <p className="listing-dropdown-help">
-                      Select the main materials shown on the item's label. You can
-                      choose up to 3.
+                      Select the main materials shown on the item's label. You can choose up to 3.
                     </p>
 
-                    {materialOptions.map((material) => (
-                      <button
-                        key={material}
-                        type="button"
-                        className="listing-option-row"
-                        onClick={() => toggleMaterial(material)}
-                      >
-                        <strong>{material}</strong>
+                    {materialOptions.map(
+                      (
+                        material
+                      ) => (
+                        <button
+                          key={
+                            material
+                          }
+                          type="button"
+                          className="listing-option-row"
+                          onClick={() =>
+                            toggleMaterial(
+                              material
+                            )
+                          }
+                        >
+                          <strong>
+                            {
+                              material
+                            }
+                          </strong>
 
-                        <span
-                          className={`listing-checkbox ${
-                            form.selectedMaterials.includes(material) ? "active" : ""
-                          }`}
-                        />
-                      </button>
-                    ))}
+                          <span
+                            className={`listing-checkbox ${
+                              form.selectedMaterials.includes(
+                                material
+                              )
+                                ? "active"
+                                : ""
+                            }`}
+                          />
+                        </button>
+                      )
+                    )}
                   </div>
                 )}
               </div>
@@ -2619,32 +4833,58 @@ export default function NewListing() {
           </section>
 
           <section className="form-section">
-            <h2>Authenticity proofs</h2>
+            <h2>
+              Authenticity proofs
+            </h2>
 
             <div className="authenticity-hint-card">
               <div>
-                <strong>Don’t forget to add these photos</strong>
+                <strong>
+                  Don’t forget to add these photos
+                </strong>
 
                 <div className="authenticity-hint-preview">
-                  {authenticityGuide.required.slice(0, 3).map((item) => (
-                    <button
-                      key={item.label}
-                      type="button"
-                      className="authenticity-proof-mini"
-                      onClick={() => setShowAuthenticityModal(true)}
-                    >
-                      <span>{item.icon}</span>
-                    </button>
-                  ))}
+                  {authenticityGuide.required
+                    .slice(
+                      0,
+                      3
+                    )
+                    .map(
+                      (
+                        item
+                      ) => (
+                        <button
+                          key={
+                            item.label
+                          }
+                          type="button"
+                          className="authenticity-proof-mini"
+                          onClick={() =>
+                            setShowAuthenticityModal(
+                              true
+                            )
+                          }
+                        >
+                          <span>
+                            {
+                              item.icon
+                            }
+                          </span>
+                        </button>
+                      )
+                    )}
                 </div>
 
                 <p>
-                  Add these photos to help prove your item is authentic and avoid
-                  your listing being hidden or removed.{" "}
+                  Add these photos to help prove your item is authentic and avoid your listing being hidden or removed.{" "}
                   <button
                     type="button"
                     className="authenticity-link-button"
-                    onClick={() => setShowAuthenticityModal(true)}
+                    onClick={() =>
+                      setShowAuthenticityModal(
+                        true
+                      )
+                    }
                   >
                     Check the essential authenticity proofs
                   </button>
@@ -2655,17 +4895,24 @@ export default function NewListing() {
           </section>
 
           <section className="form-section">
-            <h2>Price</h2>
+            <h2>
+              Price
+            </h2>
 
             <label>
               Price in ₱
+
               <input
                 name="price"
                 type="number"
                 min="1"
                 step="1"
-                value={form.price}
-                onChange={updateField}
+                value={
+                  form.price
+                }
+                onChange={
+                  updateField
+                }
                 required
                 placeholder="ex: 500"
               />
@@ -2675,64 +4922,138 @@ export default function NewListing() {
               <input
                 type="checkbox"
                 name="is_negotiable"
-                checked={form.is_negotiable}
-                onChange={updateField}
+                checked={
+                  form.is_negotiable
+                }
+                onChange={
+                  updateField
+                }
               />
+
               Price is negotiable
             </label>
 
             <div className="price-preview">
               <div>
-                <span>Item price</span>
-                <strong>₱{Number(form.price || 0).toLocaleString("en-PH")}</strong>
+                <span>
+                  Item price
+                </span>
+
+                <strong>
+                  ₱
+                  {Number(
+                    form.price ||
+                      0
+                  ).toLocaleString(
+                    "en-PH"
+                  )}
+                </strong>
               </div>
 
               <div>
-                <span>Buyer Protection 8%</span>
-                <strong>₱{buyerProtection.toLocaleString("en-PH")}</strong>
+                <span>
+                  Buyer Protection 8%
+                </span>
+
+                <strong>
+                  ₱
+                  {buyerProtection.toLocaleString(
+                    "en-PH"
+                  )}
+                </strong>
               </div>
 
               <div className="total-row">
-                <span>Buyer preview total</span>
-                <strong>₱{totalPreview.toLocaleString("en-PH")}</strong>
+                <span>
+                  Buyer preview total
+                </span>
+
+                <strong>
+                  ₱
+                  {totalPreview.toLocaleString(
+                    "en-PH"
+                  )}
+                </strong>
               </div>
             </div>
           </section>
 
           <section className="parcel-section">
-            <h2>Choose parcel size</h2>
-            <p>Shipping fees are paid by the buyer.</p>
+            <h2>
+              Choose parcel size
+            </h2>
+
+            <p>
+              Shipping fees are paid by the buyer.
+            </p>
 
             <div className="parcel-options">
-              {parcelOptions.map((parcel) => (
-                <button
-                  key={parcel.id}
-                  type="button"
-                  className={`parcel-option ${
-                    form.parcel_size === parcel.id ? "active" : ""
-                  }`}
-                  onClick={() => selectParcelSize(parcel.id)}
-                >
-                  <span>
-                    {recommendedParcelSize === parcel.id && (
-                      <small className="parcel-badge">Recommended</small>
-                    )}
-                    <strong>{parcel.label}</strong>
-                    <em>{parcel.description}</em>
-                  </span>
-
-                  <span
-                    className={`listing-radio ${
-                      form.parcel_size === parcel.id ? "active" : ""
+              {parcelOptions.map(
+                (
+                  parcel
+                ) => (
+                  <button
+                    key={
+                      parcel.id
+                    }
+                    type="button"
+                    className={`parcel-option ${
+                      form.parcel_size ===
+                      parcel.id
+                        ? "active"
+                        : ""
                     }`}
-                  />
-                </button>
-              ))}
+                    onClick={() =>
+                      selectParcelSize(
+                        parcel.id
+                      )
+                    }
+                  >
+                    <span>
+                      {recommendedParcelSize ===
+                        parcel.id && (
+                        <small className="parcel-badge">
+                          Recommended
+                        </small>
+                      )}
+
+                      <strong>
+                        {
+                          parcel.label
+                        }
+                      </strong>
+
+                      <em>
+                        {
+                          parcel.description
+                        }
+                      </em>
+                    </span>
+
+                    <span
+                      className={`listing-radio ${
+                        form.parcel_size ===
+                        parcel.id
+                          ? "active"
+                          : ""
+                      }`}
+                    />
+                  </button>
+                )
+              )}
             </div>
           </section>
 
-          <button className="add-listing-button" disabled={loading} type="submit">
-            {loading ? "Adding..." : "Add"}
+          <button
+            className="add-listing-button"
+            disabled={
+              loading
+            }
+            type="submit"
+          >
+            {loading
+              ? "Adding..."
+              : "Add"}
           </button>
         </form>
       </div>
@@ -2741,9 +5062,16 @@ export default function NewListing() {
         <div
           className="authenticity-modal-overlay"
           role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setShowAuthenticityModal(false);
+          onMouseDown={(
+            event
+          ) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              setShowAuthenticityModal(
+                false
+              );
             }
           }}
         >
@@ -2754,57 +5082,129 @@ export default function NewListing() {
             aria-label="Authenticity proofs"
           >
             <header className="authenticity-modal-header">
-              <strong>Authenticity proofs</strong>
+              <strong>
+                Authenticity proofs
+              </strong>
 
               <button
                 type="button"
                 aria-label="Close"
-                onClick={() => setShowAuthenticityModal(false)}
+                onClick={() =>
+                  setShowAuthenticityModal(
+                    false
+                  )
+                }
               >
-                <X size={24} />
+                <X
+                  size={24}
+                />
               </button>
             </header>
 
             <div className="authenticity-modal-body">
-              <h2>{authenticityGuide.title}</h2>
+              <h2>
+                {
+                  authenticityGuide.title
+                }
+              </h2>
 
-              <p>{authenticityGuide.intro}</p>
+              <p>
+                {
+                  authenticityGuide.intro
+                }
+              </p>
 
-              <h3>{authenticityGuide.requiredTitle}</h3>
+              <h3>
+                {
+                  authenticityGuide.requiredTitle
+                }
+              </h3>
 
               <div className="authenticity-proof-grid">
-                {authenticityGuide.required.map((item) => (
-                  <div className="authenticity-proof-card" key={item.label}>
-                    <div>
-                      <span>{item.icon}</span>
+                {authenticityGuide.required.map(
+                  (
+                    item
+                  ) => (
+                    <div
+                      className="authenticity-proof-card"
+                      key={
+                        item.label
+                      }
+                    >
+                      <div>
+                        <span>
+                          {
+                            item.icon
+                          }
+                        </span>
+                      </div>
+
+                      <p>
+                        {
+                          item.label
+                        }
+                      </p>
                     </div>
-                    <p>{item.label}</p>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
 
-              <h3>{authenticityGuide.optionalTitle}</h3>
+              <h3>
+                {
+                  authenticityGuide.optionalTitle
+                }
+              </h3>
 
               <div className="authenticity-proof-grid">
-                {authenticityGuide.optional.map((item) => (
-                  <div className="authenticity-proof-card" key={item.label}>
-                    <div>
-                      <span>{item.icon}</span>
+                {authenticityGuide.optional.map(
+                  (
+                    item
+                  ) => (
+                    <div
+                      className="authenticity-proof-card"
+                      key={
+                        item.label
+                      }
+                    >
+                      <div>
+                        <span>
+                          {
+                            item.icon
+                          }
+                        </span>
+                      </div>
+
+                      <p>
+                        {
+                          item.label
+                        }
+                      </p>
                     </div>
-                    <p>{item.label}</p>
-                  </div>
-                ))}
+                  )
+                )}
               </div>
 
               <label className="authenticity-upload-button">
                 Add photos
-                <input type="file" accept="image/*" multiple onChange={handleFiles} />
+
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  onChange={
+                    handleFiles
+                  }
+                />
               </label>
 
               <button
                 className="authenticity-close-button"
                 type="button"
-                onClick={() => setShowAuthenticityModal(false)}
+                onClick={() =>
+                  setShowAuthenticityModal(
+                    false
+                  )
+                }
               >
                 Close
               </button>
@@ -2817,9 +5217,16 @@ export default function NewListing() {
         <div
           className="dimensions-modal-overlay"
           role="presentation"
-          onMouseDown={(event) => {
-            if (event.target === event.currentTarget) {
-              setShowDimensionsModal(false);
+          onMouseDown={(
+            event
+          ) => {
+            if (
+              event.target ===
+              event.currentTarget
+            ) {
+              setShowDimensionsModal(
+                false
+              );
             }
           }}
         >
@@ -2830,58 +5237,88 @@ export default function NewListing() {
             aria-label="Dimensions guide"
           >
             <header className="dimensions-modal-header">
-              <strong>Dimensions guide</strong>
+              <strong>
+                Dimensions guide
+              </strong>
 
               <button
                 type="button"
                 aria-label="Close"
-                onClick={() => setShowDimensionsModal(false)}
+                onClick={() =>
+                  setShowDimensionsModal(
+                    false
+                  )
+                }
               >
-                <X size={24} />
+                <X
+                  size={24}
+                />
               </button>
             </header>
 
             <div className="dimensions-modal-body">
-              <h2>How to measure your item</h2>
+              <h2>
+                How to measure your item
+              </h2>
 
-              <p>Lay your item flat on a clean surface.</p>
+              <p>
+                Lay your item flat on a clean surface.
+              </p>
 
               <ul>
                 <li>
-                  <strong>Shoulder width:</strong> measure the distance between the
-                  shoulder seams, across the back of the item.
+                  <strong>
+                    Shoulder width:
+                  </strong>{" "}
+                  measure the distance between the shoulder seams, across the back of the item.
                 </li>
 
                 <li>
-                  <strong>Length:</strong> measure from the highest point near the
-                  collar down to the bottom hem.
+                  <strong>
+                    Length:
+                  </strong>{" "}
+                  measure from the highest point near the collar down to the bottom hem.
                 </li>
               </ul>
 
               <div className="dimensions-guide-grid">
                 <div className="dimensions-guide-card">
                   <div className="dimensions-guide-illustration">
-                    <Ruler size={44} />
+                    <Ruler
+                      size={44}
+                    />
+
                     <span className="dimension-horizontal-line" />
                   </div>
 
-                  <p>Shoulder width</p>
+                  <p>
+                    Shoulder width
+                  </p>
                 </div>
 
                 <div className="dimensions-guide-card">
                   <div className="dimensions-guide-illustration">
-                    <Ruler size={44} />
+                    <Ruler
+                      size={44}
+                    />
+
                     <span className="dimension-vertical-line" />
                   </div>
 
-                  <p>Length</p>
+                  <p>
+                    Length
+                  </p>
                 </div>
               </div>
 
               <button
                 className="dimensions-done-button"
                 type="button"
-                onClick={() => setShowDimensionsModal(false)}
+                onClick={() =>
+                  setShowDimensionsModal(
+                    false
+                  )
+                }
               >
                 Done
               </button>
