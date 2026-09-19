@@ -26891,3 +26891,12 @@ body.tindahan-feed-zoom-locked button {
       16px !important;
   }
 }
+/* ========================================================= */
+/* REMOVE GREY FILTER SEPARATORS                             */
+/* ========================================================= */
+
+.search-filter-row-wrap.with-separator {
+  margin-top: 0 !important;
+  border-top: none !important;
+  background: #ffffff !important;
+}
