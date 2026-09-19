@@ -54,23 +54,14 @@ import Badges from "./pages/Badges";
 import "./styles/searchFilters.css";
 
 function isMobileDevice() {
-  if (
-    typeof window ===
-    "undefined"
-  ) {
+  if (typeof window === "undefined") {
     return false;
   }
 
-  return window
-    .matchMedia(
-      "(max-width: 760px)"
-    )
-    .matches;
+  return window.matchMedia("(max-width: 760px)").matches;
 }
 
-function AppLaunchLoader({
-  isLeaving
-}) {
+function AppLaunchLoader({ isLeaving }) {
   return (
     <div
       className={
@@ -95,9 +86,7 @@ function AppLaunchLoader({
   );
 }
 
-function ProtectedRoute({
-  children
-}) {
+function ProtectedRoute({ children }) {
   const {
     user,
     loadingAuth
@@ -107,9 +96,7 @@ function ProtectedRoute({
     return (
       <div className="page">
         <div className="container">
-          <p>
-            Loading...
-          </p>
+          <p>Loading...</p>
         </div>
       </div>
     );
@@ -128,16 +115,13 @@ function ProtectedRoute({
 }
 
 export default function App() {
-  const location =
-    useLocation();
+  const location = useLocation();
 
   const [
     showLaunchLoader,
     setShowLaunchLoader
   ] = useState(() => {
-    if (
-      !isMobileDevice()
-    ) {
+    if (!isMobileDevice()) {
       return false;
     }
 
@@ -154,85 +138,98 @@ export default function App() {
   ] = useState(false);
 
   useEffect(() => {
-    if (
-      !showLaunchLoader
-    ) {
+    if (!showLaunchLoader) {
       return;
     }
 
-    const leaveTimer =
-      setTimeout(() => {
-        setLoaderLeaving(
-          true
-        );
-      }, 2200);
+    const leaveTimer = setTimeout(() => {
+      setLoaderLeaving(true);
+    }, 2200);
 
-    const hideTimer =
-      setTimeout(() => {
-        sessionStorage.setItem(
-          "tindahan_mobile_launch_loader_seen",
-          "true"
-        );
+    const hideTimer = setTimeout(() => {
+      sessionStorage.setItem(
+        "tindahan_mobile_launch_loader_seen",
+        "true"
+      );
 
-        setShowLaunchLoader(
-          false
-        );
-      }, 2550);
+      setShowLaunchLoader(false);
+    }, 2550);
 
     return () => {
-      clearTimeout(
-        leaveTimer
-      );
-
-      clearTimeout(
-        hideTimer
-      );
+      clearTimeout(leaveTimer);
+      clearTimeout(hideTimer);
     };
-  }, [
-    showLaunchLoader
-  ]);
+  }, [showLaunchLoader]);
 
+  /*
+   * Search query used on the Home page:
+   * /?q=shirt
+   */
+  const currentSearchParams =
+    new URLSearchParams(location.search);
+
+  const activeSearchQuery =
+    currentSearchParams.get("q")?.trim() || "";
+
+  /*
+   * Product / transaction pages
+   */
   const isProductPage =
-    location.pathname.startsWith(
-      "/item/"
-    ) ||
-    location.pathname.startsWith(
-      "/listing/"
-    ) ||
-    location.pathname.startsWith(
-      "/listings/"
-    ) ||
-    location.pathname.startsWith(
-      "/checkout/"
-    ) ||
-    location.pathname.startsWith(
-      "/safe-meetup/"
-    ) ||
-    location.pathname.startsWith(
-      "/offer/"
-    ) ||
-    location.pathname.startsWith(
-      "/tracking/"
-    ) ||
-    location.pathname.startsWith(
-      "/shipping-label/"
-    ) ||
-    location.pathname.startsWith(
-      "/refund-request/"
-    ) ||
-    location.pathname.startsWith(
-      "/welcome"
-    );
+    location.pathname.startsWith("/item/") ||
+    location.pathname.startsWith("/listing/") ||
+    location.pathname.startsWith("/listings/") ||
+    location.pathname.startsWith("/checkout/") ||
+    location.pathname.startsWith("/safe-meetup/") ||
+    location.pathname.startsWith("/offer/") ||
+    location.pathname.startsWith("/tracking/") ||
+    location.pathname.startsWith("/shipping-label/") ||
+    location.pathname.startsWith("/refund-request/") ||
+    location.pathname.startsWith("/welcome");
 
+  /*
+   * Full-screen filter pages.
+   */
   const isSearchFilterPage =
-    location.pathname ===
-      "/search/filters" ||
-    location.pathname.startsWith(
-      "/search/filter/"
-    );
+    location.pathname === "/search/filters" ||
+    location.pathname.startsWith("/search/filter/");
 
+  /*
+   * Dedicated search screen.
+   */
+  const isDedicatedSearchPage =
+    location.pathname === "/search";
+
+  /*
+   * A search has actually been submitted.
+   *
+   * Example:
+   * /?q=shirt
+   */
+  const hasSearchQuery =
+    Boolean(activeSearchQuery);
+
+  /*
+   * Navbar / Footer stay hidden on the
+   * full-screen filter interface.
+   */
   const shouldShowGlobalChrome =
     !isSearchFilterPage;
+
+  /*
+   * CATEGORY BAR RULE
+   *
+   * We show:
+   * See all / Women / Men / Kids / Designer...
+   *
+   * ONLY while browsing the marketplace feed.
+   *
+   * Once the user searches, this disappears.
+   * The new search filters then take its place.
+   */
+  const shouldShowCategoryBar =
+    shouldShowGlobalChrome &&
+    !hasSearchQuery &&
+    !isDedicatedSearchPage;
 
   const shouldShowMobileBottomNav =
     !isProductPage &&
@@ -242,17 +239,16 @@ export default function App() {
     <>
       {showLaunchLoader && (
         <AppLaunchLoader
-          isLeaving={
-            loaderLeaving
-          }
+          isLeaving={loaderLeaving}
         />
       )}
 
       {shouldShowGlobalChrome && (
-        <>
-          <Navbar />
-          <CategoryBar />
-        </>
+        <Navbar />
+      )}
+
+      {shouldShowCategoryBar && (
+        <CategoryBar />
       )}
 
       <Routes>
@@ -263,30 +259,22 @@ export default function App() {
 
         <Route
           path="/search"
-          element={
-            <SearchPage />
-          }
+          element={<SearchPage />}
         />
 
         <Route
           path="/search/filters"
-          element={
-            <SearchFilters />
-          }
+          element={<SearchFilters />}
         />
 
         <Route
           path="/search/filter/:filterType"
-          element={
-            <SearchFilterPage />
-          }
+          element={<SearchFilterPage />}
         />
 
         <Route
           path="/how-it-works"
-          element={
-            <HowItWorks />
-          }
+          element={<HowItWorks />}
         />
 
         <Route
@@ -296,9 +284,7 @@ export default function App() {
 
         <Route
           path="/register"
-          element={
-            <Register />
-          }
+          element={<Register />}
         />
 
         <Route
@@ -522,30 +508,22 @@ export default function App() {
 
         <Route
           path="/item/:id"
-          element={
-            <ListingDetail />
-          }
+          element={<ListingDetail />}
         />
 
         <Route
           path="/listing/:id"
-          element={
-            <ListingDetail />
-          }
+          element={<ListingDetail />}
         />
 
         <Route
           path="/listings/:id"
-          element={
-            <ListingDetail />
-          }
+          element={<ListingDetail />}
         />
 
         <Route
           path="/profile/:username"
-          element={
-            <Profile />
-          }
+          element={<Profile />}
         />
 
         <Route
