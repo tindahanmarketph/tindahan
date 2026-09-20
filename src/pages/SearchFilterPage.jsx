@@ -4,18 +4,27 @@ import {
   ChevronRight,
   Search
 } from "lucide-react";
+
 import {
   useEffect,
   useMemo,
   useState
 } from "react";
+
 import {
   useNavigate,
   useParams,
   useSearchParams
 } from "react-router-dom";
-import { CATEGORIES } from "../lib/categories";
-import { BRAND_OPTIONS } from "../lib/brands";
+
+import {
+  SEARCH_CATEGORY_TREE
+} from "../lib/categories";
+
+import {
+  BRAND_OPTIONS
+} from "../lib/brands";
+
 import {
   COLOR_FILTER_OPTIONS,
   CONDITION_FILTER_OPTIONS,
@@ -25,6 +34,11 @@ import {
   readMultiParam,
   writeMultiParam
 } from "../lib/searchFilters";
+
+
+/* =========================================================
+   FILTER TITLES
+========================================================= */
 
 const FILTER_TITLES = {
   category: "Category",
@@ -37,14 +51,17 @@ const FILTER_TITLES = {
   sort: "Sort by"
 };
 
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
 function toggleArrayValue(
   currentValues,
   value
 ) {
   if (
-    currentValues.includes(
-      value
-    )
+    currentValues.includes(value)
   ) {
     return currentValues.filter(
       (item) =>
@@ -57,6 +74,81 @@ function toggleArrayValue(
     value
   ];
 }
+
+function normalizeCategorySelection(
+  value = {}
+) {
+  return {
+    category:
+      value.category || "",
+
+    subcategory:
+      value.subcategory || "",
+
+    child_category:
+      value.child_category || ""
+  };
+}
+
+function categorySelectionsMatch(
+  first,
+  second
+) {
+  const a =
+    normalizeCategorySelection(first);
+
+  const b =
+    normalizeCategorySelection(second);
+
+  return (
+    a.category === b.category &&
+    a.subcategory === b.subcategory &&
+    a.child_category === b.child_category
+  );
+}
+
+function getCategoryNodeByPath(
+  path = []
+) {
+  let nodes =
+    SEARCH_CATEGORY_TREE;
+
+  let currentNode =
+    null;
+
+  for (
+    const id of path
+  ) {
+    const nextNode =
+      nodes.find(
+        (item) =>
+          item.id === id
+      );
+
+    if (!nextNode) {
+      return null;
+    }
+
+    currentNode =
+      nextNode;
+
+    nodes =
+      nextNode.children || [];
+  }
+
+  return currentNode;
+}
+
+function getCategoryDepth(
+  path = []
+) {
+  return path.length;
+}
+
+
+/* =========================================================
+   PAGE
+========================================================= */
 
 export default function SearchFilterPage() {
   const navigate =
@@ -71,15 +163,39 @@ export default function SearchFilterPage() {
   const searchKey =
     searchParams.toString();
 
+
+  /* =======================================================
+     GENERIC FILTER STATE
+  ======================================================= */
+
   const [
     selectedValues,
     setSelectedValues
   ] = useState([]);
 
+
+  /* =======================================================
+     CATEGORY STATE
+  ======================================================= */
+
   const [
-    selectedCategory,
-    setSelectedCategory
-  ] = useState("");
+    categorySelection,
+    setCategorySelection
+  ] = useState({
+    category: "",
+    subcategory: "",
+    child_category: ""
+  });
+
+  const [
+    categoryPath,
+    setCategoryPath
+  ] = useState([]);
+
+
+  /* =======================================================
+     PRICE
+  ======================================================= */
 
   const [
     minimumPrice,
@@ -91,39 +207,75 @@ export default function SearchFilterPage() {
     setMaximumPrice
   ] = useState("");
 
+
+  /* =======================================================
+     SORT
+  ======================================================= */
+
   const [
     selectedSort,
     setSelectedSort
-  ] = useState("newest");
+  ] = useState(
+    "newest"
+  );
+
+
+  /* =======================================================
+     BRAND
+  ======================================================= */
 
   const [
     brandSearch,
     setBrandSearch
   ] = useState("");
 
+
+  /* =======================================================
+     SIZE
+  ======================================================= */
+
   const [
     sizeAudience,
     setSizeAudience
   ] = useState("");
 
+
+  /* =======================================================
+     LOAD CURRENT URL FILTERS
+  ======================================================= */
+
   useEffect(() => {
     setBrandSearch("");
     setSizeAudience("");
+    setCategoryPath([]);
 
     if (
-      filterType === "category"
+      filterType ===
+      "category"
     ) {
-      setSelectedCategory(
-        searchParams.get(
-          "category"
-        ) || ""
-      );
+      setCategorySelection({
+        category:
+          searchParams.get(
+            "category"
+          ) || "",
+
+        subcategory:
+          searchParams.get(
+            "subcategory"
+          ) || "",
+
+        child_category:
+          searchParams.get(
+            "child_category"
+          ) || ""
+      });
 
       return;
     }
 
     if (
-      filterType === "price"
+      filterType ===
+      "price"
     ) {
       setMinimumPrice(
         searchParams.get(
@@ -141,7 +293,8 @@ export default function SearchFilterPage() {
     }
 
     if (
-      filterType === "sort"
+      filterType ===
+      "sort"
     ) {
       setSelectedSort(
         searchParams.get(
@@ -159,9 +312,7 @@ export default function SearchFilterPage() {
         "condition",
         "color",
         "material"
-      ].includes(
-        filterType
-      )
+      ].includes(filterType)
     ) {
       setSelectedValues(
         readMultiParam(
@@ -174,6 +325,11 @@ export default function SearchFilterPage() {
     filterType,
     searchKey
   ]);
+
+
+  /* =======================================================
+     BRAND RESULTS
+  ======================================================= */
 
   const filteredBrands =
     useMemo(() => {
@@ -202,6 +358,11 @@ export default function SearchFilterPage() {
       brandSearch
     ]);
 
+
+  /* =======================================================
+     SIZE GROUP
+  ======================================================= */
+
   const activeSizeGroup =
     useMemo(
       () =>
@@ -215,6 +376,41 @@ export default function SearchFilterPage() {
       ]
     );
 
+
+  /* =======================================================
+     CURRENT CATEGORY NODE
+  ======================================================= */
+
+  const currentCategoryNode =
+    useMemo(
+      () =>
+        getCategoryNodeByPath(
+          categoryPath
+        ),
+      [
+        categoryPath
+      ]
+    );
+
+
+  /* =======================================================
+     HEADER TITLE
+  ======================================================= */
+
+  const pageTitle =
+    filterType ===
+      "category" &&
+    currentCategoryNode
+      ? currentCategoryNode.label
+      : FILTER_TITLES[
+          filterType
+        ];
+
+
+  /* =======================================================
+     FILTER VALIDATION
+  ======================================================= */
+
   const validFilter =
     Boolean(
       FILTER_TITLES[
@@ -222,12 +418,35 @@ export default function SearchFilterPage() {
       ]
     );
 
+
+  /* =======================================================
+     BACK
+  ======================================================= */
+
   function handleBack() {
     if (
-      filterType === "size" &&
+      filterType ===
+        "category" &&
+      categoryPath.length > 0
+    ) {
+      setCategoryPath(
+        (current) =>
+          current.slice(
+            0,
+            -1
+          )
+      );
+
+      return;
+    }
+
+    if (
+      filterType ===
+        "size" &&
       sizeAudience
     ) {
       setSizeAudience("");
+
       return;
     }
 
@@ -236,27 +455,40 @@ export default function SearchFilterPage() {
     );
   }
 
+
+  /* =======================================================
+     CLEAR
+  ======================================================= */
+
   function clearCurrentFilter() {
     if (
-      filterType === "category"
+      filterType ===
+      "category"
     ) {
-      setSelectedCategory(
-        ""
-      );
+      setCategorySelection({
+        category: "",
+        subcategory: "",
+        child_category: ""
+      });
+
+      setCategoryPath([]);
 
       return;
     }
 
     if (
-      filterType === "price"
+      filterType ===
+      "price"
     ) {
       setMinimumPrice("");
       setMaximumPrice("");
+
       return;
     }
 
     if (
-      filterType === "sort"
+      filterType ===
+      "sort"
     ) {
       setSelectedSort(
         "newest"
@@ -268,21 +500,50 @@ export default function SearchFilterPage() {
     setSelectedValues([]);
   }
 
+
+  /* =======================================================
+     APPLY
+  ======================================================= */
+
   function applyFilter() {
     const nextParams =
       new URLSearchParams(
         searchParams
       );
 
+
+    /* CATEGORY */
+
     if (
-      filterType === "category"
+      filterType ===
+      "category"
     ) {
+      let effectiveSelection =
+        normalizeCategorySelection(
+          categorySelection
+        );
+
+      /*
+       * If the user navigated inside a category but did not
+       * explicitly tap "All", pressing Show results selects
+       * the currently displayed category.
+       */
       if (
-        selectedCategory
+        !effectiveSelection.category &&
+        currentCategoryNode?.query
+      ) {
+        effectiveSelection =
+          normalizeCategorySelection(
+            currentCategoryNode.query
+          );
+      }
+
+      if (
+        effectiveSelection.category
       ) {
         nextParams.set(
           "category",
-          selectedCategory
+          effectiveSelection.category
         );
       } else {
         nextParams.delete(
@@ -290,14 +551,35 @@ export default function SearchFilterPage() {
         );
       }
 
-      nextParams.delete(
-        "subcategory"
-      );
+      if (
+        effectiveSelection.subcategory
+      ) {
+        nextParams.set(
+          "subcategory",
+          effectiveSelection.subcategory
+        );
+      } else {
+        nextParams.delete(
+          "subcategory"
+        );
+      }
 
-      nextParams.delete(
-        "child_category"
-      );
+      if (
+        effectiveSelection.child_category
+      ) {
+        nextParams.set(
+          "child_category",
+          effectiveSelection.child_category
+        );
+      } else {
+        nextParams.delete(
+          "child_category"
+        );
+      }
     }
+
+
+    /* MULTI SELECT */
 
     if (
       [
@@ -317,8 +599,12 @@ export default function SearchFilterPage() {
       );
     }
 
+
+    /* PRICE */
+
     if (
-      filterType === "price"
+      filterType ===
+      "price"
     ) {
       const cleanMinimum =
         String(
@@ -353,8 +639,12 @@ export default function SearchFilterPage() {
       }
     }
 
+
+    /* SORT */
+
     if (
-      filterType === "sort"
+      filterType ===
+      "sort"
     ) {
       if (
         selectedSort &&
@@ -372,10 +662,16 @@ export default function SearchFilterPage() {
       }
     }
 
+
     navigate(
       `/?${nextParams.toString()}`
     );
   }
+
+
+  /* =======================================================
+     INVALID FILTER
+  ======================================================= */
 
   if (!validFilter) {
     return (
@@ -384,6 +680,7 @@ export default function SearchFilterPage() {
           <button
             type="button"
             className="search-filter-header-button"
+            aria-label="Back"
             onClick={() =>
               navigate(
                 `/search/filters?${searchParams.toString()}`
@@ -411,6 +708,11 @@ export default function SearchFilterPage() {
     );
   }
 
+
+  /* =======================================================
+     PAGE
+  ======================================================= */
+
   return (
     <main className="search-filter-screen">
       <header className="search-filter-header">
@@ -428,11 +730,7 @@ export default function SearchFilterPage() {
         </button>
 
         <h1>
-          {
-            FILTER_TITLES[
-              filterType
-            ]
-          }
+          {pageTitle}
         </h1>
 
         <button
@@ -446,18 +744,29 @@ export default function SearchFilterPage() {
         </button>
       </header>
 
+
       <div className="search-filter-body">
         {filterType ===
           "category" && (
           <CategoryFilter
-            selectedCategory={
-              selectedCategory
+            categoryPath={
+              categoryPath
             }
-            setSelectedCategory={
-              setSelectedCategory
+            setCategoryPath={
+              setCategoryPath
+            }
+            currentNode={
+              currentCategoryNode
+            }
+            categorySelection={
+              categorySelection
+            }
+            setCategorySelection={
+              setCategorySelection
             }
           />
         )}
+
 
         {filterType ===
           "size" && (
@@ -480,6 +789,7 @@ export default function SearchFilterPage() {
           />
         )}
 
+
         {filterType ===
           "brand" && (
           <BrandFilter
@@ -501,6 +811,7 @@ export default function SearchFilterPage() {
           />
         )}
 
+
         {filterType ===
           "condition" && (
           <ConditionFilter
@@ -513,6 +824,7 @@ export default function SearchFilterPage() {
           />
         )}
 
+
         {filterType ===
           "color" && (
           <ColorFilter
@@ -524,6 +836,7 @@ export default function SearchFilterPage() {
             }
           />
         )}
+
 
         {filterType ===
           "price" && (
@@ -543,6 +856,7 @@ export default function SearchFilterPage() {
           />
         )}
 
+
         {filterType ===
           "material" && (
           <MaterialFilter
@@ -554,6 +868,7 @@ export default function SearchFilterPage() {
             }
           />
         )}
+
 
         {filterType ===
           "sort" && (
@@ -567,6 +882,7 @@ export default function SearchFilterPage() {
           />
         )}
       </div>
+
 
       <footer className="search-filter-footer">
         <button
@@ -583,62 +899,182 @@ export default function SearchFilterPage() {
   );
 }
 
+
+/* =========================================================
+   CATEGORY FILTER
+========================================================= */
+
 function CategoryFilter({
-  selectedCategory,
-  setSelectedCategory
+  categoryPath,
+  setCategoryPath,
+  currentNode,
+  categorySelection,
+  setCategorySelection
 }) {
+  const depth =
+    getCategoryDepth(
+      categoryPath
+    );
+
+  const options =
+    currentNode
+      ? currentNode.children || []
+      : SEARCH_CATEGORY_TREE;
+
+  const currentNodeSelected =
+    currentNode?.query
+      ? categorySelectionsMatch(
+          categorySelection,
+          currentNode.query
+        )
+      : false;
+
+  function openNode(item) {
+    if (
+      item.children?.length
+    ) {
+      setCategoryPath(
+        (current) => [
+          ...current,
+          item.id
+        ]
+      );
+
+      return;
+    }
+
+    setCategorySelection(
+      normalizeCategorySelection(
+        item.query
+      )
+    );
+  }
+
   return (
-    <section className="search-filter-section">
-      <h2>
-        Categories
-      </h2>
+    <section className="search-filter-section search-category-section">
+      {!currentNode && (
+        <h2>
+          Categories
+        </h2>
+      )}
 
       <div className="search-filter-category-list">
-        {CATEGORIES.map(
-          (category) => {
+        {currentNode && (
+          <button
+            type="button"
+            className={
+              currentNodeSelected
+                ? "search-category-all-option active"
+                : "search-category-all-option"
+            }
+            onClick={() =>
+              setCategorySelection(
+                normalizeCategorySelection(
+                  currentNode.query
+                )
+              )
+            }
+          >
+            <span className="search-category-all-icon">
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+              <span />
+            </span>
+
+            <strong>
+              All
+            </strong>
+
+            <span
+              className={
+                currentNodeSelected
+                  ? "search-category-radio active"
+                  : "search-category-radio"
+              }
+            >
+              {currentNodeSelected && (
+                <span />
+              )}
+            </span>
+          </button>
+        )}
+
+
+        {options.map(
+          (item) => {
+            const hasChildren =
+              Boolean(
+                item.children?.length
+              );
+
             const selected =
-              selectedCategory ===
-              category.id;
+              categorySelectionsMatch(
+                categorySelection,
+                item.query
+              );
+
+            const isRoot =
+              depth === 0;
 
             return (
               <button
                 key={
-                  category.id
+                  item.id
                 }
                 type="button"
-                className={
+                className={[
+                  "search-filter-category-option",
+                  isRoot
+                    ? "root"
+                    : "nested",
                   selected
-                    ? "search-filter-category-option active"
-                    : "search-filter-category-option"
-                }
+                    ? "active"
+                    : ""
+                ]
+                  .filter(Boolean)
+                  .join(" ")}
                 onClick={() =>
-                  setSelectedCategory(
-                    selected
-                      ? ""
-                      : category.id
-                  )
+                  openNode(item)
                 }
               >
-                <span className="search-filter-category-icon">
-                  {
-                    category.icon
-                  }
-                </span>
+                {isRoot ? (
+                  <span className="search-filter-category-icon">
+                    {item.icon || "•"}
+                  </span>
+                ) : item.icon ? (
+                  <span className="search-filter-category-icon">
+                    {item.icon}
+                  </span>
+                ) : null}
+
 
                 <strong>
-                  {
-                    category.label
-                  }
+                  {item.label}
                 </strong>
 
-                {selected ? (
-                  <Check
-                    size={21}
+
+                {hasChildren ? (
+                  <ChevronRight
+                    size={22}
                   />
                 ) : (
-                  <ChevronRight
-                    size={21}
-                  />
+                  <span
+                    className={
+                      selected
+                        ? "search-category-radio active"
+                        : "search-category-radio"
+                    }
+                  >
+                    {selected && (
+                      <span />
+                    )}
+                  </span>
                 )}
               </button>
             );
@@ -648,6 +1084,11 @@ function CategoryFilter({
     </section>
   );
 }
+
+
+/* =========================================================
+   SIZE
+========================================================= */
 
 function SizeFilter({
   activeSizeGroup,
@@ -730,9 +1171,7 @@ function SizeFilter({
                       }
                       onClick={() =>
                         setSelectedValues(
-                          (
-                            current
-                          ) =>
+                          (current) =>
                             toggleArrayValue(
                               current,
                               option.value
@@ -740,9 +1179,7 @@ function SizeFilter({
                         )
                       }
                     >
-                      {
-                        option.label
-                      }
+                      {option.label}
                     </button>
                   );
                 }
@@ -754,6 +1191,11 @@ function SizeFilter({
     </section>
   );
 }
+
+
+/* =========================================================
+   BRAND
+========================================================= */
 
 function BrandFilter({
   search,
@@ -830,6 +1272,11 @@ function BrandFilter({
   );
 }
 
+
+/* =========================================================
+   CONDITION
+========================================================= */
+
 function ConditionFilter({
   selectedValues,
   setSelectedValues
@@ -862,15 +1309,11 @@ function ConditionFilter({
             >
               <div>
                 <strong>
-                  {
-                    condition.label
-                  }
+                  {condition.label}
                 </strong>
 
                 <p>
-                  {
-                    condition.description
-                  }
+                  {condition.description}
                 </p>
               </div>
 
@@ -894,6 +1337,11 @@ function ConditionFilter({
     </section>
   );
 }
+
+
+/* =========================================================
+   COLOR
+========================================================= */
 
 function ColorFilter({
   selectedValues,
@@ -955,6 +1403,11 @@ function ColorFilter({
     </section>
   );
 }
+
+
+/* =========================================================
+   PRICE
+========================================================= */
 
 function PriceFilter({
   minimumPrice,
@@ -1023,6 +1476,11 @@ function PriceFilter({
   );
 }
 
+
+/* =========================================================
+   MATERIAL
+========================================================= */
+
 function MaterialFilter({
   selectedValues,
   setSelectedValues
@@ -1080,6 +1538,11 @@ function MaterialFilter({
   );
 }
 
+
+/* =========================================================
+   SORT
+========================================================= */
+
 function SortFilter({
   selectedSort,
   setSelectedSort
@@ -1107,9 +1570,7 @@ function SortFilter({
                 }
               >
                 <strong>
-                  {
-                    option.label
-                  }
+                  {option.label}
                 </strong>
 
                 <span
