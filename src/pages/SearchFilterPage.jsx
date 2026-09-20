@@ -2,15 +2,14 @@ import {
   ArrowLeft,
   Check,
   ChevronRight,
+  Grip,
   Search
 } from "lucide-react";
-
 import {
   useEffect,
   useMemo,
   useState
 } from "react";
-
 import {
   useNavigate,
   useParams,
@@ -18,12 +17,11 @@ import {
 } from "react-router-dom";
 
 import {
+  CATEGORIES,
   SEARCH_CATEGORY_TREE
 } from "../lib/categories";
 
-import {
-  BRAND_OPTIONS
-} from "../lib/brands";
+import { BRAND_OPTIONS } from "../lib/brands";
 
 import {
   COLOR_FILTER_OPTIONS,
@@ -53,19 +51,13 @@ const FILTER_TITLES = {
 
 
 /* =========================================================
-   HELPERS
+   GENERIC HELPERS
 ========================================================= */
 
-function toggleArrayValue(
-  currentValues,
-  value
-) {
-  if (
-    currentValues.includes(value)
-  ) {
+function toggleArrayValue(currentValues, value) {
+  if (currentValues.includes(value)) {
     return currentValues.filter(
-      (item) =>
-        item !== value
+      (item) => item !== value
     );
   }
 
@@ -75,79 +67,194 @@ function toggleArrayValue(
   ];
 }
 
-function normalizeCategorySelection(
-  value = {}
-) {
-  return {
-    category:
-      value.category || "",
 
-    subcategory:
-      value.subcategory || "",
+/* =========================================================
+   CATEGORY TREE
+========================================================= */
 
-    child_category:
-      value.child_category || ""
-  };
-}
-
-function categorySelectionsMatch(
-  first,
-  second
-) {
-  const a =
-    normalizeCategorySelection(first);
-
-  const b =
-    normalizeCategorySelection(second);
-
-  return (
-    a.category === b.category &&
-    a.subcategory === b.subcategory &&
-    a.child_category === b.child_category
-  );
-}
-
-function getCategoryNodeByPath(
-  path = []
-) {
-  let nodes =
-    SEARCH_CATEGORY_TREE;
-
-  let currentNode =
-    null;
-
-  for (
-    const id of path
-  ) {
-    const nextNode =
-      nodes.find(
+function createCategoryFilterTree() {
+  return CATEGORIES.map((category) => {
+    const detailedCategory =
+      SEARCH_CATEGORY_TREE.find(
         (item) =>
-          item.id === id
+          item.id === category.id
       );
 
-    if (!nextNode) {
-      return null;
+    /*
+      Women / Men / Designer use the detailed tree.
+
+      Other categories continue using the normal
+      CATEGORIES structure until we develop them.
+    */
+    if (
+      detailedCategory &&
+      detailedCategory.children?.length
+    ) {
+      return detailedCategory;
     }
 
-    currentNode =
-      nextNode;
+    return {
+      id: category.id,
+      label: category.label,
+      icon: category.icon,
 
-    nodes =
-      nextNode.children || [];
-  }
+      children:
+        category.subcategories?.map(
+          (subcategory) => ({
+            id: subcategory.id,
+            label: subcategory.label,
+            icon: subcategory.icon || null,
 
-  return currentNode;
+            children:
+              subcategory.children?.map(
+                (child) => ({
+                  ...child,
+                  children:
+                    child.children || []
+                })
+              ) || []
+          })
+        ) || []
+    };
+  });
 }
 
-function getCategoryDepth(
-  path = []
+
+const CATEGORY_FILTER_TREE =
+  createCategoryFilterTree();
+
+
+function findCategoryNodePath(
+  nodes,
+  targetId,
+  currentPath = []
 ) {
-  return path.length;
+  if (!targetId) {
+    return [];
+  }
+
+  for (const node of nodes || []) {
+    const nextPath = [
+      ...currentPath,
+      node
+    ];
+
+    if (node.id === targetId) {
+      return nextPath;
+    }
+
+    if (node.children?.length) {
+      const result =
+        findCategoryNodePath(
+          node.children,
+          targetId,
+          nextPath
+        );
+
+      if (result.length) {
+        return result;
+      }
+    }
+  }
+
+  return [];
+}
+
+
+function findCategoryNodeById(
+  nodes,
+  targetId
+) {
+  if (!targetId) {
+    return null;
+  }
+
+  for (const node of nodes || []) {
+    if (node.id === targetId) {
+      return node;
+    }
+
+    if (node.children?.length) {
+      const result =
+        findCategoryNodeById(
+          node.children,
+          targetId
+        );
+
+      if (result) {
+        return result;
+      }
+    }
+  }
+
+  return null;
+}
+
+
+function getInitialCategorySelection(
+  searchParams
+) {
+  const childCategory =
+    searchParams.get(
+      "child_category"
+    );
+
+  const subcategory =
+    searchParams.get(
+      "subcategory"
+    );
+
+  const category =
+    searchParams.get(
+      "category"
+    );
+
+  /*
+    Existing applied filter may be remembered.
+
+    IMPORTANT:
+    this does NOT control navigation.
+
+    Therefore opening Men > Clothing does not
+    automatically select Jeans, Shirts, etc.
+  */
+
+  if (
+    childCategory &&
+    findCategoryNodeById(
+      CATEGORY_FILTER_TREE,
+      childCategory
+    )
+  ) {
+    return childCategory;
+  }
+
+  if (
+    subcategory &&
+    findCategoryNodeById(
+      CATEGORY_FILTER_TREE,
+      subcategory
+    )
+  ) {
+    return subcategory;
+  }
+
+  if (
+    category &&
+    findCategoryNodeById(
+      CATEGORY_FILTER_TREE,
+      category
+    )
+  ) {
+    return category;
+  }
+
+  return "";
 }
 
 
 /* =========================================================
-   PAGE
+   MAIN PAGE
 ========================================================= */
 
 export default function SearchFilterPage() {
@@ -165,7 +272,7 @@ export default function SearchFilterPage() {
 
 
   /* =======================================================
-     GENERIC FILTER STATE
+     STANDARD MULTI FILTERS
   ======================================================= */
 
   const [
@@ -175,21 +282,28 @@ export default function SearchFilterPage() {
 
 
   /* =======================================================
-     CATEGORY STATE
+     CATEGORY
   ======================================================= */
 
-  const [
-    categorySelection,
-    setCategorySelection
-  ] = useState({
-    category: "",
-    subcategory: "",
-    child_category: ""
-  });
+  /*
+    selectedCategoryNodeId =
+    the category/subcategory actually selected
+    for filtering.
+
+    categoryNavigation =
+    where the user currently is in the menu.
+
+    These two states are intentionally separated.
+  */
 
   const [
-    categoryPath,
-    setCategoryPath
+    selectedCategoryNodeId,
+    setSelectedCategoryNodeId
+  ] = useState("");
+
+  const [
+    categoryNavigation,
+    setCategoryNavigation
   ] = useState([]);
 
 
@@ -215,9 +329,7 @@ export default function SearchFilterPage() {
   const [
     selectedSort,
     setSelectedSort
-  ] = useState(
-    "newest"
-  );
+  ] = useState("newest");
 
 
   /* =======================================================
@@ -241,42 +353,33 @@ export default function SearchFilterPage() {
 
 
   /* =======================================================
-     LOAD CURRENT URL FILTERS
+     READ CURRENT URL FILTERS
   ======================================================= */
 
   useEffect(() => {
     setBrandSearch("");
     setSizeAudience("");
-    setCategoryPath([]);
 
-    if (
-      filterType ===
-      "category"
-    ) {
-      setCategorySelection({
-        category:
-          searchParams.get(
-            "category"
-          ) || "",
+    /*
+      Always reopen the Category filter
+      from the root.
 
-        subcategory:
-          searchParams.get(
-            "subcategory"
-          ) || "",
+      Navigation is NEVER inferred from
+      the selected category.
+    */
+    setCategoryNavigation([]);
 
-        child_category:
-          searchParams.get(
-            "child_category"
-          ) || ""
-      });
+    if (filterType === "category") {
+      setSelectedCategoryNodeId(
+        getInitialCategorySelection(
+          searchParams
+        )
+      );
 
       return;
     }
 
-    if (
-      filterType ===
-      "price"
-    ) {
+    if (filterType === "price") {
       setMinimumPrice(
         searchParams.get(
           "min_price"
@@ -292,10 +395,7 @@ export default function SearchFilterPage() {
       return;
     }
 
-    if (
-      filterType ===
-      "sort"
-    ) {
+    if (filterType === "sort") {
       setSelectedSort(
         searchParams.get(
           "sort"
@@ -328,7 +428,7 @@ export default function SearchFilterPage() {
 
 
   /* =======================================================
-     BRAND RESULTS
+     BRANDS
   ======================================================= */
 
   const filteredBrands =
@@ -378,38 +478,54 @@ export default function SearchFilterPage() {
 
 
   /* =======================================================
-     CURRENT CATEGORY NODE
+     CURRENT CATEGORY PAGE
   ======================================================= */
 
   const currentCategoryNode =
-    useMemo(
-      () =>
-        getCategoryNodeByPath(
-          categoryPath
-        ),
-      [
-        categoryPath
-      ]
-    );
+    useMemo(() => {
+      if (
+        categoryNavigation.length === 0
+      ) {
+        return null;
+      }
+
+      const currentNodeId =
+        categoryNavigation[
+          categoryNavigation.length - 1
+        ];
+
+      return findCategoryNodeById(
+        CATEGORY_FILTER_TREE,
+        currentNodeId
+      );
+    }, [
+      categoryNavigation
+    ]);
 
 
   /* =======================================================
      HEADER TITLE
   ======================================================= */
 
-  const pageTitle =
-    filterType ===
-      "category" &&
-    currentCategoryNode
-      ? currentCategoryNode.label
-      : FILTER_TITLES[
+  const currentHeaderTitle =
+    useMemo(() => {
+      if (
+        filterType === "category" &&
+        currentCategoryNode
+      ) {
+        return currentCategoryNode.label;
+      }
+
+      return (
+        FILTER_TITLES[
           filterType
-        ];
+        ] || "Filter"
+      );
+    }, [
+      filterType,
+      currentCategoryNode
+    ]);
 
-
-  /* =======================================================
-     FILTER VALIDATION
-  ======================================================= */
 
   const validFilter =
     Boolean(
@@ -420,16 +536,55 @@ export default function SearchFilterPage() {
 
 
   /* =======================================================
+     CATEGORY NAVIGATION
+  ======================================================= */
+
+  function openCategoryNode(nodeId) {
+    /*
+      CRITICAL FIX:
+
+      Opening a category only changes
+      navigation.
+
+      It DOES NOT select anything.
+    */
+
+    setCategoryNavigation(
+      (current) => [
+        ...current,
+        nodeId
+      ]
+    );
+  }
+
+
+  function selectCategoryNode(nodeId) {
+    /*
+      Selection only happens after
+      an explicit click on:
+      - All
+      - a final category
+    */
+
+    setSelectedCategoryNodeId(
+      (current) =>
+        current === nodeId
+          ? ""
+          : nodeId
+    );
+  }
+
+
+  /* =======================================================
      BACK
   ======================================================= */
 
   function handleBack() {
     if (
-      filterType ===
-        "category" &&
-      categoryPath.length > 0
+      filterType === "category" &&
+      categoryNavigation.length > 0
     ) {
-      setCategoryPath(
+      setCategoryNavigation(
         (current) =>
           current.slice(
             0,
@@ -441,12 +596,10 @@ export default function SearchFilterPage() {
     }
 
     if (
-      filterType ===
-        "size" &&
+      filterType === "size" &&
       sizeAudience
     ) {
       setSizeAudience("");
-
       return;
     }
 
@@ -457,38 +610,35 @@ export default function SearchFilterPage() {
 
 
   /* =======================================================
-     CLEAR
+     CLEAR CURRENT FILTER
   ======================================================= */
 
   function clearCurrentFilter() {
     if (
-      filterType ===
-      "category"
+      filterType === "category"
     ) {
-      setCategorySelection({
-        category: "",
-        subcategory: "",
-        child_category: ""
-      });
+      /*
+        Clear selection only.
+        Keep current navigation screen.
+      */
 
-      setCategoryPath([]);
+      setSelectedCategoryNodeId(
+        ""
+      );
 
       return;
     }
 
     if (
-      filterType ===
-      "price"
+      filterType === "price"
     ) {
       setMinimumPrice("");
       setMaximumPrice("");
-
       return;
     }
 
     if (
-      filterType ===
-      "sort"
+      filterType === "sort"
     ) {
       setSelectedSort(
         "newest"
@@ -502,7 +652,87 @@ export default function SearchFilterPage() {
 
 
   /* =======================================================
-     APPLY
+     APPLY CATEGORY FILTER
+  ======================================================= */
+
+  function applyCategorySelection(
+    nextParams
+  ) {
+    nextParams.delete(
+      "category"
+    );
+
+    nextParams.delete(
+      "subcategory"
+    );
+
+    nextParams.delete(
+      "child_category"
+    );
+
+    if (
+      !selectedCategoryNodeId
+    ) {
+      return;
+    }
+
+    const selectedPath =
+      findCategoryNodePath(
+        CATEGORY_FILTER_TREE,
+        selectedCategoryNodeId
+      );
+
+    if (
+      selectedPath.length === 0
+    ) {
+      return;
+    }
+
+    /*
+      First level:
+      Women / Men / Designer / etc.
+    */
+
+    if (selectedPath[0]) {
+      nextParams.set(
+        "category",
+        selectedPath[0].id
+      );
+    }
+
+    /*
+      Second level:
+      Clothing / Shoes / Bags / etc.
+    */
+
+    if (selectedPath[1]) {
+      nextParams.set(
+        "subcategory",
+        selectedPath[1].id
+      );
+    }
+
+    /*
+      Third level or deeper.
+
+      Supabase currently uses one
+      child_category field, therefore
+      we save the final selected node.
+    */
+
+    if (selectedPath.length >= 3) {
+      nextParams.set(
+        "child_category",
+        selectedPath[
+          selectedPath.length - 1
+        ].id
+      );
+    }
+  }
+
+
+  /* =======================================================
+     APPLY FILTER
   ======================================================= */
 
   function applyFilter() {
@@ -511,75 +741,13 @@ export default function SearchFilterPage() {
         searchParams
       );
 
-
-    /* CATEGORY */
-
     if (
-      filterType ===
-      "category"
+      filterType === "category"
     ) {
-      let effectiveSelection =
-        normalizeCategorySelection(
-          categorySelection
-        );
-
-      /*
-       * If the user navigated inside a category but did not
-       * explicitly tap "All", pressing Show results selects
-       * the currently displayed category.
-       */
-      if (
-        !effectiveSelection.category &&
-        currentCategoryNode?.query
-      ) {
-        effectiveSelection =
-          normalizeCategorySelection(
-            currentCategoryNode.query
-          );
-      }
-
-      if (
-        effectiveSelection.category
-      ) {
-        nextParams.set(
-          "category",
-          effectiveSelection.category
-        );
-      } else {
-        nextParams.delete(
-          "category"
-        );
-      }
-
-      if (
-        effectiveSelection.subcategory
-      ) {
-        nextParams.set(
-          "subcategory",
-          effectiveSelection.subcategory
-        );
-      } else {
-        nextParams.delete(
-          "subcategory"
-        );
-      }
-
-      if (
-        effectiveSelection.child_category
-      ) {
-        nextParams.set(
-          "child_category",
-          effectiveSelection.child_category
-        );
-      } else {
-        nextParams.delete(
-          "child_category"
-        );
-      }
+      applyCategorySelection(
+        nextParams
+      );
     }
-
-
-    /* MULTI SELECT */
 
     if (
       [
@@ -599,12 +767,8 @@ export default function SearchFilterPage() {
       );
     }
 
-
-    /* PRICE */
-
     if (
-      filterType ===
-      "price"
+      filterType === "price"
     ) {
       const cleanMinimum =
         String(
@@ -639,12 +803,8 @@ export default function SearchFilterPage() {
       }
     }
 
-
-    /* SORT */
-
     if (
-      filterType ===
-      "sort"
+      filterType === "sort"
     ) {
       if (
         selectedSort &&
@@ -661,7 +821,6 @@ export default function SearchFilterPage() {
         );
       }
     }
-
 
     navigate(
       `/?${nextParams.toString()}`
@@ -730,7 +889,7 @@ export default function SearchFilterPage() {
         </button>
 
         <h1>
-          {pageTitle}
+          {currentHeaderTitle}
         </h1>
 
         <button
@@ -749,20 +908,20 @@ export default function SearchFilterPage() {
         {filterType ===
           "category" && (
           <CategoryFilter
-            categoryPath={
-              categoryPath
-            }
-            setCategoryPath={
-              setCategoryPath
-            }
             currentNode={
               currentCategoryNode
             }
-            categorySelection={
-              categorySelection
+            rootNodes={
+              CATEGORY_FILTER_TREE
             }
-            setCategorySelection={
-              setCategorySelection
+            selectedNodeId={
+              selectedCategoryNodeId
+            }
+            onOpenNode={
+              openCategoryNode
+            }
+            onSelectNode={
+              selectCategoryNode
             }
           />
         )}
@@ -905,176 +1064,232 @@ export default function SearchFilterPage() {
 ========================================================= */
 
 function CategoryFilter({
-  categoryPath,
-  setCategoryPath,
   currentNode,
-  categorySelection,
-  setCategorySelection
+  rootNodes,
+  selectedNodeId,
+  onOpenNode,
+  onSelectNode
 }) {
-  const depth =
-    getCategoryDepth(
-      categoryPath
-    );
+  /*
+    ROOT:
+    Women
+    Men
+    Kids
+    Designer
+    ...
 
-  const options =
-    currentNode
-      ? currentNode.children || []
-      : SEARCH_CATEGORY_TREE;
+    No selection occurs here when a
+    category contains children.
+  */
 
-  const currentNodeSelected =
-    currentNode?.query
-      ? categorySelectionsMatch(
-          categorySelection,
-          currentNode.query
-        )
-      : false;
-
-  function openNode(item) {
-    if (
-      item.children?.length
-    ) {
-      setCategoryPath(
-        (current) => [
-          ...current,
-          item.id
-        ]
-      );
-
-      return;
-    }
-
-    setCategorySelection(
-      normalizeCategorySelection(
-        item.query
-      )
-    );
-  }
-
-  return (
-    <section className="search-filter-section search-category-section">
-      {!currentNode && (
+  if (!currentNode) {
+    return (
+      <section className="search-filter-section">
         <h2>
           Categories
         </h2>
-      )}
 
+        <div className="search-filter-category-list">
+          {rootNodes.map(
+            (category) => {
+              const hasChildren =
+                Boolean(
+                  category
+                    .children
+                    ?.length
+                );
+
+              const selected =
+                !hasChildren &&
+                selectedNodeId ===
+                  category.id;
+
+              return (
+                <button
+                  key={
+                    category.id
+                  }
+                  type="button"
+                  className={
+                    selected
+                      ? "search-filter-category-option active"
+                      : "search-filter-category-option"
+                  }
+                  onClick={() => {
+                    if (
+                      hasChildren
+                    ) {
+                      onOpenNode(
+                        category.id
+                      );
+
+                      return;
+                    }
+
+                    onSelectNode(
+                      category.id
+                    );
+                  }}
+                >
+                  <span className="search-filter-category-icon">
+                    {
+                      category.icon
+                    }
+                  </span>
+
+                  <strong>
+                    {
+                      category.label
+                    }
+                  </strong>
+
+                  {hasChildren ? (
+                    <ChevronRight
+                      size={22}
+                    />
+                  ) : (
+                    <CategoryRadio
+                      active={
+                        selected
+                      }
+                    />
+                  )}
+                </button>
+              );
+            }
+          )}
+        </div>
+      </section>
+    );
+  }
+
+
+  /*
+    INSIDE A CATEGORY:
+
+    Example:
+    Men
+      All
+      Clothing >
+      Shoes >
+      Bags >
+      Accessories >
+      Grooming >
+
+    Clicking Clothing ONLY opens Clothing.
+    It does not select it automatically.
+  */
+
+  return (
+    <section className="search-filter-section">
       <div className="search-filter-category-list">
-        {currentNode && (
-          <button
-            type="button"
-            className={
-              currentNodeSelected
-                ? "search-category-all-option active"
-                : "search-category-all-option"
+        <button
+          type="button"
+          className={
+            selectedNodeId ===
+            currentNode.id
+              ? "search-filter-category-option active"
+              : "search-filter-category-option"
+          }
+          onClick={() =>
+            onSelectNode(
+              currentNode.id
+            )
+          }
+        >
+          <span className="search-filter-category-icon">
+            <Grip
+              size={23}
+            />
+          </span>
+
+          <strong>
+            All
+          </strong>
+
+          <CategoryRadio
+            active={
+              selectedNodeId ===
+              currentNode.id
             }
-            onClick={() =>
-              setCategorySelection(
-                normalizeCategorySelection(
-                  currentNode.query
-                )
-              )
-            }
-          >
-            <span className="search-category-all-icon">
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-              <span />
-            </span>
-
-            <strong>
-              All
-            </strong>
-
-            <span
-              className={
-                currentNodeSelected
-                  ? "search-category-radio active"
-                  : "search-category-radio"
-              }
-            >
-              {currentNodeSelected && (
-                <span />
-              )}
-            </span>
-          </button>
-        )}
+          />
+        </button>
 
 
-        {options.map(
-          (item) => {
+        {currentNode.children?.map(
+          (child) => {
             const hasChildren =
               Boolean(
-                item.children?.length
+                child
+                  .children
+                  ?.length
               );
+
+            /*
+              IMPORTANT:
+              A navigable row is NEVER
+              automatically marked active.
+
+              Only a terminal explicitly
+              selected option becomes active.
+            */
 
             const selected =
-              categorySelectionsMatch(
-                categorySelection,
-                item.query
-              );
-
-            const isRoot =
-              depth === 0;
+              !hasChildren &&
+              selectedNodeId ===
+                child.id;
 
             return (
               <button
                 key={
-                  item.id
+                  child.id
                 }
                 type="button"
-                className={[
-                  "search-filter-category-option",
-                  isRoot
-                    ? "root"
-                    : "nested",
+                className={
                   selected
-                    ? "active"
-                    : ""
-                ]
-                  .filter(Boolean)
-                  .join(" ")}
-                onClick={() =>
-                  openNode(item)
+                    ? "search-filter-category-option active"
+                    : "search-filter-category-option"
                 }
-              >
-                {isRoot ? (
-                  <span className="search-filter-category-icon">
-                    {item.icon || "•"}
-                  </span>
-                ) : item.icon ? (
-                  <span className="search-filter-category-icon">
-                    {item.icon}
-                  </span>
-                ) : null}
+                onClick={() => {
+                  if (
+                    hasChildren
+                  ) {
+                    onOpenNode(
+                      child.id
+                    );
 
+                    return;
+                  }
+
+                  onSelectNode(
+                    child.id
+                  );
+                }}
+              >
+                {child.icon && (
+                  <span className="search-filter-category-icon">
+                    {
+                      child.icon
+                    }
+                  </span>
+                )}
 
                 <strong>
-                  {item.label}
+                  {
+                    child.label
+                  }
                 </strong>
-
 
                 {hasChildren ? (
                   <ChevronRight
                     size={22}
                   />
                 ) : (
-                  <span
-                    className={
+                  <CategoryRadio
+                    active={
                       selected
-                        ? "search-category-radio active"
-                        : "search-category-radio"
                     }
-                  >
-                    {selected && (
-                      <span />
-                    )}
-                  </span>
+                  />
                 )}
               </button>
             );
@@ -1087,7 +1302,31 @@ function CategoryFilter({
 
 
 /* =========================================================
-   SIZE
+   CATEGORY RADIO
+========================================================= */
+
+function CategoryRadio({
+  active
+}) {
+  return (
+    <span
+      className={
+        active
+          ? "search-radio active"
+          : "search-radio"
+      }
+      aria-hidden="true"
+    >
+      {active && (
+        <span />
+      )}
+    </span>
+  );
+}
+
+
+/* =========================================================
+   SIZE FILTER
 ========================================================= */
 
 function SizeFilter({
@@ -1120,7 +1359,9 @@ function SizeFilter({
                 }
               >
                 <strong>
-                  {group.label}
+                  {
+                    group.label
+                  }
                 </strong>
 
                 <ChevronRight
@@ -1149,7 +1390,9 @@ function SizeFilter({
             }
           >
             <h2>
-              {section.title}
+              {
+                section.title
+              }
             </h2>
 
             <div className="search-size-grid">
@@ -1171,7 +1414,9 @@ function SizeFilter({
                       }
                       onClick={() =>
                         setSelectedValues(
-                          (current) =>
+                          (
+                            current
+                          ) =>
                             toggleArrayValue(
                               current,
                               option.value
@@ -1179,7 +1424,9 @@ function SizeFilter({
                         )
                       }
                     >
-                      {option.label}
+                      {
+                        option.label
+                      }
                     </button>
                   );
                 }
@@ -1194,7 +1441,7 @@ function SizeFilter({
 
 
 /* =========================================================
-   BRAND
+   BRAND FILTER
 ========================================================= */
 
 function BrandFilter({
@@ -1274,7 +1521,7 @@ function BrandFilter({
 
 
 /* =========================================================
-   CONDITION
+   CONDITION FILTER
 ========================================================= */
 
 function ConditionFilter({
@@ -1309,11 +1556,15 @@ function ConditionFilter({
             >
               <div>
                 <strong>
-                  {condition.label}
+                  {
+                    condition.label
+                  }
                 </strong>
 
                 <p>
-                  {condition.description}
+                  {
+                    condition.description
+                  }
                 </p>
               </div>
 
@@ -1340,7 +1591,7 @@ function ConditionFilter({
 
 
 /* =========================================================
-   COLOR
+   COLOR FILTER
 ========================================================= */
 
 function ColorFilter({
@@ -1393,7 +1644,9 @@ function ColorFilter({
                 </span>
 
                 <span>
-                  {color.label}
+                  {
+                    color.label
+                  }
                 </span>
               </button>
             );
@@ -1406,7 +1659,7 @@ function ColorFilter({
 
 
 /* =========================================================
-   PRICE
+   PRICE FILTER
 ========================================================= */
 
 function PriceFilter({
@@ -1445,6 +1698,7 @@ function PriceFilter({
           </div>
         </label>
 
+
         <label>
           <span>
             Maximum
@@ -1478,7 +1732,7 @@ function PriceFilter({
 
 
 /* =========================================================
-   MATERIAL
+   MATERIAL FILTER
 ========================================================= */
 
 function MaterialFilter({
@@ -1540,7 +1794,7 @@ function MaterialFilter({
 
 
 /* =========================================================
-   SORT
+   SORT FILTER
 ========================================================= */
 
 function SortFilter({
@@ -1570,7 +1824,9 @@ function SortFilter({
                 }
               >
                 <strong>
-                  {option.label}
+                  {
+                    option.label
+                  }
                 </strong>
 
                 <span
