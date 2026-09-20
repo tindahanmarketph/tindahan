@@ -2,14 +2,15 @@ import {
   ArrowLeft,
   Check,
   ChevronRight,
-  Grip,
   Search
 } from "lucide-react";
+
 import {
   useEffect,
   useMemo,
   useState
 } from "react";
+
 import {
   useNavigate,
   useParams,
@@ -21,7 +22,9 @@ import {
   SEARCH_CATEGORY_TREE
 } from "../lib/categories";
 
-import { BRAND_OPTIONS } from "../lib/brands";
+import {
+  BRAND_OPTIONS
+} from "../lib/brands";
 
 import {
   COLOR_FILTER_OPTIONS,
@@ -33,10 +36,8 @@ import {
   writeMultiParam
 } from "../lib/searchFilters";
 
+import "./SearchFilterPage.css";
 
-/* =========================================================
-   FILTER TITLES
-========================================================= */
 
 const FILTER_TITLES = {
   category: "Category",
@@ -49,10 +50,6 @@ const FILTER_TITLES = {
   sort: "Sort by"
 };
 
-
-/* =========================================================
-   GENERIC HELPERS
-========================================================= */
 
 function toggleArrayValue(currentValues, value) {
   if (currentValues.includes(value)) {
@@ -68,27 +65,15 @@ function toggleArrayValue(currentValues, value) {
 }
 
 
-/* =========================================================
-   CATEGORY TREE
-========================================================= */
-
 function createCategoryFilterTree() {
   return CATEGORIES.map((category) => {
     const detailedCategory =
-      SEARCH_CATEGORY_TREE.find(
-        (item) =>
-          item.id === category.id
+      SEARCH_CATEGORY_TREE?.find(
+        (item) => item.id === category.id
       );
 
-    /*
-      Women / Men / Designer use the detailed tree.
-
-      Other categories continue using the normal
-      CATEGORIES structure until we develop them.
-    */
     if (
-      detailedCategory &&
-      detailedCategory.children?.length
+      detailedCategory?.children?.length
     ) {
       return detailedCategory;
     }
@@ -97,14 +82,13 @@ function createCategoryFilterTree() {
       id: category.id,
       label: category.label,
       icon: category.icon,
-
       children:
         category.subcategories?.map(
           (subcategory) => ({
             id: subcategory.id,
             label: subcategory.label,
-            icon: subcategory.icon || null,
-
+            icon:
+              subcategory.icon || null,
             children:
               subcategory.children?.map(
                 (child) => ({
@@ -122,6 +106,33 @@ function createCategoryFilterTree() {
 
 const CATEGORY_FILTER_TREE =
   createCategoryFilterTree();
+
+
+function findCategoryNodeById(nodes, targetId) {
+  if (!targetId) {
+    return null;
+  }
+
+  for (const node of nodes || []) {
+    if (node.id === targetId) {
+      return node;
+    }
+
+    if (node.children?.length) {
+      const found =
+        findCategoryNodeById(
+          node.children,
+          targetId
+        );
+
+      if (found) {
+        return found;
+      }
+    }
+  }
+
+  return null;
+}
 
 
 function findCategoryNodePath(
@@ -144,15 +155,15 @@ function findCategoryNodePath(
     }
 
     if (node.children?.length) {
-      const result =
+      const found =
         findCategoryNodePath(
           node.children,
           targetId,
           nextPath
         );
 
-      if (result.length) {
-        return result;
+      if (found.length) {
+        return found;
       }
     }
   }
@@ -161,101 +172,74 @@ function findCategoryNodePath(
 }
 
 
-function findCategoryNodeById(
-  nodes,
-  targetId
-) {
-  if (!targetId) {
-    return null;
+function getSelectableLeafIds(node) {
+  if (!node) {
+    return [];
   }
 
-  for (const node of nodes || []) {
-    if (node.id === targetId) {
-      return node;
-    }
-
-    if (node.children?.length) {
-      const result =
-        findCategoryNodeById(
-          node.children,
-          targetId
-        );
-
-      if (result) {
-        return result;
-      }
-    }
+  if (!node.children?.length) {
+    return [node.id];
   }
 
-  return null;
+  return node.children.flatMap(
+    (child) =>
+      getSelectableLeafIds(child)
+  );
 }
 
 
-function getInitialCategorySelection(
-  searchParams
-) {
-  const childCategory =
-    searchParams.get(
+function getInitialCategoryState(searchParams) {
+  const selectedChildren =
+    readMultiParam(
+      searchParams,
       "child_category"
     );
 
   const subcategory =
     searchParams.get(
       "subcategory"
-    );
+    ) || "";
 
   const category =
     searchParams.get(
       "category"
-    );
+    ) || "";
 
-  /*
-    Existing applied filter may be remembered.
+  const scopeId =
+    subcategory || category;
 
-    IMPORTANT:
-    this does NOT control navigation.
-
-    Therefore opening Men > Clothing does not
-    automatically select Jeans, Shirts, etc.
-  */
-
-  if (
-    childCategory &&
-    findCategoryNodeById(
-      CATEGORY_FILTER_TREE,
-      childCategory
-    )
-  ) {
-    return childCategory;
+  if (selectedChildren.length) {
+    return {
+      selectedIds:
+        selectedChildren,
+      scopeId
+    };
   }
 
-  if (
-    subcategory &&
-    findCategoryNodeById(
-      CATEGORY_FILTER_TREE,
-      subcategory
-    )
-  ) {
-    return subcategory;
+  if (scopeId) {
+    const scopeNode =
+      findCategoryNodeById(
+        CATEGORY_FILTER_TREE,
+        scopeId
+      );
+
+    if (scopeNode) {
+      return {
+        selectedIds:
+          getSelectableLeafIds(
+            scopeNode
+          ),
+        scopeId
+      };
+    }
   }
 
-  if (
-    category &&
-    findCategoryNodeById(
-      CATEGORY_FILTER_TREE,
-      category
-    )
-  ) {
-    return category;
-  }
-
-  return "";
+  return {
+    selectedIds: [],
+    scopeId: ""
+  };
 }
 
-
-/* =========================================================
-   MAIN PAGE
-========================================================= */
 
 export default function SearchFilterPage() {
   const navigate =
@@ -271,45 +255,47 @@ export default function SearchFilterPage() {
     searchParams.toString();
 
 
-  /* =======================================================
-     STANDARD MULTI FILTERS
-  ======================================================= */
-
+  /*
+   * Standard multi-choice filters:
+   * size / brand / condition / color / material
+   */
   const [
     selectedValues,
     setSelectedValues
   ] = useState([]);
 
 
-  /* =======================================================
-     CATEGORY
-  ======================================================= */
-
   /*
-    selectedCategoryNodeId =
-    the category/subcategory actually selected
-    for filtering.
-
-    categoryNavigation =
-    where the user currently is in the menu.
-
-    These two states are intentionally separated.
-  */
-
+   * CATEGORY
+   *
+   * selectedCategoryNodeIds:
+   * actual checked final options.
+   *
+   * categoryNavigation:
+   * menu currently displayed.
+   *
+   * categorySelectionScopeId:
+   * parent category under which the checked
+   * items belong.
+   *
+   * Navigation and selection are completely
+   * separated.
+   */
   const [
-    selectedCategoryNodeId,
-    setSelectedCategoryNodeId
-  ] = useState("");
+    selectedCategoryNodeIds,
+    setSelectedCategoryNodeIds
+  ] = useState([]);
 
   const [
     categoryNavigation,
     setCategoryNavigation
   ] = useState([]);
 
+  const [
+    categorySelectionScopeId,
+    setCategorySelectionScopeId
+  ] = useState("");
 
-  /* =======================================================
-     PRICE
-  ======================================================= */
 
   const [
     minimumPrice,
@@ -321,30 +307,15 @@ export default function SearchFilterPage() {
     setMaximumPrice
   ] = useState("");
 
-
-  /* =======================================================
-     SORT
-  ======================================================= */
-
   const [
     selectedSort,
     setSelectedSort
   ] = useState("newest");
 
-
-  /* =======================================================
-     BRAND
-  ======================================================= */
-
   const [
     brandSearch,
     setBrandSearch
   ] = useState("");
-
-
-  /* =======================================================
-     SIZE
-  ======================================================= */
 
   const [
     sizeAudience,
@@ -352,34 +323,38 @@ export default function SearchFilterPage() {
   ] = useState("");
 
 
-  /* =======================================================
-     READ CURRENT URL FILTERS
-  ======================================================= */
-
   useEffect(() => {
     setBrandSearch("");
     setSizeAudience("");
 
-    /*
-      Always reopen the Category filter
-      from the root.
-
-      Navigation is NEVER inferred from
-      the selected category.
-    */
-    setCategoryNavigation([]);
-
-    if (filterType === "category") {
-      setSelectedCategoryNodeId(
-        getInitialCategorySelection(
+    if (
+      filterType === "category"
+    ) {
+      const initial =
+        getInitialCategoryState(
           searchParams
-        )
+        );
+
+      setSelectedCategoryNodeIds(
+        initial.selectedIds
       );
+
+      setCategorySelectionScopeId(
+        initial.scopeId
+      );
+
+      /*
+       * Always reopen the category
+       * browser at root.
+       */
+      setCategoryNavigation([]);
 
       return;
     }
 
-    if (filterType === "price") {
+    if (
+      filterType === "price"
+    ) {
       setMinimumPrice(
         searchParams.get(
           "min_price"
@@ -395,7 +370,9 @@ export default function SearchFilterPage() {
       return;
     }
 
-    if (filterType === "sort") {
+    if (
+      filterType === "sort"
+    ) {
       setSelectedSort(
         searchParams.get(
           "sort"
@@ -427,10 +404,6 @@ export default function SearchFilterPage() {
   ]);
 
 
-  /* =======================================================
-     BRANDS
-  ======================================================= */
-
   const filteredBrands =
     useMemo(() => {
       const query =
@@ -459,10 +432,6 @@ export default function SearchFilterPage() {
     ]);
 
 
-  /* =======================================================
-     SIZE GROUP
-  ======================================================= */
-
   const activeSizeGroup =
     useMemo(
       () =>
@@ -477,10 +446,6 @@ export default function SearchFilterPage() {
     );
 
 
-  /* =======================================================
-     CURRENT CATEGORY PAGE
-  ======================================================= */
-
   const currentCategoryNode =
     useMemo(() => {
       if (
@@ -489,23 +454,19 @@ export default function SearchFilterPage() {
         return null;
       }
 
-      const currentNodeId =
+      const nodeId =
         categoryNavigation[
           categoryNavigation.length - 1
         ];
 
       return findCategoryNodeById(
         CATEGORY_FILTER_TREE,
-        currentNodeId
+        nodeId
       );
     }, [
       categoryNavigation
     ]);
 
-
-  /* =======================================================
-     HEADER TITLE
-  ======================================================= */
 
   const currentHeaderTitle =
     useMemo(() => {
@@ -535,20 +496,7 @@ export default function SearchFilterPage() {
     );
 
 
-  /* =======================================================
-     CATEGORY NAVIGATION
-  ======================================================= */
-
   function openCategoryNode(nodeId) {
-    /*
-      CRITICAL FIX:
-
-      Opening a category only changes
-      navigation.
-
-      It DOES NOT select anything.
-    */
-
     setCategoryNavigation(
       (current) => [
         ...current,
@@ -558,26 +506,86 @@ export default function SearchFilterPage() {
   }
 
 
-  function selectCategoryNode(nodeId) {
+  function toggleCategoryLeaf(
+    nodeId,
+    scopeNodeId
+  ) {
     /*
-      Selection only happens after
-      an explicit click on:
-      - All
-      - a final category
-    */
+     * Entering another category branch and
+     * selecting something there starts a
+     * new category selection.
+     */
+    if (
+      categorySelectionScopeId !==
+      scopeNodeId
+    ) {
+      setCategorySelectionScopeId(
+        scopeNodeId
+      );
 
-    setSelectedCategoryNodeId(
+      setSelectedCategoryNodeIds([
+        nodeId
+      ]);
+
+      return;
+    }
+
+    setSelectedCategoryNodeIds(
       (current) =>
-        current === nodeId
-          ? ""
-          : nodeId
+        toggleArrayValue(
+          current,
+          nodeId
+        )
     );
   }
 
 
-  /* =======================================================
-     BACK
-  ======================================================= */
+  function toggleAllCategoryLeaves(
+    scopeNode
+  ) {
+    if (!scopeNode) {
+      return;
+    }
+
+    const allIds =
+      getSelectableLeafIds(
+        scopeNode
+      );
+
+    if (!allIds.length) {
+      return;
+    }
+
+    const everythingSelected =
+      categorySelectionScopeId ===
+        scopeNode.id &&
+      allIds.every(
+        (id) =>
+          selectedCategoryNodeIds.includes(
+            id
+          )
+      );
+
+    setCategorySelectionScopeId(
+      scopeNode.id
+    );
+
+    if (everythingSelected) {
+      setSelectedCategoryNodeIds(
+        []
+      );
+
+      return;
+    }
+
+    /*
+     * ALL = literally check everything.
+     */
+    setSelectedCategoryNodeIds(
+      allIds
+    );
+  }
+
 
   function handleBack() {
     if (
@@ -609,20 +617,15 @@ export default function SearchFilterPage() {
   }
 
 
-  /* =======================================================
-     CLEAR CURRENT FILTER
-  ======================================================= */
-
   function clearCurrentFilter() {
     if (
       filterType === "category"
     ) {
-      /*
-        Clear selection only.
-        Keep current navigation screen.
-      */
+      setSelectedCategoryNodeIds(
+        []
+      );
 
-      setSelectedCategoryNodeId(
+      setCategorySelectionScopeId(
         ""
       );
 
@@ -651,11 +654,7 @@ export default function SearchFilterPage() {
   }
 
 
-  /* =======================================================
-     APPLY CATEGORY FILTER
-  ======================================================= */
-
-  function applyCategorySelection(
+  function applyCategoryFilter(
     nextParams
   ) {
     nextParams.delete(
@@ -671,69 +670,57 @@ export default function SearchFilterPage() {
     );
 
     if (
-      !selectedCategoryNodeId
+      !categorySelectionScopeId ||
+      selectedCategoryNodeIds.length === 0
     ) {
       return;
     }
 
-    const selectedPath =
+    const scopePath =
       findCategoryNodePath(
         CATEGORY_FILTER_TREE,
-        selectedCategoryNodeId
+        categorySelectionScopeId
       );
 
-    if (
-      selectedPath.length === 0
-    ) {
+    if (!scopePath.length) {
       return;
     }
 
     /*
-      First level:
-      Women / Men / Designer / etc.
-    */
+     * Example:
+     *
+     * Men
+     *   -> Clothing
+     *      -> Jeans
+     *      -> Shorts
+     *
+     * category = men
+     * subcategory = men_clothing
+     * child_category = jeans
+     * child_category = shorts
+     */
 
-    if (selectedPath[0]) {
+    if (scopePath[0]) {
       nextParams.set(
         "category",
-        selectedPath[0].id
+        scopePath[0].id
       );
     }
 
-    /*
-      Second level:
-      Clothing / Shoes / Bags / etc.
-    */
-
-    if (selectedPath[1]) {
+    if (scopePath[1]) {
       nextParams.set(
         "subcategory",
-        selectedPath[1].id
+        scopePath[1].id
       );
     }
 
-    /*
-      Third level or deeper.
-
-      Supabase currently uses one
-      child_category field, therefore
-      we save the final selected node.
-    */
-
-    if (selectedPath.length >= 3) {
-      nextParams.set(
-        "child_category",
-        selectedPath[
-          selectedPath.length - 1
-        ].id
-      );
-    }
+    writeMultiParam(
+      nextParams,
+      "child_category",
+      selectedCategoryNodeIds
+    );
   }
 
-
-  /* =======================================================
-     APPLY FILTER
-  ======================================================= */
 
   function applyFilter() {
     const nextParams =
@@ -744,7 +731,7 @@ export default function SearchFilterPage() {
     if (
       filterType === "category"
     ) {
-      applyCategorySelection(
+      applyCategoryFilter(
         nextParams
       );
     }
@@ -756,9 +743,7 @@ export default function SearchFilterPage() {
         "condition",
         "color",
         "material"
-      ].includes(
-        filterType
-      )
+      ].includes(filterType)
     ) {
       writeMultiParam(
         nextParams,
@@ -808,8 +793,7 @@ export default function SearchFilterPage() {
     ) {
       if (
         selectedSort &&
-        selectedSort !==
-          "newest"
+        selectedSort !== "newest"
       ) {
         nextParams.set(
           "sort",
@@ -828,10 +812,6 @@ export default function SearchFilterPage() {
   }
 
 
-  /* =======================================================
-     INVALID FILTER
-  ======================================================= */
-
   if (!validFilter) {
     return (
       <main className="search-filter-screen">
@@ -846,9 +826,7 @@ export default function SearchFilterPage() {
               )
             }
           >
-            <ArrowLeft
-              size={25}
-            />
+            <ArrowLeft size={25} />
           </button>
 
           <h1>
@@ -868,24 +846,22 @@ export default function SearchFilterPage() {
   }
 
 
-  /* =======================================================
-     PAGE
-  ======================================================= */
-
   return (
-    <main className="search-filter-screen">
+    <main
+      className={
+        filterType === "category"
+          ? "search-filter-screen category-multiselect-screen"
+          : "search-filter-screen"
+      }
+    >
       <header className="search-filter-header">
         <button
           type="button"
           className="search-filter-header-button"
           aria-label="Back"
-          onClick={
-            handleBack
-          }
+          onClick={handleBack}
         >
-          <ArrowLeft
-            size={25}
-          />
+          <ArrowLeft size={25} />
         </button>
 
         <h1>
@@ -914,14 +890,20 @@ export default function SearchFilterPage() {
             rootNodes={
               CATEGORY_FILTER_TREE
             }
-            selectedNodeId={
-              selectedCategoryNodeId
+            selectedNodeIds={
+              selectedCategoryNodeIds
+            }
+            selectionScopeId={
+              categorySelectionScopeId
             }
             onOpenNode={
               openCategoryNode
             }
-            onSelectNode={
-              selectCategoryNode
+            onToggleLeaf={
+              toggleCategoryLeaf
+            }
+            onToggleAll={
+              toggleAllCategoryLeaves
             }
           />
         )}
@@ -1060,28 +1042,21 @@ export default function SearchFilterPage() {
 
 
 /* =========================================================
-   CATEGORY FILTER
+   CATEGORY
 ========================================================= */
 
 function CategoryFilter({
   currentNode,
   rootNodes,
-  selectedNodeId,
+  selectedNodeIds,
+  selectionScopeId,
   onOpenNode,
-  onSelectNode
+  onToggleLeaf,
+  onToggleAll
 }) {
   /*
-    ROOT:
-    Women
-    Men
-    Kids
-    Designer
-    ...
-
-    No selection occurs here when a
-    category contains children.
-  */
-
+   * ROOT CATEGORY PAGE
+   */
   if (!currentNode) {
     return (
       <section className="search-filter-section">
@@ -1089,7 +1064,7 @@ function CategoryFilter({
           Categories
         </h2>
 
-        <div className="search-filter-category-list">
+        <div className="search-filter-category-list search-category-root-list">
           {rootNodes.map(
             (category) => {
               const hasChildren =
@@ -1099,22 +1074,13 @@ function CategoryFilter({
                     ?.length
                 );
 
-              const selected =
-                !hasChildren &&
-                selectedNodeId ===
-                  category.id;
-
               return (
                 <button
                   key={
                     category.id
                   }
                   type="button"
-                  className={
-                    selected
-                      ? "search-filter-category-option active"
-                      : "search-filter-category-option"
-                  }
+                  className="search-filter-category-option search-category-navigation-row search-category-with-icon"
                   onClick={() => {
                     if (
                       hasChildren
@@ -1122,13 +1088,7 @@ function CategoryFilter({
                       onOpenNode(
                         category.id
                       );
-
-                      return;
                     }
-
-                    onSelectNode(
-                      category.id
-                    );
                   }}
                 >
                   <span className="search-filter-category-icon">
@@ -1143,17 +1103,9 @@ function CategoryFilter({
                     }
                   </strong>
 
-                  {hasChildren ? (
-                    <ChevronRight
-                      size={22}
-                    />
-                  ) : (
-                    <CategoryRadio
-                      active={
-                        selected
-                      }
-                    />
-                  )}
+                  <ChevronRight
+                    size={22}
+                  />
                 </button>
               );
             }
@@ -1164,53 +1116,62 @@ function CategoryFilter({
   }
 
 
-  /*
-    INSIDE A CATEGORY:
+  const allLeafIds =
+    getSelectableLeafIds(
+      currentNode
+    );
 
-    Example:
-    Men
-      All
-      Clothing >
-      Shoes >
-      Bags >
-      Accessories >
-      Grooming >
+  const selectedInsideCurrentScope =
+    selectionScopeId ===
+    currentNode.id;
 
-    Clicking Clothing ONLY opens Clothing.
-    It does not select it automatically.
-  */
+  const selectedCount =
+    selectedInsideCurrentScope
+      ? allLeafIds.filter(
+          (id) =>
+            selectedNodeIds.includes(
+              id
+            )
+        ).length
+      : 0;
+
+  const allSelected =
+    allLeafIds.length > 0 &&
+    selectedCount ===
+      allLeafIds.length;
+
+  const partiallySelected =
+    selectedCount > 0 &&
+    !allSelected;
+
 
   return (
     <section className="search-filter-section">
-      <div className="search-filter-category-list">
+      <div className="search-filter-category-list search-category-nested-list">
+
         <button
           type="button"
           className={
-            selectedNodeId ===
-            currentNode.id
-              ? "search-filter-category-option active"
-              : "search-filter-category-option"
+            allSelected
+              ? "search-filter-category-option search-category-selectable-row search-category-all-row active"
+              : "search-filter-category-option search-category-selectable-row search-category-all-row"
           }
           onClick={() =>
-            onSelectNode(
-              currentNode.id
+            onToggleAll(
+              currentNode
             )
           }
         >
-          <span className="search-filter-category-icon">
-            <Grip
-              size={23}
-            />
-          </span>
-
           <strong>
             All
           </strong>
 
-          <CategoryRadio
+          <CategoryCheckbox
             active={
-              selectedNodeId ===
-              currentNode.id
+              allSelected
+            }
+            partial={
+              partiallySelected
             }
           />
         </button>
@@ -1225,19 +1186,51 @@ function CategoryFilter({
                   ?.length
               );
 
-            /*
-              IMPORTANT:
-              A navigable row is NEVER
-              automatically marked active.
+            if (hasChildren) {
+              return (
+                <button
+                  key={
+                    child.id
+                  }
+                  type="button"
+                  className={
+                    child.icon
+                      ? "search-filter-category-option search-category-navigation-row search-category-with-icon"
+                      : "search-filter-category-option search-category-navigation-row"
+                  }
+                  onClick={() =>
+                    onOpenNode(
+                      child.id
+                    )
+                  }
+                >
+                  {child.icon && (
+                    <span className="search-filter-category-icon">
+                      {
+                        child.icon
+                      }
+                    </span>
+                  )}
 
-              Only a terminal explicitly
-              selected option becomes active.
-            */
+                  <strong>
+                    {
+                      child.label
+                    }
+                  </strong>
 
-            const selected =
-              !hasChildren &&
-              selectedNodeId ===
-                child.id;
+                  <ChevronRight
+                    size={22}
+                  />
+                </button>
+              );
+            }
+
+
+            const active =
+              selectedInsideCurrentScope &&
+              selectedNodeIds.includes(
+                child.id
+              );
 
             return (
               <button
@@ -1246,51 +1239,28 @@ function CategoryFilter({
                 }
                 type="button"
                 className={
-                  selected
-                    ? "search-filter-category-option active"
-                    : "search-filter-category-option"
+                  active
+                    ? "search-filter-category-option search-category-selectable-row active"
+                    : "search-filter-category-option search-category-selectable-row"
                 }
-                onClick={() => {
-                  if (
-                    hasChildren
-                  ) {
-                    onOpenNode(
-                      child.id
-                    );
-
-                    return;
-                  }
-
-                  onSelectNode(
-                    child.id
-                  );
-                }}
+                onClick={() =>
+                  onToggleLeaf(
+                    child.id,
+                    currentNode.id
+                  )
+                }
               >
-                {child.icon && (
-                  <span className="search-filter-category-icon">
-                    {
-                      child.icon
-                    }
-                  </span>
-                )}
-
                 <strong>
                   {
                     child.label
                   }
                 </strong>
 
-                {hasChildren ? (
-                  <ChevronRight
-                    size={22}
-                  />
-                ) : (
-                  <CategoryRadio
-                    active={
-                      selected
-                    }
-                  />
-                )}
+                <CategoryCheckbox
+                  active={
+                    active
+                  }
+                />
               </button>
             );
           }
@@ -1301,32 +1271,44 @@ function CategoryFilter({
 }
 
 
-/* =========================================================
-   CATEGORY RADIO
-========================================================= */
-
-function CategoryRadio({
-  active
+function CategoryCheckbox({
+  active,
+  partial = false
 }) {
   return (
     <span
-      className={
+      className={[
+        "search-category-checkbox",
         active
-          ? "search-radio active"
-          : "search-radio"
+          ? "active"
+          : "",
+        partial
+          ? "partial"
+          : ""
+      ]
+        .filter(Boolean)
+        .join(" ")
       }
       aria-hidden="true"
     >
       {active && (
-        <span />
+        <Check
+          size={18}
+          strokeWidth={3}
+        />
       )}
+
+      {!active &&
+        partial && (
+          <span className="search-category-checkbox-dash" />
+        )}
     </span>
   );
 }
 
 
 /* =========================================================
-   SIZE FILTER
+   SIZE
 ========================================================= */
 
 function SizeFilter({
@@ -1375,9 +1357,11 @@ function SizeFilter({
     );
   }
 
+
   if (!activeSizeGroup) {
     return null;
   }
+
 
   return (
     <section className="search-filter-section">
@@ -1441,7 +1425,7 @@ function SizeFilter({
 
 
 /* =========================================================
-   BRAND FILTER
+   BRAND
 ========================================================= */
 
 function BrandFilter({
@@ -1521,7 +1505,7 @@ function BrandFilter({
 
 
 /* =========================================================
-   CONDITION FILTER
+   CONDITION
 ========================================================= */
 
 function ConditionFilter({
@@ -1591,7 +1575,7 @@ function ConditionFilter({
 
 
 /* =========================================================
-   COLOR FILTER
+   COLOR
 ========================================================= */
 
 function ColorFilter({
@@ -1659,7 +1643,7 @@ function ColorFilter({
 
 
 /* =========================================================
-   PRICE FILTER
+   PRICE
 ========================================================= */
 
 function PriceFilter({
@@ -1732,7 +1716,7 @@ function PriceFilter({
 
 
 /* =========================================================
-   MATERIAL FILTER
+   MATERIAL
 ========================================================= */
 
 function MaterialFilter({
@@ -1794,7 +1778,7 @@ function MaterialFilter({
 
 
 /* =========================================================
-   SORT FILTER
+   SORT
 ========================================================= */
 
 function SortFilter({
