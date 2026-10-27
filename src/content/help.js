@@ -10,7 +10,7 @@ export const HELP_CATEGORIES = [
   { id: "shipping", title: "Delivery and meet-ups", icon: "Truck", blurb: "Couriers, labels, tracking" },
   { id: "payments", title: "Payments and wallet", icon: "Wallet", blurb: "GCash, Maya, refunds" },
   { id: "safety", title: "Safety and scams", icon: "ShieldCheck", blurb: "Stay protected" },
-  { id: "account", title: "Account and privacy", icon: "UserRound", blurb: "Settings, data, dark mode" }
+  { id: "account", title: "Account and privacy", icon: "UserRound", blurb: "Settings, privacy, data" }
 ];
 
 export const HELP_ARTICLES = [
@@ -110,14 +110,12 @@ export const HELP_ARTICLES = [
     p("Write to us first. You can also contact the Department of Trade and Industry (DTI) Consumer Care at **" + DTI_HOTLINE + "**. For personal data, contact the National Privacy Commission at privacy.gov.ph.")] },
 
   /* ---------- Account ---------- */
-  { slug: "dark-mode", cat: "account", q: "How do I use dark mode?", a: [
-    p("Go to **Settings → Appearance** and choose **Light**, **Dark** or **Automatic**. On a computer you can also use the moon icon in the top bar, or the switch at the bottom of the page.")] },
   { slug: "change-password", cat: "account", q: "How do I change my password?", a: [
     p("Go to **Settings → Security → Password**, enter a new password and save. Use at least 8 characters with letters and numbers. If you forgot your password, use **Forgot password** on the login page.")] },
   { slug: "change-address", cat: "account", q: "How do I add or change my address?", a: [
     p("Go to **Settings → Shipping → My address** and fill in your name, mobile number, street, barangay, city or municipality, province, region and postal code.")] },
   { slug: "my-data", cat: "account", q: "How do I download or delete my data?", a: [
-    p("Go to **Settings → Privacy settings → Your data**. You can download a copy of your data and ask for your account to be deleted. You can also write to " + MAIL + ". See the [Privacy Center](/privacy).")] },
+    p("Go to **Settings → Privacy settings → Your data**. You can download a copy of your data and ask for your account to be deleted. You can also write to " + MAIL + ". See the [Protection Center](/privacy).")] },
   { slug: "contact-us", cat: "account", q: "How do I contact TindaHan?", a: [
     p("Write to " + MAIL + ". Please tell us your username, the order if any, and what happened. You can also message us on [Instagram](https://www.instagram.com/tinda_han_official/) or [Facebook](https://www.facebook.com/profile.php?id=61594957387328).")] }
 ];

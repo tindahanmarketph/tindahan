@@ -104,7 +104,7 @@ export const accessibility = {
     section("commitment", "Our commitment",
       p("We want everyone to be able to use TindaHan, including people who use screen readers, keyboards, larger text, or older and low-cost phones. We work towards the Web Content Accessibility Guidelines (WCAG) 2.1 level AA.")),
     section("what", "What we do",
-      ul("A **dark mode** and a light mode, with readable contrast. Choose in [Settings → Appearance](/settings/appearance).", "Clear text, large touch targets and labels on buttons and icons.", "Pages that work on slow connections and small screens.", "Text in simple English. We plan to add Filipino and other languages.")),
+      ul("Readable contrast, large text and clear labels.", "Clear text, large touch targets and labels on buttons and icons.", "Pages that work on slow connections and small screens.", "Text in simple English. We plan to add Filipino and other languages.")),
     section("limits", "Known limits",
       p("Some parts of TindaHan are still being improved, for example some images and animations. If you find something hard to use, tell us.")),
     section("contact", "Tell us",

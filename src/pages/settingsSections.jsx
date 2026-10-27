@@ -3,7 +3,6 @@ import { Link, useNavigate } from "react-router-dom";
 import { Building2, CreditCard, Download, Landmark, Mail, ShieldCheck, Smartphone, Trash2, WalletCards } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
-import { ThemeChoiceCards } from "../components/ThemeControls";
 import { CONTACT_EMAIL, NPC_WEBSITE } from "../content/site";
 
 /* ---------- petits éléments identiques à ceux de Settings.jsx ---------- */
@@ -71,24 +70,6 @@ function usePersistedState(key, initial) {
   }
 
   return [value, update];
-}
-
-/* ---------- Appearance ---------- */
-export function AppearanceSection() {
-  return (
-    <div className="settings-content-inner">
-      <h2 className="settings-panel-title">Appearance</h2>
-      <p className="settings-panel-subtitle">
-        Choose how TindaHan looks on this device. Dark mode is easier on the eyes at night and can save battery on OLED screens.
-      </p>
-
-      <ThemeChoiceCards />
-
-      <p className="settings-small-note">
-        Your choice is saved on this device. “Automatic” follows your phone or computer settings.
-      </p>
-    </div>
-  );
 }
 
 /* ---------- Shipping : adresse philippine + modes de livraison ---------- */
@@ -421,7 +402,7 @@ export function PrivacySection() {
           </div>
           <div className="settings-row-action"><span className="settings-chevron">›</span></div>
         </a>
-        <SettingsRow title="Privacy Center" helper="How we use your data and your rights under the Data Privacy Act." icon={<ShieldCheck size={22} />} to="/privacy" action={<span className="settings-chevron">›</span>} />
+        <SettingsRow title="Protection Center" helper="How we use your data and your rights under the Data Privacy Act." icon={<ShieldCheck size={22} />} to="/privacy" action={<span className="settings-chevron">›</span>} />
         <SettingsRow title="Cookie settings" icon={<Mail size={22} />} to="/cookie-settings" action={<span className="settings-chevron">›</span>} />
       </SettingsCard>
 

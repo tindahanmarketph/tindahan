@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Check, ChevronLeft, Copy, Gift, MessageCircle, Share2 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
+import { bumpInviteCount } from "../lib/walletData";
 
 /* Inviter des amis : lien personnel + partage via les apps les plus utilisées aux Philippines */
 export default function Invite() {
@@ -27,6 +28,7 @@ export default function Invite() {
   ];
 
   async function copyLink() {
+    bumpInviteCount(user?.id);
     try {
       await navigator.clipboard.writeText(link);
       setCopied(true);
@@ -40,6 +42,7 @@ export default function Invite() {
     if (navigator.share) {
       try {
         await navigator.share({ title: "TindaHan", text: "Join me on TindaHan", url: link });
+        bumpInviteCount(user?.id);
       } catch {
         /* annulé */
       }
@@ -87,7 +90,7 @@ export default function Invite() {
           <h2>Send it with</h2>
           <div className="invite-channels">
             {channels.map((c) => (
-              <a key={c.label} href={c.href} target="_blank" rel="noopener noreferrer" className="invite-channel">
+              <a key={c.label} href={c.href} target="_blank" rel="noopener noreferrer" className="invite-channel" onClick={() => bumpInviteCount(user?.id)}>
                 <MessageCircle size={18} /> {c.label}
               </a>
             ))}

@@ -1,21 +1,51 @@
+import { useMemo, useState } from "react";
 import { ChevronLeft, Search } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { usePersonalisation } from "../lib/personalisation";
 
-const brands = [
-  { name: "adidas", count: "35.6M items" },
-  { name: "Calvin Klein", count: "4.7M items" },
-  { name: "GUESS", count: "6.6M items" },
-  { name: "H&M", count: "91M items" },
-  { name: "Lacoste", count: "4.9M items" },
-  { name: "Levi's", count: "11.1M items" },
-  { name: "Mango", count: "15M items" },
-  { name: "Michael Kors", count: "2.1M items" },
-  { name: "Nike", count: "42M items" },
-  { name: "Ralph Lauren", count: "8.4M items" }
+const BRANDS = [
+  { name: "Bench", type: "Clothing, Philippines" },
+  { name: "Penshoppe", type: "Clothing, Philippines" },
+  { name: "Folded & Hung", type: "Clothing, Philippines" },
+  { name: "Sunnies Studios", type: "Eyewear, Philippines" },
+  { name: "Uniqlo", type: "Clothing" },
+  { name: "H&M", type: "Clothing" },
+  { name: "Zara", type: "Clothing" },
+  { name: "Mango", type: "Clothing" },
+  { name: "Cotton On", type: "Clothing" },
+  { name: "Levi's", type: "Denim" },
+  { name: "Nike", type: "Sportswear" },
+  { name: "adidas", type: "Sportswear" },
+  { name: "Lacoste", type: "Clothing" },
+  { name: "Calvin Klein", type: "Clothing" },
+  { name: "GUESS", type: "Clothing and bags" },
+  { name: "Ralph Lauren", type: "Clothing" },
+  { name: "Coach", type: "Bags" },
+  { name: "Michael Kors", type: "Bags" },
+  { name: "Apple", type: "Electronics" },
+  { name: "Samsung", type: "Electronics" },
+  { name: "Xiaomi", type: "Electronics" },
+  { name: "Brother", type: "Home appliances" }
 ];
 
 export default function Brands() {
   const navigate = useNavigate();
+  const [data, update] = usePersonalisation();
+  const [query, setQuery] = useState("");
+
+  const followed = data.brands || [];
+
+  const visible = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return BRANDS.filter((brand) => !q || brand.name.toLowerCase().includes(q));
+  }, [query]);
+
+  function toggle(name) {
+    update((d) => {
+      const list = d.brands || [];
+      return { ...d, brands: list.includes(name) ? list.filter((b) => b !== name) : [...list, name] };
+    });
+  }
 
   return (
     <main className="mobile-subpage">
@@ -29,25 +59,46 @@ export default function Brands() {
         <span />
       </header>
 
-      <form className="mobile-brand-search">
+      <form className="mobile-brand-search" onSubmit={(e) => e.preventDefault()}>
         <Search size={21} />
-        <input type="text" placeholder="Search brands" />
+        <input
+          type="search"
+          placeholder="Search brands"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          aria-label="Search brands"
+        />
       </form>
 
       <section className="mobile-brand-section">
-        <p className="mobile-brand-label">Popular brands</p>
+        <p className="mobile-brand-label">
+          {query ? `${visible.length} result${visible.length === 1 ? "" : "s"}` : `Popular brands · ${followed.length} followed`}
+        </p>
 
         <div className="mobile-brand-list">
-          {brands.map((brand) => (
-            <article className="mobile-brand-row" key={brand.name}>
-              <div>
-                <strong>{brand.name}</strong>
-                <span>{brand.count}</span>
-              </div>
+          {visible.map((brand) => {
+            const isFollowed = followed.includes(brand.name);
 
-              <button type="button">Follow</button>
-            </article>
-          ))}
+            return (
+              <article className="mobile-brand-row" key={brand.name}>
+                <div>
+                  <strong>{brand.name}</strong>
+                  <span>{brand.type}</span>
+                </div>
+
+                <button
+                  type="button"
+                  className={isFollowed ? "pers-following" : ""}
+                  aria-pressed={isFollowed}
+                  onClick={() => toggle(brand.name)}
+                >
+                  {isFollowed ? "Following" : "Follow"}
+                </button>
+              </article>
+            );
+          })}
+
+          {visible.length === 0 && <p className="mobile-brand-label">No brand found.</p>}
         </div>
       </section>
     </main>

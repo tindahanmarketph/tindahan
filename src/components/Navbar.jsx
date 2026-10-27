@@ -183,7 +183,13 @@ export default function Navbar() {
             Sell your items
           </Link>
 
-          <button className="navbar-help-button" type="button" aria-label="Help">
+          <button
+            className="navbar-help-button"
+            type="button"
+            aria-label="Help Center"
+            title="Help Center"
+            onClick={() => navigate("/help-center")}
+          >
             <HelpCircle size={22} />
           </button>
 

@@ -1,8 +1,33 @@
-import { ChevronLeft, Info, Shirt, Truck } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Award, BadgeCheck, ChevronLeft, MessageCircle, Shirt, Truck, Users } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import { evaluateBadges, loadBadgeStats } from "../lib/walletData";
+
+const ICONS = { publisher: Shirt, shipping: Truck, trusted: Award, verified: BadgeCheck, community: Users };
 
 export default function Badges() {
   const navigate = useNavigate();
+  const { user, profile } = useAuth();
+  const [badges, setBadges] = useState(() => evaluateBadges({ listings: 0, shipped: 0, completedSales: 0, rating: 0, phoneVerified: false, invites: 0 }));
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadBadgeStats(user?.id, profile).then((stats) => {
+      if (!cancelled) {
+        setBadges(evaluateBadges(stats));
+        setLoading(false);
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [user?.id, profile]);
+
+  const earned = badges.filter((b) => b.earned).length;
 
   return (
     <main className="mobile-subpage tindahan-badges-page">
@@ -10,58 +35,38 @@ export default function Badges() {
         <button type="button" onClick={() => navigate(-1)} aria-label="Go back">
           <ChevronLeft size={27} />
         </button>
-
         <h1>Badges</h1>
-
         <span />
       </header>
 
-      <section className="tindahan-badge-card">
-        <div className="tindahan-badge-icon">
-          <Shirt size={30} />
-        </div>
+      <p className="badge-summary" role="status">
+        {loading ? "Loading your progress…" : `${earned} of ${badges.length} badges earned`}
+      </p>
 
-        <div className="tindahan-badge-content">
-          <h2>It’s a good start!</h2>
-          <p>
-            List 5 items within 30 days to earn the Active Publisher badge.
-          </p>
+      {badges.map((badge) => {
+        const Icon = ICONS[badge.id] || MessageCircle;
+        const percent = Math.min(100, Math.round((badge.now / badge.goal) * 100));
 
-          <Link to="/sell" className="tindahan-primary-wide">
-            List an item
-          </Link>
-        </div>
+        return (
+          <section className={`tindahan-badge-card ${badge.earned ? "badge-earned" : ""}`} key={badge.id}>
+            <div className="tindahan-badge-icon"><Icon size={30} /></div>
 
-        <button
-          type="button"
-          className="tindahan-info-button"
-          aria-label="More information"
-        >
-          <Info size={20} />
-        </button>
-      </section>
+            <div className="tindahan-badge-content">
+              <h2>{badge.title} {badge.earned && <span className="badge-earned-pill">Earned</span>}</h2>
+              <p>{badge.text}</p>
 
-      <section className="tindahan-badge-card">
-        <div className="tindahan-badge-icon">
-          <Truck size={30} />
-        </div>
+              <div className="badge-progress" aria-label={`${percent}% complete`}>
+                <span style={{ width: `${percent}%` }} />
+              </div>
+              <small>{Math.min(badge.now, badge.goal)} of {badge.goal}</small>
 
-        <div className="tindahan-badge-content">
-          <h2>Ready for the Fast Shipping badge?</h2>
-          <p>
-            Ship the items you sell within the next 24 hours so this badge can
-            be visible to buyers.
-          </p>
-        </div>
-
-        <button
-          type="button"
-          className="tindahan-info-button"
-          aria-label="More information"
-        >
-          <Info size={20} />
-        </button>
-      </section>
+              {!badge.earned && (
+                <Link to={badge.cta.to} className="tindahan-primary-wide">{badge.cta.label}</Link>
+              )}
+            </div>
+          </section>
+        );
+      })}
     </main>
   );
 }

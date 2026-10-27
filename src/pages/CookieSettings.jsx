@@ -4,7 +4,7 @@ import { ChevronLeft } from "lucide-react";
 import { useConsent } from "../lib/consent";
 
 const ROWS = [
-  { key: "necessary", title: "Essential", text: "Needed to run TindaHan: log in, security, your orders and your choices (like dark mode). Always on.", locked: true },
+  { key: "necessary", title: "Essential", text: "Needed to run TindaHan: log in, security, your orders and your choices. Always on.", locked: true },
   { key: "preferences", title: "Preferences", text: "Remembers things like recently viewed items and filters on this device." },
   { key: "analytics", title: "Analytics", text: "Would help us understand how TindaHan is used. We do not use analytics today." },
   { key: "marketing", title: "Marketing", text: "Would be used to measure or show promotions. We do not use it today." }
