@@ -16,7 +16,7 @@ export const terms = {
   sections: [
     section("about", "1. About TindaHan and these Terms",
       p("TindaHan is an online marketplace where people in the Philippines buy and sell second-hand items directly with each other. These Terms and Conditions (the “Terms”) are an agreement between you and TindaHan, operated by Gian (“TindaHan”, “we”, “us”)."),
-      p("By creating an account, listing an item, making an offer or buying, you confirm that you have read and accepted these Terms, our [Privacy Notice](/privacy), our [Cookie Policy](/cookies) and our [Community Guidelines](/community-guidelines)."),
+      p("By creating an account, listing an item, making an offer or buying, you confirm that you have read and accepted these Terms, our [Protection Center](/privacy), our [Cookie Policy](/cookies) and our [Community Guidelines](/community-guidelines)."),
       note("**TindaHan is in beta.** Some features, such as secure payments with GCash and Maya and delivery with courier partners like J&T Express, are being switched on step by step. When a feature is not available yet, the app says so. We may change, pause or remove beta features, and we will do our best to tell you first.", "info")),
 
     section("eligibility", "2. Who can use TindaHan",
@@ -111,7 +111,7 @@ export const terms = {
 
 /* ====================================================================== */
 export const privacy = {
-  title: "Privacy Center",
+  title: "Protection Center",
   kicker: "Legal",
   updated: LEGAL_UPDATED,
   summary:
@@ -133,7 +133,7 @@ export const privacy = {
         ["Payments", "Payment method used (GCash, Maya), transaction references, wallet balance and history", "Take payments, pay sellers, refund buyers, prevent fraud", "Contract; legal obligation"],
         ["Reviews and favourites", "Ratings, comments, saved items, followed members", "Build trust and personalise your feed", "Contract; your consent for personalisation"],
         ["Device and usage", "Browser, device type, IP address, security logs, error reports", "Keep TindaHan secure, fix errors, prevent abuse", "Legitimate interest"],
-        ["Preferences", "Light or dark theme, cookie choices, notification settings", "Remember your choices on your device", "Your choice (storage you ask for)"]
+        ["Preferences", "Cookie choices, notification settings", "Remember your choices on your device", "Your choice (storage you ask for)"]
       ]),
       note("**Sensitive personal information.** Under the Data Privacy Act, your age and date of birth are sensitive personal information. We ask for it only to confirm you are an adult and only when you choose to give it. We do not ask for government IDs, health data or religious, political or similar information. If we ever need ID verification, we will ask you separately and explain why.", "info")),
 
@@ -210,7 +210,6 @@ export const cookies = {
     section("table", "What we store",
       table(["Name", "Purpose", "How long", "Type"], [
         ["tindahan-auth-token", "Keeps you logged in (session issued by our authentication provider)", "Until you log out or the session expires", "Essential"],
-        ["tindahan_theme", "Remembers your Light, Dark or Automatic appearance choice", "Until you clear it", "Essential (a choice you ask for)"],
         ["tindahan_cookie_consent_v1", "Remembers your cookie choices and when you made them", "Up to 12 months", "Essential"],
         ["tindahan_profile, tindahan_account_settings", "Keeps your profile form on your device while you edit it", "Until you log out or clear it", "Essential"],
         ["tindahan_messages_safety_hidden, tindahan_hidden_conversations_by_user", "Remember a safety notice you closed and conversations you hid", "Until you clear it", "Essential"],
@@ -227,7 +226,7 @@ export const cookies = {
       p("Use [Cookie settings](/cookie-settings) to choose. You can also delete stored data from your browser settings, but you may be logged out and some features may not work.")),
 
     section("law", "Legal basis",
-      p("Essential storage is used to provide the service you request. Optional storage is used only with your consent, which you can withdraw at any time. Personal data we process through these technologies is handled as explained in our [Privacy Notice](/privacy), under the Philippine Data Privacy Act of 2012.")),
+      p("Essential storage is used to provide the service you request. Optional storage is used only with your consent, which you can withdraw at any time. Personal data we process through these technologies is handled as explained in our [Protection Center](/privacy), under the Philippine Data Privacy Act of 2012.")),
 
     section("contact", "Questions",
       p(`Write to ${MAIL}.`))

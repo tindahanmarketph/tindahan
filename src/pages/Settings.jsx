@@ -16,6 +16,14 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import { supabase } from "../lib/supabase";
+import {
+  BundleDiscountsSection,
+  NotificationsSection,
+  PaymentsSection,
+  PrivacySection,
+  SecuritySection,
+  ShippingSection
+} from "./settingsSections";
 
 const SETTINGS_NAV = [
   { key: "profile", label: "Profile information" },
@@ -29,7 +37,10 @@ const SETTINGS_NAV = [
 ];
 
 const CITIES_BY_COUNTRY = {
-  Philippines: ["Manila", "Quezon City", "Cebu", "Davao", "Makati", "Taguig"],
+  Philippines: [
+    "Manila", "Quezon City", "Makati", "Taguig", "Pasig", "Mandaluyong", "Caloocan", "Parañaque", "Las Piñas", "Muntinlupa", "Marikina",
+    "Cebu", "Davao", "Baguio", "Iloilo", "Bacolod", "Cagayan de Oro", "Zamboanga", "General Santos", "Angeles", "Antipolo", "Dasmariñas", "Naga", "Tacloban", "Dumaguete"
+  ],
   France: ["Paris", "Lyon", "Marseille", "Toulouse", "Nice"],
   "United States": ["New York", "Los Angeles", "Miami", "San Francisco"]
 };
@@ -1197,342 +1208,11 @@ function AccountSection({ user }) {
 }
 
 
-function ShippingSection() {
-  return (
-    <div className="settings-content-inner">
-      <h2 className="settings-panel-title">My address</h2>
 
-      <SettingsCard>
-        <SettingsRow title="Add your address" action={<Plus size={22} />} />
-      </SettingsCard>
 
-      <p className="settings-small-note">
-        This is the address where couriers will collect or deliver parcels. It
-        may also be used for returns when needed.
-      </p>
 
-      <div className="settings-info-box">
-        <Info size={18} />
-        <p>
-          Disabling some shipping methods may reduce your sales. If a member
-          cannot buy from you because a shipping option is disabled, we may still
-          suggest it to them.
-        </p>
-      </div>
 
-      <h2 className="settings-panel-title">Shipping methods</h2>
 
-      <p className="settings-panel-subtitle">
-        Choose the shipping methods you want to offer for each option below.
-      </p>
-
-      <SettingsCard>
-        <SettingsRow
-          title="From your home"
-          helper="A courier collects the parcel at your address."
-          icon={<Home size={22} />}
-          action={<ChevronDown size={20} />}
-          muted
-        />
-      </SettingsCard>
-
-      <p className="settings-small-note">
-        No carrier can currently pick up parcels from your home.
-      </p>
-
-      <SettingsCard>
-        <SettingsRow
-          title="From a drop-off point"
-          helper="You drop off your parcel at a partner point or locker."
-          icon={<MapPinned size={22} />}
-          action={<ChevronDown size={20} />}
-        />
-      </SettingsCard>
-
-      <p className="settings-small-note settings-shipping-note">
-        Some shipping methods are enabled for all sellers and cannot be disabled.
-      </p>
-    </div>
-  );
-}
-
-function PaymentsSection() {
-  return (
-    <div className="settings-content-inner">
-      <div className="settings-section-label">Payment options</div>
-
-      <SettingsCard>
-        <SettingsRow title="Add a card" action={<ChevronRight size={22} />} />
-      </SettingsCard>
-
-      <div className="settings-section-label">Payout methods</div>
-
-      <SettingsCard>
-        <SettingsRow
-          title="Add a bank account"
-          action={<ChevronRight size={22} />}
-        />
-      </SettingsCard>
-
-      <SettingsCard>
-        <SettingsRow
-          title="TindaHan wallet"
-          icon={<WalletCards size={22} />}
-          action={<ChevronRight size={22} />}
-        />
-      </SettingsCard>
-    </div>
-  );
-}
-
-function BundleDiscountsSection() {
-  const [bundleEnabled, setBundleEnabled] = useState(true);
-
-  return (
-    <div className="settings-content-inner">
-      <SettingsCard>
-        <SettingsRow
-          title="Offer bundle discounts"
-          action={
-            <Toggle
-              active={bundleEnabled}
-              onClick={() => setBundleEnabled((current) => !current)}
-            />
-          }
-        />
-      </SettingsCard>
-
-      <SettingsCard>
-        <SettingsRow title="2 items" value={<SelectLike>5%</SelectLike>} />
-        <SettingsRow title="3 items" value={<SelectLike>10%</SelectLike>} />
-        <SettingsRow title="5 items" value={<SelectLike>20%</SelectLike>} />
-      </SettingsCard>
-
-      <p className="settings-small-note">
-        You can offer increasing discounts based on the number of items. The
-        better the discount, the more attractive your bundle becomes.
-      </p>
-    </div>
-  );
-}
-
-function NotificationsSection() {
-  const [updates, setUpdates] = useState(false);
-  const [commercial, setCommercial] = useState(false);
-  const [messages, setMessages] = useState(true);
-  const [reviews, setReviews] = useState(true);
-  const [saleFavorites, setSaleFavorites] = useState(true);
-  const [favorites, setFavorites] = useState(true);
-  const [followedItems, setFollowedItems] = useState(true);
-  const [emailNotifications, setEmailNotifications] = useState(true);
-
-  return (
-    <div className="settings-content-inner">
-      <div className="settings-section-label">Newsletter</div>
-
-      <SettingsCard>
-        <SettingsRow
-          title="TindaHan updates"
-          helper="Receive the latest news about new features and updates."
-          action={
-            <Toggle
-              active={updates}
-              onClick={() => setUpdates((current) => !current)}
-            />
-          }
-        />
-
-        <SettingsRow
-          title="Commercial communications"
-          helper="Receive offers, news and personalised recommendations."
-          action={
-            <Toggle
-              active={commercial}
-              onClick={() => setCommercial((current) => !current)}
-            />
-          }
-        />
-      </SettingsCard>
-
-      <div className="settings-section-label">Important notifications</div>
-
-      <SettingsCard>
-        <SettingsRow
-          title="New messages"
-          action={
-            <Toggle
-              active={messages}
-              onClick={() => setMessages((current) => !current)}
-            />
-          }
-        />
-
-        <SettingsRow
-          title="New reviews"
-          action={
-            <Toggle
-              active={reviews}
-              onClick={() => setReviews((current) => !current)}
-            />
-          }
-        />
-
-        <SettingsRow
-          title="Favourite items on sale"
-          action={
-            <Toggle
-              active={saleFavorites}
-              onClick={() => setSaleFavorites((current) => !current)}
-            />
-          }
-        />
-      </SettingsCard>
-
-      <div className="settings-section-label">Secondary notifications</div>
-
-      <SettingsCard>
-        <SettingsRow
-          title="Favourite items"
-          action={
-            <Toggle
-              active={favorites}
-              onClick={() => setFavorites((current) => !current)}
-            />
-          }
-        />
-
-        <SettingsRow
-          title="New items from members I follow"
-          action={
-            <Toggle
-              active={followedItems}
-              onClick={() => setFollowedItems((current) => !current)}
-            />
-          }
-        />
-
-        <SettingsRow
-          title="Daily limit"
-          value={<SelectLike>Up to 2 notifications</SelectLike>}
-        />
-      </SettingsCard>
-
-      <SettingsCard>
-        <SettingsRow
-          title="Allow email notifications"
-          action={
-            <Toggle
-              active={emailNotifications}
-              onClick={() => setEmailNotifications((current) => !current)}
-            />
-          }
-        />
-      </SettingsCard>
-    </div>
-  );
-}
-
-function PrivacySection() {
-  const [marketing, setMarketing] = useState(true);
-  const [favoriteNotify, setFavoriteNotify] = useState(true);
-  const [personalisation, setPersonalisation] = useState(true);
-  const [recentViews, setRecentViews] = useState(true);
-
-  return (
-    <div className="settings-content-inner">
-      <div className="settings-section-label">Privacy settings</div>
-
-      <SettingsCard>
-        <SettingsRow
-          title="Show my items in marketing campaigns to increase my chances of selling faster"
-          helper="This allows TindaHan to showcase your listings on social media and other websites."
-          action={
-            <Toggle
-              active={marketing}
-              onClick={() => setMarketing((current) => !current)}
-            />
-          }
-        />
-
-        <SettingsRow
-          title="Notify members when I favourite their items"
-          action={
-            <Toggle
-              active={favoriteNotify}
-              onClick={() => setFavoriteNotify((current) => !current)}
-            />
-          }
-        />
-
-        <SettingsRow
-          title="Allow TindaHan to personalise my feed and search results"
-          helper="We may use your preferences, settings, purchases and platform activity."
-          action={
-            <Toggle
-              active={personalisation}
-              onClick={() => setPersonalisation((current) => !current)}
-            />
-          }
-        />
-
-        <SettingsRow
-          title="Show recently viewed items on my homepage"
-          helper="If disabled, these items will not be used to personalise your home feed."
-          action={
-            <Toggle
-              active={recentViews}
-              onClick={() => setRecentViews((current) => !current)}
-            />
-          }
-        />
-
-        <SettingsRow
-          title="Manage account data"
-          helper="Request and download a copy of your TindaHan account data."
-          action={<ChevronRight size={22} />}
-        />
-      </SettingsCard>
-    </div>
-  );
-}
-
-function SecuritySection() {
-  return (
-    <div className="settings-content-inner">
-      <h2 className="settings-panel-title">Keep your account secure</h2>
-
-      <p className="settings-panel-subtitle">
-        Check your information to protect your account.
-      </p>
-
-      <SettingsCard>
-        <SettingsRow
-          title="Email"
-          helper="Make sure your email address is up to date."
-          action={<ChevronRight size={22} />}
-        />
-
-        <SettingsRow
-          title="Password"
-          helper="Protect your account with a stronger password."
-          action={<ChevronRight size={22} />}
-        />
-
-        <SettingsRow
-          title="Two-step verification"
-          helper="Secure your login with an extra verification step."
-          action={<ChevronRight size={22} />}
-        />
-
-        <SettingsRow
-          title="Sessions"
-          helper="Manage your connected devices."
-          action={<ChevronRight size={22} />}
-        />
-      </SettingsCard>
-    </div>
-  );
-}
 
 export default function Settings() {
   const { section = "profile" } = useParams();

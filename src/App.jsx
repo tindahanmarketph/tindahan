@@ -27,7 +27,13 @@ import Profile from "./pages/Profile";
 import Favorites from "./pages/Favorites";
 import NewListing from "./pages/NewListing";
 import HowItWorks from "./pages/HowItWorks";
-import StaticPage from "./pages/StaticPage";
+import InfoPage from "./pages/InfoPage";
+import LegalHub from "./pages/LegalHub";
+import HelpCenter, { HelpArticle, HelpTopic } from "./pages/HelpCenter";
+import Invite from "./pages/Invite";
+import CookieSettings from "./pages/CookieSettings";
+import Dashboard from "./pages/Dashboard";
+import CookieBanner from "./components/CookieBanner";
 import Settings from "./pages/Settings";
 import Messages from "./pages/Messages";
 import Checkout from "./pages/Checkout";
@@ -432,6 +438,24 @@ export default function App() {
         />
 
         <Route
+          path="/preferred-sizes"
+          element={
+            <ProtectedRoute>
+              <PreferredSizes />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
+          path="/brands"
+          element={
+            <ProtectedRoute>
+              <Brands />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/personalisation/members"
           element={
             <ProtectedRoute>
@@ -526,117 +550,66 @@ export default function App() {
           element={<Profile />}
         />
 
-        <Route
-          path="/about"
-          element={
-            <StaticPage title="About TindaHan" />
-          }
-        />
+        <Route path="/about" element={<InfoPage pageKey="about" />} />
 
-        <Route
-          path="/sustainability"
-          element={
-            <StaticPage title="Sustainability" />
-          }
-        />
+        <Route path="/sustainability" element={<InfoPage pageKey="sustainability" />} />
 
-        <Route
-          path="/press"
-          element={
-            <StaticPage title="Press" />
-          }
-        />
+        <Route path="/press" element={<InfoPage pageKey="press" />} />
 
-        <Route
-          path="/advertising"
-          element={
-            <StaticPage title="Advertising" />
-          }
-        />
+        <Route path="/advertising" element={<InfoPage pageKey="advertising" />} />
 
-        <Route
-          path="/accessibility"
-          element={
-            <StaticPage title="Accessibility" />
-          }
-        />
+        <Route path="/accessibility" element={<InfoPage pageKey="accessibility" />} />
 
-        <Route
-          path="/item-verification"
-          element={
-            <StaticPage title="Item verification" />
-          }
-        />
+        <Route path="/item-verification" element={<InfoPage pageKey="item-verification" />} />
 
-        <Route
-          path="/mobile-apps"
-          element={
-            <StaticPage title="Mobile apps" />
-          }
-        />
+        <Route path="/mobile-apps" element={<InfoPage pageKey="mobile-apps" />} />
+
+        <Route path="/buy" element={<InfoPage pageKey="buy" />} />
+
+        <Route path="/trust-and-safety" element={<InfoPage pageKey="trust-and-safety" />} />
+
+        <Route path="/privacy" element={<InfoPage pageKey="privacy" />} />
+
+        <Route path="/cookies" element={<InfoPage pageKey="cookies" />} />
+
+        <Route path="/terms" element={<InfoPage pageKey="terms" />} />
+
+        <Route path="/platform" element={<InfoPage pageKey="platform" />} />
+
+        <Route path="/community-guidelines" element={<InfoPage pageKey="community-guidelines" />} />
+
+        <Route path="/buyer-protection" element={<InfoPage pageKey="buyer-protection" />} />
 
         <Route
           path="/dashboard"
           element={
-            <StaticPage title="Dashboard" />
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
           }
         />
 
+        <Route path="/help-center" element={<HelpCenter />} />
+        <Route path="/help-center/topic/:cat" element={<HelpTopic />} />
+        <Route path="/help-center/:slug" element={<HelpArticle />} />
+
         <Route
-          path="/help-center"
-          element={
-            <StaticPage title="Help Center" />
-          }
+          path="/tindahan-guide/:slug"
+          element={<HelpArticle backTo="/tindahan-guide" headerTitle="TindaHan Guide" />}
         />
 
         <Route
-          path="/buy"
+          path="/invite"
           element={
-            <StaticPage title="Buy" />
+            <ProtectedRoute>
+              <Invite />
+            </ProtectedRoute>
           }
         />
 
-        <Route
-          path="/trust-and-safety"
-          element={
-            <StaticPage title="Trust and safety" />
-          }
-        />
-
-        <Route
-          path="/privacy"
-          element={
-            <StaticPage title="Privacy Center" />
-          }
-        />
-
-        <Route
-          path="/cookies"
-          element={
-            <StaticPage title="Cookie Policy" />
-          }
-        />
-
-        <Route
-          path="/cookie-settings"
-          element={
-            <StaticPage title="Cookie Settings" />
-          }
-        />
-
-        <Route
-          path="/terms"
-          element={
-            <StaticPage title="Terms and Conditions" />
-          }
-        />
-
-        <Route
-          path="/platform"
-          element={
-            <StaticPage title="Our platform" />
-          }
-        />
+        <Route path="/cookie-settings" element={<CookieSettings />} />
+        <Route path="/legal" element={<LegalHub />} />
+        <Route path="/prohibited-items" element={<Navigate to="/legal" replace />} />
 
         <Route
           path="*"
@@ -652,6 +625,8 @@ export default function App() {
       {shouldShowGlobalChrome && (
         <Footer />
       )}
+
+      <CookieBanner />
 
       {shouldShowMobileBottomNav && (
         <MobileBottomNav />

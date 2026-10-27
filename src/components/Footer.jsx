@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom";
+import { SOCIAL } from "../content/site";
 
 export default function Footer() {
   return (
@@ -40,47 +41,38 @@ export default function Footer() {
               <Link to="/sell">Sell</Link>
               <Link to="/buy">Buy</Link>
               <Link to="/trust-and-safety">Trust and safety</Link>
+              <Link to="/buyer-protection">Buyer Protection</Link>
             </div>
           </div>
         </div>
 
         <div className="site-footer-middle">
           <div className="site-footer-socials">
-            <a href="#" aria-label="Facebook">
+            <a href={SOCIAL.facebook} aria-label="TindaHan on Facebook" target="_blank" rel="noopener noreferrer">
               f
             </a>
-            <a href="#" aria-label="LinkedIn">
-              in
-            </a>
-            <a href="#" aria-label="Instagram">
+            <a href={SOCIAL.instagram} aria-label="TindaHan on Instagram" target="_blank" rel="noopener noreferrer">
               ◎
             </a>
           </div>
 
           <div className="site-footer-apps">
-            <a href="#" className="app-badge">
-              <span className="app-icon"></span>
+            <Link to="/mobile-apps" className="app-badge">
+              <span className="app-icon">📱</span>
               <span>
-                <small>Download on the</small>
-                App Store
+                <small>Use it on your phone</small>
+                Add to home screen
               </span>
-            </a>
-
-            <a href="#" className="app-badge">
-              <span className="app-icon">▶</span>
-              <span>
-                <small>Get it on</small>
-                Google Play
-              </span>
-            </a>
+            </Link>
           </div>
         </div>
 
         <div className="site-footer-bottom">
-          <Link to="/privacy">Privacy Center</Link>
+          <Link to="/privacy">Protection Center</Link>
           <Link to="/cookies">Cookie Policy</Link>
           <Link to="/cookie-settings">Cookie Settings</Link>
           <Link to="/terms">Terms and Conditions</Link>
+          <Link to="/community-guidelines">Community Guidelines</Link>
           <Link to="/platform">Our platform</Link>
         </div>
       </div>

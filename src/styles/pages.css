@@ -3,6 +3,14 @@
    Utilise uniquement les variables du thème : clair et sombre.
    ========================================================== */
 
+:root {
+  --orange-text: var(--orange);
+  --on-orange: #ffffff;
+  --green-text: #0f8a5f;
+  --brand-rgb: 255, 107, 44;
+  --font-display: inherit;
+}
+
 /* ---------- Pages d'information ---------- */
 .info-page {
   color: var(--text);
@@ -208,9 +216,6 @@
   color: #b27a00;
 }
 
-html[data-theme="dark"] .info-note-warning svg {
-  color: #f0c040;
-}
 
 .info-table-wrap {
   margin: 14px 0 20px;
@@ -767,14 +772,6 @@ a.settings-row {
   background: var(--orange-soft);
 }
 
-.settings-row.danger .settings-row-main strong {
-  color: #d92d20;
-}
-
-html[data-theme="dark"] .settings-row.danger .settings-row-main strong {
-  color: #ff7a70;
-}
-
 .settings-form-message {
   margin: 0 0 0 14px;
   font-size: 14px;
@@ -783,13 +780,7 @@ html[data-theme="dark"] .settings-row.danger .settings-row-main strong {
 
 .settings-form-message.success { color: var(--green-text); }
 .settings-form-message.error { color: #d92d20; }
-html[data-theme="dark"] .settings-form-message.error { color: #ff7a70; }
 
-.settings-save-row {
-  display: flex;
-  align-items: center;
-  flex-wrap: wrap;
-}
 
 /* ---------- Portefeuille, promotion, lots, badges, dons ---------- */
 .wallet-info-button {
@@ -907,8 +898,7 @@ html[data-theme="dark"] .settings-form-message.error { color: #ff7a70; }
 
 .bundle-tier:last-child { border-bottom: 0; }
 
-.bundle-tier select,
-.settings-inline-select {
+.bundle-tier select {
   min-height: 40px;
   padding: 0 12px;
   border: 1px solid var(--border);
@@ -1020,4 +1010,97 @@ html[data-theme="dark"] .settings-form-message.error { color: #ff7a70; }
 .invite-channel,
 .invite-channel:hover {
   text-decoration: none;
+}
+
+/* ---------- Tailles, marques, badges réels ---------- */
+.preferred-size-main-row button.pers-check.active {
+  border-color: var(--orange);
+  background: var(--orange);
+  color: #ffffff;
+}
+
+.pers-chevron {
+  transition: transform 0.15s;
+}
+
+.pers-chevron.open {
+  transform: rotate(180deg);
+}
+
+.pers-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 4px 20px 16px 56px;
+  background: #ffffff;
+}
+
+.pers-chip {
+  padding: 8px 14px;
+  border: 1.5px solid #cdd6d6;
+  border-radius: 999px;
+  background: #ffffff;
+  color: #222222;
+  font: inherit;
+  font-size: 13.5px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pers-chip.active {
+  border-color: var(--orange);
+  background: var(--orange-soft);
+  color: var(--orange);
+}
+
+.mobile-brand-row button.pers-following {
+  background: #ffffff;
+  color: #222222;
+  box-shadow: inset 0 0 0 1.5px #cdd6d6;
+}
+
+.wallet-amount-in {
+  color: #0f8a5f;
+}
+
+.badge-summary {
+  margin: 12px 16px 0;
+  color: #5f6f75;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.badge-progress {
+  height: 8px;
+  margin: 10px 0 6px;
+  border-radius: 99px;
+  background: #e3eaea;
+  overflow: hidden;
+}
+
+.badge-progress span {
+  display: block;
+  height: 100%;
+  border-radius: 99px;
+  background: var(--orange);
+}
+
+.badge-earned .badge-progress span {
+  background: #0f8a5f;
+}
+
+.badge-earned-pill {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 99px;
+  background: #e3f6ec;
+  color: #0f8a5f;
+  font-size: 11.5px;
+  font-weight: 800;
+  vertical-align: middle;
+}
+
+.tindahan-badge-content small {
+  color: #5f6f75;
 }

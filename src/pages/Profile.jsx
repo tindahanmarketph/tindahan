@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import ListingCard from "../components/ListingCard";
+import { evaluateBadges, loadBadgeStats } from "../lib/walletData";
 import { supabase } from "../lib/supabase";
 import { formatReviewDate, getReviewsForUser } from "../lib/reviews";
 
@@ -259,6 +260,23 @@ function MobileProfileDashboard({
   reviews,
   onLogout
 }) {
+  const { user: badgeUser, profile: badgeProfile } = useAuth();
+  const [badgeSummary, setBadgeSummary] = useState({ earned: 0, total: 5 });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    loadBadgeStats(badgeUser?.id, badgeProfile).then((stats) => {
+      if (cancelled) return;
+      const list = evaluateBadges(stats);
+      setBadgeSummary({ earned: list.filter((b) => b.earned).length, total: list.length });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [badgeUser?.id, badgeProfile]);
+
   const reviewLabel =
     getReviewSummaryLabel(reviews);
 
@@ -300,11 +318,11 @@ function MobileProfileDashboard({
               <strong>Badges earned</strong>
             </div>
 
-            <span>0 of 2</span>
+            <span>{badgeSummary.earned} of {badgeSummary.total}</span>
           </div>
 
           <div className="mobile-profile-progress">
-            <span />
+            <span style={{ width: `${(badgeSummary.earned / badgeSummary.total) * 100}%` }} />
           </div>
         </Link>
       </div>
@@ -403,7 +421,7 @@ function MobileProfileDashboard({
         <MobileProfileMenuItem
           icon={<FileText size={29} />}
           title="Legal information"
-          to="/terms"
+          to="/legal"
         />
 
         <MobileProfileMenuItem

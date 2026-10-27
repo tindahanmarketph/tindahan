@@ -13,7 +13,7 @@ const TOOLS = [
   { to: "/badges", icon: Award, title: "Badges", text: "Show you are reliable" },
   { to: "/personalisation", icon: SlidersHorizontal, title: "Personalisation", text: "Sizes, brands and members" },
   { to: "/donations", icon: HeartHandshake, title: "Donations", text: "Give part of your earnings" },
-  { to: "/settings/profile", icon: Settings, title: "Settings", text: "Profile, address, privacy, appearance" },
+  { to: "/settings/profile", icon: Settings, title: "Settings", text: "Profile, address, privacy" },
   { to: "/help-center", icon: LifeBuoy, title: "Help Center", text: "Answers and contact" }
 ];
 
