@@ -1,0 +1,35 @@
+/* ==========================================================
+   TindaHan — variables de thème (clair / sombre)
+   - styles/tokens.generated.css : couleurs d'origine converties en variables
+   - ce fichier : variables « sémantiques » et palette sombre (« Nuit » du kit logo)
+   ========================================================== */
+@import "./tokens.generated.css";
+
+:root {
+  --brand-rgb: 255, 107, 44;
+  --surface-rgb: 255, 255, 255;
+  --on-orange: #ffffff;
+  --orange-text: #ff6b2c;
+  --green-text: #0f8a5f;
+}
+
+html[data-theme="dark"] {
+  color-scheme: dark;
+
+  --brand-rgb: 255, 107, 44;
+  --surface-rgb: 26, 34, 43;
+  --on-orange: #14181d;
+
+  --orange-text: #ff8a4c;
+  --green-text: #3ddc97;
+  --orange-dark: #e85d22;
+  --orange-soft: #2a1d15;
+  --orange-border: #4a3426;
+
+  --bg: #12181f;
+  --text: #f4efe8;
+  --muted: #a9b4bc;
+  --border: #2d3844;
+  --white: #1a222b;
+  --shadow: 0 8px 24px rgba(0, 0, 0, 0.45);
+}

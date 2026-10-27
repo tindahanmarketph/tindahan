@@ -1,0 +1,411 @@
+/* ==========================================================
+   TindaHan — habillage « Kanto »
+   Même structure et mêmes fonctions : seules les couleurs, arrondis,
+   typographie et quelques décors changent. Chargé APRÈS index.css.
+   Fonctionne en clair et en sombre (les variables sombres sont dans tokens.css).
+   Palette du kit : orange #F26A1B · orange profond #B8420C · encre #14181D
+                    crème #FFF4E8 · pêche #FFD2B3
+   ========================================================== */
+
+:root {
+  --orange: #f26a1b;
+  --orange-dark: #d95a12;
+  --orange-soft: #fff4e8;
+  --orange-border: #ffd2b3;
+  --bg: #fff4e8;
+  --text: #14181d;
+  --muted: #6a6f78;
+  --border: #f0dcc8;
+  --radius: 22px;
+  --shadow: 0 10px 24px -14px rgba(120, 60, 10, 0.45);
+
+  --brand-rgb: 242, 106, 27;
+  --on-orange: #14181d;       /* texte sur fond orange : encre (contraste ≥ 5:1) */
+  --orange-text: #b8420c;     /* orange lisible sur fond clair */
+
+  --font-display: "Bricolage Grotesque", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+
+html[data-theme="dark"] {
+  --brand-rgb: 242, 106, 27;
+  --shadow: 0 10px 24px -14px rgba(0, 0, 0, 0.7);
+}
+
+body {
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* ---------- Logo ---------- */
+.brand-logo {
+  display: block;
+  width: auto;
+  user-select: none;
+}
+
+.navbar-logo {
+  font-style: normal;
+}
+
+/* comme avant : le logo et les actions restent masqués sur mobile (règle d'origine) */
+@media (min-width: 761px) {
+  .navbar-logo {
+    display: flex;
+    align-items: center;
+  }
+
+  .navbar-logo .brand-logo {
+    height: 58px;
+    margin: -4px 0 -4px -8px;
+  }
+}
+
+.site-footer-logo {
+  display: inline-flex;
+  font-style: normal;
+}
+
+/* ---------- Navbar ---------- */
+.navbar-search {
+  border-radius: 999px;
+}
+
+.search-type-button {
+  background: var(--orange-border);
+}
+
+html[data-theme="dark"] .search-type-button {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.navbar-sell-button {
+  border-radius: 999px;
+  padding: 0 18px;
+  font-weight: 800;
+}
+
+.navbar-help-button,
+.navbar-theme-button {
+  display: grid;
+  place-items: center;
+}
+
+.theme-toggle-button {
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.theme-toggle-button:hover {
+  background: var(--orange-soft);
+  color: var(--orange-text);
+}
+
+.theme-toggle-button:focus-visible,
+.theme-segmented button:focus-visible,
+.theme-choice-card:focus-visible {
+  outline: 3px solid var(--orange);
+  outline-offset: 2px;
+}
+
+/* ---------- Catégories (ordinateur) : pilules ---------- */
+@media (min-width: 761px) {
+  .vinted-category-inner {
+    gap: 6px;
+  }
+
+  .vinted-category-link {
+    height: 34px;
+    padding: 0 15px;
+    border-radius: 999px;
+    border-bottom: 0;
+    font-weight: 600;
+  }
+
+  .vinted-category-link:hover {
+    background: var(--orange-soft);
+    color: var(--orange-text);
+  }
+
+  .vinted-category-link.active {
+    background: var(--orange);
+    color: var(--on-orange);
+    font-weight: 700;
+  }
+}
+
+/* ---------- Hero visiteur : auvent rayé ---------- */
+.guest-hero-card {
+  position: relative;
+  overflow: hidden;
+  padding-top: 44px;
+  border-radius: 24px;
+}
+
+.guest-hero-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  height: 12px;
+  background: repeating-linear-gradient(90deg, var(--orange) 0 28px, var(--orange-border) 28px 56px);
+}
+
+.guest-hero-card h2,
+.page-header h1,
+.mobile-profile-header h1,
+.mobile-subpage-intro h2 {
+  font-family: var(--font-display);
+  letter-spacing: -0.02em;
+}
+
+.guest-hero-primary {
+  border-radius: 999px;
+}
+
+/* ---------- Cartes de confiance ---------- */
+.home-trust-card {
+  border-radius: 20px;
+}
+
+.home-trust-card strong {
+  font-family: var(--font-display);
+}
+
+.home-trust-icon {
+  background: var(--orange-border);
+  border-color: transparent;
+  color: var(--orange-text);
+  border-radius: 14px;
+}
+
+/* ---------- Annonces ---------- */
+.listing-card {
+  border-radius: 22px;
+}
+
+.listing-price {
+  font-family: var(--font-display);
+  font-weight: 800;
+  letter-spacing: -0.01em;
+}
+
+/* ---------- Navigation mobile ---------- */
+.mobile-bottom-link.active {
+  color: var(--orange-text) !important;
+}
+
+/* ---------- Pied de page ---------- */
+.site-footer-socials a {
+  display: grid;
+  place-items: center;
+}
+
+.site-footer-middle {
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.site-footer-copy {
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+/* ---------- Thème : commandes ---------- */
+.theme-segmented {
+  display: inline-flex;
+  padding: 3px;
+  gap: 2px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--white);
+}
+
+.theme-segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.theme-segmented button.active {
+  background: var(--orange);
+  color: var(--on-orange);
+}
+
+.theme-choice-grid {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0 8px;
+}
+
+.theme-choice-card {
+  display: grid;
+  grid-template-columns: 92px 1fr 28px;
+  align-items: center;
+  gap: 16px;
+  width: 100%;
+  padding: 14px;
+  text-align: left;
+  border: 2px solid var(--border);
+  border-radius: 18px;
+  background: var(--white);
+  color: var(--text);
+  font: inherit;
+  cursor: pointer;
+}
+
+.theme-choice-card.active {
+  border-color: var(--orange);
+  box-shadow: 0 0 0 3px rgba(var(--brand-rgb), 0.18);
+}
+
+.theme-choice-label strong {
+  display: block;
+  font-size: 16px;
+}
+
+.theme-choice-label small {
+  display: block;
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 13.5px;
+  line-height: 1.35;
+}
+
+.theme-choice-check {
+  width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--orange);
+  color: var(--on-orange);
+}
+
+.theme-choice-check:empty {
+  background: transparent;
+  border: 2px solid var(--border);
+}
+
+/* aperçus : couleurs fixes (ne changent pas avec le thème) */
+.theme-preview {
+  position: relative;
+  display: block;
+  width: 92px;
+  height: 64px;
+  overflow: hidden;
+  border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+}
+
+.theme-preview-bar,
+.theme-preview-card {
+  position: absolute;
+  display: block;
+  border-radius: 6px;
+}
+
+.theme-preview-bar { left: 8px; right: 8px; top: 8px; height: 10px; }
+.theme-preview-card { left: 8px; width: 34px; top: 24px; height: 32px; }
+.theme-preview-card.short { left: auto; right: 8px; width: 34px; }
+
+.theme-preview-light { background: #fff4e8; }
+.theme-preview-light .theme-preview-bar { background: #f26a1b; }
+.theme-preview-light .theme-preview-card { background: #ffffff; }
+
+.theme-preview-dark { background: #12181f; }
+.theme-preview-dark .theme-preview-bar { background: #f26a1b; }
+.theme-preview-dark .theme-preview-card { background: #1a222b; }
+
+.theme-preview-system { background: #fff4e8; }
+.theme-preview-system .theme-preview-bar { background: #f26a1b; }
+.theme-preview-system .theme-preview-card { background: #ffffff; }
+.theme-preview-split {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 50%;
+  display: block;
+  background: #12181f;
+}
+.theme-preview-system .theme-preview-bar,
+.theme-preview-system .theme-preview-card { z-index: 1; }
+.theme-preview-system .theme-preview-card.short { background: #1a222b; z-index: 2; }
+
+/* ---------- Pied de page orange : texte encre (recommandation du kit, contraste ≥ 5:1) ---------- */
+.site-footer {
+  background: var(--orange);
+  color: #14181d;
+}
+
+.site-footer-column h3 {
+  color: #14181d;
+}
+
+.site-footer-brand p,
+.site-footer-column a,
+.site-footer-bottom a,
+.site-footer-copy {
+  color: rgba(20, 24, 29, 0.9);
+}
+
+.site-footer-column a:hover,
+.site-footer-bottom a:hover {
+  color: #000000;
+}
+
+.site-footer-top,
+.site-footer-middle {
+  border-bottom-color: rgba(20, 24, 29, 0.25);
+}
+
+.site-footer-socials a {
+  border-color: rgba(20, 24, 29, 0.5);
+  color: #14181d;
+}
+
+.site-footer-socials a:hover {
+  background: #14181d;
+  color: #ffffff;
+}
+
+.site-footer .theme-segmented {
+  border-color: rgba(20, 24, 29, 0.4);
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.site-footer .theme-segmented button {
+  color: #14181d;
+}
+
+.site-footer .theme-segmented button.active {
+  background: #14181d;
+  color: #ffffff;
+}
+
+.site-footer .theme-segmented button:focus-visible {
+  outline-color: #14181d;
+}
+
+/* ---------- Titres de réglages : espace propre quand titre et sous-titre se suivent ---------- */
+.settings-content-inner .settings-panel-title + .settings-panel-subtitle {
+  margin-top: 12px;
+}
