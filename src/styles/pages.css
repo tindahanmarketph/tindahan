@@ -1104,3 +1104,44 @@ a.settings-row {
 .tindahan-badge-content small {
   color: #5f6f75;
 }
+/* Boosts (mode simulation) */
+.boost-test-banner {
+  display: flex; align-items: center; gap: 10px;
+  margin: 0 20px 14px; padding: 10px 14px;
+  border: 1px solid #f3c9a8; border-radius: 10px;
+  background: #fff4e8; color: #8a3b00; font-size: 13.5px; font-weight: 600;
+}
+.boost-success {
+  display: flex; align-items: center; gap: 8px;
+  margin: 0 20px 14px; padding: 12px 14px;
+  border: 1px solid #bfe3d0; border-radius: 10px;
+  background: #eefaf3; color: #14583a; font-size: 14px; font-weight: 600;
+}
+.boost-section { background: #ffffff; margin: 0 0 12px; padding: 4px 0 8px; }
+.boost-section h2 { margin: 0; padding: 14px 20px 8px; font-size: 13px; color: #607174; }
+.boost-row {
+  width: 100%; display: flex; align-items: center; gap: 12px;
+  padding: 12px 20px; border: 0; border-bottom: 1px solid #edf1f1;
+  background: #ffffff; font: inherit; text-align: left; cursor: pointer;
+}
+.boost-row.selected { background: #fff7f3; }
+.boost-row img, .boost-thumb { width: 48px; height: 48px; border-radius: 8px; object-fit: cover; background: #e8eeee; flex: none; }
+.boost-row-text { flex: 1; min-width: 0; display: grid; gap: 2px; }
+.boost-row-text strong { font-size: 15px; color: #111111; }
+.boost-row-text small { color: #607174; font-size: 13px; }
+.boost-pill {
+  padding: 5px 12px; border-radius: 999px; background: #eef3f3;
+  color: #44545a; font-size: 12.5px; font-weight: 800;
+}
+.boost-row.selected .boost-pill, .boost-pill.on { background: #ffe9dc; color: var(--orange); }
+.boost-empty, .boost-note { margin: 0; padding: 10px 20px; color: #607174; font-size: 14px; }
+.boost-note { font-size: 12.5px; }
+.boost-error { margin: 0; padding: 4px 20px 8px; color: #b3261e; font-size: 14px; font-weight: 600; }
+.boost-methods { padding: 4px 20px 12px; }
+.boost-pay {
+  display: block; width: calc(100% - 40px); margin: 4px 20px 12px; min-height: 48px;
+  border: 0; border-radius: 10px; background: var(--orange); color: #14181D;
+  font: inherit; font-size: 16px; font-weight: 800; cursor: pointer;
+}
+.boost-pay:disabled { opacity: 0.55; cursor: not-allowed; }
+.boost-history { display: flex; align-items: center; gap: 12px; padding: 12px 20px; border-bottom: 1px solid #edf1f1; }
