@@ -54811,3 +54811,30 @@ strong {
     background-position: 76% center;
   }
 }
+/* ==========================================================
+   MOBILE — NAVBAR / HOME
+   ========================================================== */
+
+@media (max-width: 760px) {
+  .navbar-inner {
+    row-gap: 0;
+  }
+
+  /* Le logo TindaHan ne doit pas apparaître dans la navbar mobile */
+  .navbar-logo {
+    display: none !important;
+  }
+
+  .navbar-logo .brand-logo {
+    display: none !important;
+  }
+
+  /* Conserve le comportement actuel de la bannière d'accueil */
+  .guest-hero {
+    height: 500px;
+  }
+
+  .guest-hero-background {
+    background-position: 76% center;
+  }
+}
