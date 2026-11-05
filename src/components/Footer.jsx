@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { SOCIAL } from "../content/site";
+import BrandLogo from "./BrandLogo";
 
 export default function Footer() {
   return (
@@ -7,8 +8,8 @@ export default function Footer() {
       <div className="site-footer-inner">
         <div className="site-footer-top">
           <div className="site-footer-brand">
-            <Link to="/" className="site-footer-logo">
-              TindaHan
+            <Link to="/" className="site-footer-logo" aria-label="TindaHan">
+              <BrandLogo variant="horizontal" tone="orange" height={44} />
             </Link>
 
             <p>

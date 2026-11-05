@@ -2,6 +2,7 @@ import { Eye, EyeOff, ShieldCheck } from "lucide-react";
 import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import BrandLogo from "../components/BrandLogo";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -65,7 +66,7 @@ export default function Login() {
     <main className="auth-page auth-tindahan-page">
       <section className="auth-card auth-modern-card">
         <div className="auth-logo auth-modern-intro">
-          <span className="auth-brand-pill">TindaHan</span>
+          <BrandLogo variant="vertical" className="auth-brand-logo" height={64} />
 
           <h1>Welcome back</h1>
 

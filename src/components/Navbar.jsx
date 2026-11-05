@@ -11,6 +11,7 @@ import {
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
+import BrandLogo from "./BrandLogo";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -76,8 +77,8 @@ export default function Navbar() {
   return (
     <header className="navbar">
       <div className="navbar-inner">
-        <Link to="/" className="navbar-logo">
-          TindaHan
+        <Link to="/" className="navbar-logo" aria-label="TindaHan">
+          <BrandLogo variant="horizontal" height={36} />
         </Link>
 
         <form className="navbar-search" onSubmit={handleSearchSubmit}>
