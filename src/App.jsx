@@ -58,6 +58,8 @@ import BundleDiscounts from "./pages/BundleDiscounts";
 import Badges from "./pages/Badges";
 
 import "./styles/searchFilters.css";
+import VerificationGate from "./components/VerificationGate";
+import VerifyIdentity from "./pages/VerifyIdentity";
 
 function isMobileDevice() {
   if (typeof window === "undefined") {
@@ -190,7 +192,8 @@ export default function App() {
     location.pathname.startsWith("/tracking/") ||
     location.pathname.startsWith("/shipping-label/") ||
     location.pathname.startsWith("/refund-request/") ||
-    location.pathname.startsWith("/welcome");
+    location.pathname.startsWith("/welcome") ||
+    location.pathname.startsWith("/verify-identity");
 
   /*
    * Full-screen filter pages.
@@ -219,7 +222,8 @@ export default function App() {
    * full-screen filter interface.
    */
   const shouldShowGlobalChrome =
-    !isSearchFilterPage;
+    !isSearchFilterPage &&
+    !location.pathname.startsWith("/verify-identity");
 
   /*
    * CATEGORY BAR RULE
@@ -257,7 +261,14 @@ export default function App() {
         <CategoryBar />
       )}
 
+      <VerificationGate />
+
       <Routes>
+        <Route
+          path="/verify-identity"
+          element={<VerifyIdentity />}
+        />
+
         <Route
           path="/"
           element={<Home />}

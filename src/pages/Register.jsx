@@ -3,6 +3,20 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BrandLogo from "../components/BrandLogo";
+import { MIN_AGE, isAdult } from "../lib/identity";
+
+function RegisterSteps({ current }) {
+  const steps = ["Account", "Email", "ID check"];
+  return (
+    <ol className="reg-steps" aria-label="Sign-up steps">
+      {steps.map((label, i) => (
+        <li key={label} className={i === current ? "current" : ""}>
+          {i + 1}. {label}
+        </li>
+      ))}
+    </ol>
+  );
+}
 
 export default function Register() {
   const navigate = useNavigate();
@@ -12,7 +26,9 @@ export default function Register() {
     username: "",
     email: "",
     password: "",
-    confirmPassword: ""
+    confirmPassword: "",
+    birthDate: "",
+    agreed: false
   });
 
   const [loading, setLoading] = useState(false);
@@ -56,6 +72,18 @@ export default function Register() {
       return "Passwords do not match.";
     }
 
+    if (!form.birthDate) {
+      return "Please enter your date of birth.";
+    }
+
+    if (!isAdult(form.birthDate)) {
+      return `TindaHan is only for people aged ${MIN_AGE} and over. You can create an account once you turn ${MIN_AGE}.`;
+    }
+
+    if (!form.agreed) {
+      return `Please confirm that you are ${MIN_AGE} or older and accept the Terms.`;
+    }
+
     return "";
   }
 
@@ -79,7 +107,8 @@ export default function Register() {
     const { data, error: signUpError } = await signUp({
       email,
       password: form.password,
-      username
+      username,
+      birthDate: form.birthDate
     });
 
     if (signUpError) {
@@ -109,11 +138,14 @@ export default function Register() {
 
           <BrandLogo variant="vertical" className="auth-brand-logo" height={64} />
 
+          <RegisterSteps current={1} />
+
           <h1>Check your email</h1>
 
           <p>
             We sent a verification link to <strong>{createdEmail}</strong>.
-            Open the email and confirm your account to continue to TindaHan.
+            Open the email and confirm your account. Next, you'll verify your age
+            and ID, which takes a few minutes.
           </p>
 
           <div className="auth-info-box">
@@ -154,10 +186,13 @@ export default function Register() {
           </p>
         </div>
 
+        <RegisterSteps current={0} />
+
         <div className="auth-info-box">
           <Sparkles size={21} />
           <span>
-            Create your profile, verify your email, then start buying and
+            Create your profile, verify your email, then confirm your age and
+            ID (PhilID or another government photo ID) to start buying and
             selling safely on TindaHan.
           </span>
         </div>
@@ -234,6 +269,31 @@ export default function Register() {
                 {showConfirmPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+          </label>
+
+          <label>
+            Date of birth
+            <input
+              type="date"
+              value={form.birthDate}
+              max={new Date().toISOString().slice(0, 10)}
+              onChange={(event) => updateField("birthDate", event.target.value)}
+              autoComplete="bday"
+              required
+            />
+          </label>
+
+          <label className="reg-consent">
+            <input
+              type="checkbox"
+              checked={form.agreed}
+              onChange={(event) => updateField("agreed", event.target.checked)}
+            />
+            <span>
+              I am {MIN_AGE} or older and I accept the{" "}
+              <Link to="/terms" target="_blank">Terms</Link> and the{" "}
+              <Link to="/privacy" target="_blank">Protection Center</Link>.
+            </span>
           </label>
 
           <button type="submit" disabled={loading}>

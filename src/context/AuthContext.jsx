@@ -226,7 +226,7 @@ export function AuthProvider({ children }) {
     return data;
   }
 
-  async function signUp({ email, password, username }) {
+  async function signUp({ email, password, username, birthDate }) {
     const cleanUsername = String(username || "")
       .trim()
       .toLowerCase()
@@ -240,7 +240,8 @@ export function AuthProvider({ children }) {
       options: {
         emailRedirectTo: getWelcomeRedirectUrl(),
         data: {
-          username: cleanUsername
+          username: cleanUsername,
+          ...(birthDate ? { birth_date: birthDate } : {})
         }
       }
     });
