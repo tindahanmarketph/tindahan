@@ -182,73 +182,155 @@ async function updateOrder(orderId, updates) {
   return getOrderById(data.id);
 }
 
-async function sendOrderConversationUpdate(order, type, text) {
-  if (!order?.listingId || !order?.buyerId || !order?.sellerId) return null;
+async function sendOrderConversationUpdate(
+  order,
+  type,
+  text,
+  conversationOverride = null
+) {
+  if (!order?.listingId || !order?.buyerId || !order?.sellerId) {
+    return null;
+  }
 
   /*
-   * IMPORTANT :
-   * On ne recharge plus l'annonce depuis la table listings ici.
+   * IMPORTANT
    *
-   * Une fois la commande créée, Supabase peut immédiatement passer
-   * l'annonce en sold / reserved. Selon les règles RLS, l'annonce peut
-   * alors devenir invisible pour l'acheteur.
+   * On ne recharge plus l'annonce depuis la table "listings".
    *
-   * L'ancienne logique pouvait donc déclencher :
+   * Une fois l'achat réalisé, l'annonce peut être immédiatement
+   * considérée comme vendue/réservée et devenir inaccessible
+   * pour l'acheteur à cause des règles RLS.
+   *
+   * C'est ce comportement qui provoquait :
    * "Listing unavailable."
    *
-   * alors que la commande avait déjà été créée correctement.
+   * Les informations présentes dans la commande suffisent
+   * pour retrouver ou recréer la conversation.
    */
 
-  const conversation = await getOrCreateConversation({
-    listing: {
-      id: order.listingId,
-      seller_id: order.sellerId,
-      title: order.listingTitle || "Item",
-      price: order.itemPrice || order.originalItemPrice || 0,
-      photos: order.listingPhoto ? [order.listingPhoto] : [],
-      location: "Philippines"
-    },
-    seller: {
-      id: order.sellerId,
-      username: order.sellerUsername || "Seller"
-    },
-    buyer: {
-      id: order.buyerId
-    },
-    firstPhoto: order.listingPhoto || ""
-  });
+  const conversation =
+    conversationOverride ||
+    (await getOrCreateConversation({
+      listing: {
+        id: order.listingId,
+        seller_id: order.sellerId,
+        title: order.listingTitle || "Item",
+        price: Number(
+          order.itemPrice ||
+          order.originalItemPrice ||
+          0
+        ),
+        photos: order.listingPhoto
+          ? [order.listingPhoto]
+          : [],
+        location: "Philippines"
+      },
 
-  const currentUserId = await getCurrentUserId();
-  const senderId = currentUserId || order.buyerId || order.sellerId;
+      seller: {
+        id: order.sellerId,
+        username:
+          order.sellerUsername ||
+          "Seller"
+      },
 
-  const { data: existingMessages, error: existingError } = await supabase
+      buyer: {
+        id: order.buyerId
+      },
+
+      firstPhoto:
+        order.listingPhoto ||
+        ""
+    }));
+
+  const currentUserId =
+    await getCurrentUserId();
+
+  const senderId =
+    currentUserId ||
+    order.buyerId ||
+    order.sellerId;
+
+  /*
+   * On cherche si un message lié à cette commande existe déjà.
+   *
+   * S'il existe :
+   * on le met à jour avec le nouveau statut.
+   *
+   * Sinon :
+   * on crée le message de commande.
+   */
+
+  const {
+    data: existingMessages,
+    error: existingError
+  } = await supabase
     .from("messages")
     .select("*")
-    .eq("conversation_id", conversation.id)
-    .filter("payload->>orderId", "eq", String(order.id))
-    .order("created_at", { ascending: true });
+    .eq(
+      "conversation_id",
+      conversation.id
+    )
+    .filter(
+      "payload->>orderId",
+      "eq",
+      String(order.id)
+    )
+    .order(
+      "created_at",
+      {
+        ascending: true
+      }
+    );
 
   if (existingError) {
     throw existingError;
   }
 
-  const existingOrderMessage = existingMessages?.[0];
+  const existingOrderMessage =
+    existingMessages?.[0];
+
+  /*
+   * Un message de commande existe déjà.
+   * On le transforme en message correspondant
+   * au dernier statut connu.
+   */
 
   if (existingOrderMessage) {
-    const { data, error } = await supabase
+    const {
+      data,
+      error
+    } = await supabase
       .from("messages")
       .update({
-        sender_id: senderId,
-        message_type: type,
-        body: text,
+        sender_id:
+          senderId,
+
+        message_type:
+          type,
+
+        body:
+          text,
+
         payload: {
-          ...(existingOrderMessage.payload || {}),
-          orderId: order.id,
-          latestOrderStatus: order.status,
-          updatedAt: new Date().toISOString()
+          ...(
+            existingOrderMessage.payload ||
+            {}
+          ),
+
+          orderId:
+            order.id,
+
+          latestOrderStatus:
+            order.status,
+
+          updatedAt:
+            new Date().toISOString()
         }
       })
-      .eq("id", existingOrderMessage.id)
+      .eq(
+        "id",
+        existingOrderMessage.id
+      )
       .select("*")
       .single();
 
@@ -256,30 +338,63 @@ async function sendOrderConversationUpdate(order, type, text) {
       throw error;
     }
 
-    await supabase
+    /*
+     * On remonte également la conversation
+     * en haut de la liste Messages.
+     */
+
+    const {
+      error: conversationUpdateError
+    } = await supabase
       .from("conversations")
       .update({
-        updated_at: new Date().toISOString()
+        updated_at:
+          new Date().toISOString()
       })
-      .eq("id", conversation.id);
+      .eq(
+        "id",
+        conversation.id
+      );
+
+    if (conversationUpdateError) {
+      throw conversationUpdateError;
+    }
 
     return data;
   }
 
+  /*
+   * Aucun message de commande n'existe encore.
+   * Création du message initial.
+   */
+
   return sendSystemMessage({
-    conversationId: conversation.id,
+    conversationId:
+      conversation.id,
+
     senderId,
+
     type,
+
     text,
+
     payload: {
-      orderId: order.id,
-      latestOrderStatus: order.status,
-      updatedAt: new Date().toISOString()
+      orderId:
+        order.id,
+
+      latestOrderStatus:
+        order.status,
+
+      updatedAt:
+        new Date().toISOString()
     }
   });
 }
 
-function normalizeCheckoutAddress(address, deliveryMethod) {
+function normalizeCheckoutAddress(
+  address,
+  deliveryMethod
+) {
   const normalizedAddress = {
     ...(address || {})
   };
@@ -301,14 +416,23 @@ function normalizeCheckoutAddress(address, deliveryMethod) {
     return normalizedAddress;
   }
 
-  normalizedAddress.pickupPoint = selectedPoint;
-  normalizedAddress.pickup_point = selectedPoint;
+  normalizedAddress.pickupPoint =
+    selectedPoint;
 
-  normalizedAddress.relayPoint = selectedPoint;
-  normalizedAddress.relay_point = selectedPoint;
+  normalizedAddress.pickup_point =
+    selectedPoint;
 
-  normalizedAddress.dropOffPoint = selectedPoint;
-  normalizedAddress.drop_off_point = selectedPoint;
+  normalizedAddress.relayPoint =
+    selectedPoint;
+
+  normalizedAddress.relay_point =
+    selectedPoint;
+
+  normalizedAddress.dropOffPoint =
+    selectedPoint;
+
+  normalizedAddress.drop_off_point =
+    selectedPoint;
 
   return normalizedAddress;
 }
@@ -333,34 +457,75 @@ export async function createOrderFromCheckout({
   meetupChangeStatus
 }) {
   if (!listing?.id) {
-    throw new Error("Missing listing.");
+    throw new Error(
+      "Missing listing."
+    );
   }
 
   if (!buyer?.id) {
-    throw new Error("You must be logged in.");
+    throw new Error(
+      "You must be logged in."
+    );
   }
 
-  const sellerId = listing.seller_id || seller?.id;
+  const sellerId =
+    listing.seller_id ||
+    seller?.id;
 
   if (!sellerId) {
-    throw new Error("Missing seller.");
+    throw new Error(
+      "Missing seller."
+    );
   }
 
-  const normalizedAddress = normalizeCheckoutAddress(
-    address,
-    deliveryMethod
-  );
+  /*
+   * IMPORTANT
+   *
+   * La conversation est créée/restaurée AVANT
+   * la création de la commande.
+   *
+   * Ainsi, l'annonce est encore accessible et
+   * on conserve exactement le fonctionnement
+   * historique de TindaHan :
+   *
+   * achat
+   * → conversation
+   * → commande
+   * → suivi
+   * → message automatique.
+   */
 
-  const now = new Date().toISOString();
+  const orderConversation =
+    await getOrCreateConversation({
+      listing,
+      seller,
+      buyer,
+      firstPhoto
+    });
 
-  const maxShippingDate = addDays(now, 7);
+  const normalizedAddress =
+    normalizeCheckoutAddress(
+      address,
+      deliveryMethod
+    );
 
-  const trackingNumber = createTrackingNumber();
+  const now =
+    new Date().toISOString();
 
-  const hasMeetupSuggestion = Boolean(
-    deliveryMethod === "meetup" &&
-    buyerSuggestedMeetupSpot
-  );
+  const maxShippingDate =
+    addDays(
+      now,
+      7
+    );
+
+  const trackingNumber =
+    createTrackingNumber();
+
+  const hasMeetupSuggestion =
+    Boolean(
+      deliveryMethod === "meetup" &&
+      buyerSuggestedMeetupSpot
+    );
 
   const status =
     deliveryMethod === "meetup"
@@ -379,35 +544,46 @@ export async function createOrderFromCheckout({
   const carrier =
     deliveryMethod === "meetup"
       ? "Safe Meet-Up"
-      : pickupPoint?.carrier || "J&T Express";
+      : pickupPoint?.carrier ||
+        "J&T Express";
 
   /*
    * Création de la commande.
    */
 
-  const { data: orderRow, error } = await supabase
+  const {
+    data: orderRow,
+    error
+  } = await supabase
     .from("orders")
     .insert({
-      listing_id: listing.id,
+      listing_id:
+        listing.id,
 
-      buyer_id: buyer.id,
+      buyer_id:
+        buyer.id,
 
-      seller_id: sellerId,
+      seller_id:
+        sellerId,
 
       listing_title:
-        listing.title || "Item",
+        listing.title ||
+        "Item",
 
       listing_photo:
-        firstPhoto || "",
+        firstPhoto ||
+        "",
 
       seller_username:
-        seller?.username || "Seller",
+        seller?.username ||
+        "Seller",
 
       original_item_price:
         originalItemPrice,
 
       accepted_offer_price:
-        acceptedOfferPrice || null,
+        acceptedOfferPrice ||
+        null,
 
       item_price:
         itemPrice,
@@ -440,10 +616,12 @@ export async function createOrderFromCheckout({
         null,
 
       buyer_suggested_meetup_spot:
-        buyerSuggestedMeetupSpot || null,
+        buyerSuggestedMeetupSpot ||
+        null,
 
       meetup_change_status:
-        meetupChangeStatus || "none",
+        meetupChangeStatus ||
+        "none",
 
       carrier,
 
@@ -460,10 +638,16 @@ export async function createOrderFromCheckout({
         maxShippingDate,
 
       estimated_delivery_start:
-        addDays(now, 9),
+        addDays(
+          now,
+          9
+        ),
 
       estimated_delivery_end:
-        addDays(now, 14),
+        addDays(
+          now,
+          14
+        ),
 
       status
     })
@@ -475,7 +659,7 @@ export async function createOrderFromCheckout({
   }
 
   /*
-   * Historique initial de la commande.
+   * Premier événement du suivi.
    */
 
   await addOrderTrackingEvent(
@@ -498,93 +682,97 @@ export async function createOrderFromCheckout({
           ? `The seller has been notified and must ship the parcel within 7 days. Pick-up point selected: ${pickupPoint.name}, ${pickupPoint.address}.`
           : "The seller has been notified and must ship the parcel within 7 days.",
 
-      completed: true
+      completed:
+        true
     }
   );
 
   /*
-   * À ce stade la commande existe réellement.
+   * On recharge la commande avec son tracking.
    */
 
   const order =
-    await getOrderById(orderRow.id);
+    await getOrderById(
+      orderRow.id
+    );
 
   /*
-   * IMPORTANT :
+   * Message automatique dans la conversation.
    *
-   * Une erreur de conversation ne doit plus faire échouer
-   * tout le checkout.
-   *
-   * La commande existe déjà dans Supabase.
+   * On transmet directement "orderConversation".
+   * Aucune nouvelle lecture de l'annonce n'est nécessaire.
    */
 
-  try {
-    if (deliveryMethod !== "meetup") {
-      await sendOrderConversationUpdate(
-        order,
+  if (
+    deliveryMethod !== "meetup"
+  ) {
+    await sendOrderConversationUpdate(
+      order,
 
-        "order_sold",
+      "order_sold",
 
-        `Order confirmed. The seller has until ${formatOrderDate(
-          maxShippingDate
-        )} to ship the parcel.`
-      );
-    }
+      `Order confirmed. The seller has until ${formatOrderDate(
+        maxShippingDate
+      )} to ship the parcel.`,
 
-    else if (hasMeetupSuggestion) {
-      await sendOrderConversationUpdate(
-        order,
-
-        "meetup_change_request",
-
-        `Order confirmed. The buyer suggested another Safe Meet-Up point: ${
-          buyerSuggestedMeetupSpot?.name ||
-          "selected location"
-        }. The seller can accept or decline this location after purchase.`
-      );
-    }
-
-    else {
-      await sendOrderConversationUpdate(
-        order,
-
-        "meetup_order",
-
-        `Safe Meet-Up confirmed for ${
-          order.meetup?.spot?.name ||
-          order.sellerMeetupSpot?.name ||
-          "the selected location"
-        }.`
-      );
-    }
-  }
-
-  catch (conversationError) {
-    /*
-     * La commande ne doit pas échouer uniquement parce
-     * que la conversation n'a pas pu être mise à jour.
-     */
-
-    console.error(
-      "Order conversation update error:",
-      conversationError
+      orderConversation
     );
   }
 
-  /*
-   * Retourne toujours la commande si elle a bien été créée.
-   */
+  else if (
+    hasMeetupSuggestion
+  ) {
+    await sendOrderConversationUpdate(
+      order,
+
+      "meetup_change_request",
+
+      `Order confirmed. The buyer suggested another Safe Meet-Up point: ${
+        buyerSuggestedMeetupSpot?.name ||
+        "selected location"
+      }. The seller can accept or decline this location after purchase.`,
+
+      orderConversation
+    );
+  }
+
+  else {
+    await sendOrderConversationUpdate(
+      order,
+
+      "meetup_order",
+
+      `Safe Meet-Up confirmed for ${
+        order.meetup?.spot?.name ||
+        order.sellerMeetupSpot?.name ||
+        "the selected location"
+      }.`,
+
+      orderConversation
+    );
+  }
 
   return order;
 }
 
-export async function markShippingLabelDownloaded(orderId) {
+/*
+ * ============================================================
+ * SELLER — SHIPPING LABEL
+ * ============================================================
+ */
+
+export async function markShippingLabelDownloaded(
+  orderId
+) {
   const updatedOrder =
     await updateOrder(
       orderId,
       {
-        shipping_label_downloaded: true,
-        status: "label_downloaded"
+        shipping_label_downloaded:
+          true,
+
+        status:
+          "label_downloaded"
       }
     );
 
@@ -597,7 +785,8 @@ export async function markShippingLabelDownloaded(orderId) {
       description:
         "The seller downloaded the shipping label.",
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -609,8 +798,16 @@ export async function markShippingLabelDownloaded(orderId) {
     "The seller downloaded the shipping label."
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
+
+/*
+ * ============================================================
+ * SELLER — COURIER PICKUP
+ * ============================================================
+ */
 
 export async function scheduleCourierPickup(
   orderId,
@@ -684,7 +881,8 @@ export async function scheduleCourierPickup(
           pickupDate
         )} between ${pickupSlot} at ${sellerAddressText}.`,
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -698,8 +896,16 @@ export async function scheduleCourierPickup(
     )} between ${pickupSlot}.`
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
+
+/*
+ * ============================================================
+ * SELLER — DROP-OFF
+ * ============================================================
+ */
 
 export async function markParcelDroppedOff(
   orderId,
@@ -715,7 +921,9 @@ export async function markParcelDroppedOff(
     "";
 
   const currentOrder =
-    await getOrderById(orderId);
+    await getOrderById(
+      orderId
+    );
 
   const currentAddress =
     currentOrder?.address ||
@@ -762,7 +970,8 @@ export async function markParcelDroppedOff(
           ? `The parcel has been handed over to ${carrier} at ${pointAddress}.`
           : "The parcel has been handed over to the delivery partner.",
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -776,15 +985,26 @@ export async function markParcelDroppedOff(
       : `Order shipped. The seller dropped off the parcel with ${carrier}.`
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
 
-export async function markParcelInTransit(orderId) {
+/*
+ * ============================================================
+ * PARCEL — IN TRANSIT
+ * ============================================================
+ */
+
+export async function markParcelInTransit(
+  orderId
+) {
   const updatedOrder =
     await updateOrder(
       orderId,
       {
-        status: "in_transit"
+        status:
+          "in_transit"
       }
     );
 
@@ -797,7 +1017,8 @@ export async function markParcelInTransit(orderId) {
       description:
         "Your parcel is currently moving through the delivery network.",
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -809,12 +1030,24 @@ export async function markParcelInTransit(orderId) {
     "Order shipped. The parcel is currently in transit."
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
 
-export async function markParcelReadyForPickup(orderId) {
+/*
+ * ============================================================
+ * PARCEL — READY FOR PICKUP
+ * ============================================================
+ */
+
+export async function markParcelReadyForPickup(
+  orderId
+) {
   const currentOrder =
-    await getOrderById(orderId);
+    await getOrderById(
+      orderId
+    );
 
   const pickupPoint =
     currentOrder?.address?.pickupPoint ||
@@ -829,7 +1062,8 @@ export async function markParcelReadyForPickup(orderId) {
     await updateOrder(
       orderId,
       {
-        status: "ready_for_pickup"
+        status:
+          "ready_for_pickup"
       }
     );
 
@@ -845,7 +1079,8 @@ export async function markParcelReadyForPickup(orderId) {
           ? `Your parcel is available at ${pickupPoint.name}, ${pickupPoint.address}.`
           : "Your parcel is available at the selected pick-up point.",
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -860,10 +1095,20 @@ export async function markParcelReadyForPickup(orderId) {
       : "Your parcel has arrived at the pick-up point. Check your order before confirming it."
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
 
-export async function notifyHomeDeliveryTomorrow(orderId) {
+/*
+ * ============================================================
+ * HOME DELIVERY — TOMORROW
+ * ============================================================
+ */
+
+export async function notifyHomeDeliveryTomorrow(
+  orderId
+) {
   const updatedOrder =
     await updateOrder(
       orderId,
@@ -882,7 +1127,8 @@ export async function notifyHomeDeliveryTomorrow(orderId) {
       description:
         "The courier will deliver the parcel tomorrow.",
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -894,10 +1140,20 @@ export async function notifyHomeDeliveryTomorrow(orderId) {
     "Your parcel is on its way. You will be able to confirm the order or report a problem once it has been delivered."
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
 
-export async function markParcelDelivered(orderId) {
+/*
+ * ============================================================
+ * PARCEL — DELIVERED
+ * ============================================================
+ */
+
+export async function markParcelDelivered(
+  orderId
+) {
   const updatedOrder =
     await updateOrder(
       orderId,
@@ -916,7 +1172,8 @@ export async function markParcelDelivered(orderId) {
       description:
         "The parcel has been delivered to the buyer.",
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -928,8 +1185,16 @@ export async function markParcelDelivered(orderId) {
     "Your parcel has been delivered. Check your order before confirming it."
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
+
+/*
+ * ============================================================
+ * DELIVERY INSTRUCTIONS
+ * ============================================================
+ */
 
 export async function updateDeliveryInstructions(
   orderId,
@@ -939,12 +1204,21 @@ export async function updateDeliveryInstructions(
     orderId,
     {
       delivery_instructions:
-        instructions || ""
+        instructions ||
+        ""
     }
   );
 }
 
-export async function completeOrder(orderId) {
+/*
+ * ============================================================
+ * BUYER — COMPLETE ORDER
+ * ============================================================
+ */
+
+export async function completeOrder(
+  orderId
+) {
   const updatedOrder =
     await updateOrder(
       orderId,
@@ -966,7 +1240,8 @@ export async function completeOrder(orderId) {
       description:
         "The buyer confirmed that the item was received.",
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -978,8 +1253,16 @@ export async function completeOrder(orderId) {
     "Order accepted. The payment can now be released to the seller."
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
+
+/*
+ * ============================================================
+ * BUYER — REFUND / PROBLEM
+ * ============================================================
+ */
 
 export async function requestOrderRefund(
   orderId,
@@ -988,7 +1271,9 @@ export async function requestOrderRefund(
   const isDetailedComplaint =
     complaint &&
     typeof complaint === "object" &&
-    !Array.isArray(complaint);
+    !Array.isArray(
+      complaint
+    );
 
   const reason =
     isDetailedComplaint
@@ -999,24 +1284,28 @@ export async function requestOrderRefund(
 
   const details =
     isDetailedComplaint
-      ? complaint.details || ""
+      ? complaint.details ||
+        ""
       : "";
 
   const photosCount =
     isDetailedComplaint
       ? Number(
-          complaint.photosCount || 0
+          complaint.photosCount ||
+          0
         )
       : 0;
 
   const returnMethod =
     isDetailedComplaint
-      ? complaint.returnMethod || ""
+      ? complaint.returnMethod ||
+        ""
       : "";
 
   const returnPoint =
     isDetailedComplaint
-      ? complaint.returnPoint || null
+      ? complaint.returnPoint ||
+        null
       : null;
 
   const returnLabel =
@@ -1061,7 +1350,8 @@ export async function requestOrderRefund(
       description:
         cleanProblemDescription,
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -1074,7 +1364,8 @@ export async function requestOrderRefund(
       description:
         cleanEvidenceDescription,
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -1086,8 +1377,16 @@ export async function requestOrderRefund(
     `The buyer reported a problem with the order: ${reason}. The payment remains protected while TindaHan reviews the case.`
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
+
+/*
+ * ============================================================
+ * SAFE MEET-UP
+ * ============================================================
+ */
 
 export async function updateMeetupChangeStatus(
   orderId,
@@ -1097,7 +1396,9 @@ export async function updateMeetupChangeStatus(
     ![
       "accepted",
       "declined"
-    ].includes(nextStatus)
+    ].includes(
+      nextStatus
+    )
   ) {
     throw new Error(
       "Invalid Meet-Up status."
@@ -1126,7 +1427,8 @@ export async function updateMeetupChangeStatus(
           ? "The seller accepted the buyer's suggested meeting point."
           : "The seller declined the buyer's suggested meeting point. The original seller meeting point remains available.",
 
-      completed: true
+      completed:
+        true
     }
   );
 
@@ -1140,5 +1442,7 @@ export async function updateMeetupChangeStatus(
       : "The seller declined the suggested Safe Meet-Up point."
   );
 
-  return getOrderById(orderId);
+  return getOrderById(
+    orderId
+  );
 }
