@@ -28,7 +28,7 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import ListingCard from "../components/ListingCard";
-import { evaluateBadges, loadBadgeStats } from "../lib/walletData";
+import { evaluateBadges, loadBadgeStats, loadWalletSummary } from "../lib/walletData";
 import { supabase } from "../lib/supabase";
 import { formatReviewDate, getReviewsForUser } from "../lib/reviews";
 
@@ -262,6 +262,23 @@ function MobileProfileDashboard({
 }) {
   const { user: badgeUser, profile: badgeProfile } = useAuth();
   const [badgeSummary, setBadgeSummary] = useState({ earned: 0, total: 5 });
+  const [walletTotals, setWalletTotals] = useState({ available: 0, pending: 0 });
+
+  /* Même source que la page /wallet : un seul calcul, deux affichages. */
+  useEffect(() => {
+    let cancelled = false;
+    if (!badgeUser?.id) return undefined;
+
+    loadWalletSummary(badgeUser.id)
+      .then((summary) => {
+        if (!cancelled) setWalletTotals({ available: summary.available, pending: summary.pending });
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [badgeUser?.id]);
 
   useEffect(() => {
     let cancelled = false;
@@ -346,7 +363,8 @@ function MobileProfileDashboard({
         <MobileProfileMenuItem
           icon={<Wallet size={28} />}
           title="My wallet"
-          value="₱0.00"
+          subtitle={walletTotals.pending > 0 ? `₱${walletTotals.pending.toLocaleString("en-PH", { minimumFractionDigits: 2 })} pending` : undefined}
+          value={`₱${walletTotals.available.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
           to="/wallet"
         />
 
@@ -933,19 +951,9 @@ export default function Profile() {
                 <div className="profile-meta-line">
                   <Palette size={18} />
 
-                  <Link
-                    to={`/profile/${displayedUsername}/followers`}
-                  >
-                    0 followers
-                  </Link>
-
-                  <span>,</span>
-
-                  <Link
-                    to={`/profile/${displayedUsername}/following`}
-                  >
-                    0 following
-                  </Link>
+                  <span data-testid="profile-counters">
+                    {listings.length} listing{listings.length === 1 ? "" : "s"}
+                  </span>
                 </div>
               </div>
 
@@ -954,10 +962,13 @@ export default function Profile() {
                   Verified information:
                 </span>
 
-                <div className="profile-meta-line">
-                  <ShieldCheck size={18} />
-                  <span>Google</span>
-                </div>
+                {isOwnProfile &&
+                  user?.app_metadata?.provider === "google" && (
+                    <div className="profile-meta-line">
+                      <ShieldCheck size={18} />
+                      <span>Google</span>
+                    </div>
+                  )}
 
                 <div className="profile-meta-line">
                   <ShieldCheck size={18} />

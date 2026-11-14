@@ -1,5 +1,10 @@
 import { supabase } from "./supabase";
 import {
+  DB_HARDENING,
+  SHIPPING_DEADLINE_DAYS
+} from "./featureFlags";
+import { validateAddress } from "./addressBook";
+import {
   addDays,
   createTrackingNumber,
   formatRealtimeDate,
@@ -437,6 +442,194 @@ function normalizeCheckoutAddress(
   return normalizedAddress;
 }
 
+/*
+ * ============================================================
+ * CAHIER BÊTA — GARDE-FOUS COMMANDE (L1.1 / L1.2 / L1.3 / L2.2)
+ * ============================================================
+ */
+
+/** Statuts qui « tiennent » une annonce (commande en cours). */
+export const ACTIVE_ORDER_STATUSES = [
+  "paid_waiting_seller",
+  "label_downloaded",
+  "courier_pickup_scheduled",
+  "dropped_off",
+  "in_transit",
+  "ready_for_pickup",
+  "delivery_scheduled",
+  "meetup_request_sent",
+  "refund_requested"
+];
+
+/** Statuts finaux : l'argent ne bouge plus. */
+export const TERMINAL_ORDER_STATUSES = [
+  "completed",
+  "cancelled",
+  "canceled",
+  "expired",
+  "refunded"
+];
+
+/** Statuts avant expédition : le vendeur peut encore être en retard. */
+export const PRE_SHIPMENT_STATUSES = [
+  "paid_waiting_seller",
+  "meetup_request_sent"
+];
+
+export class OrderGuardError extends Error {
+  constructor(code, message) {
+    super(message);
+    this.name = "OrderGuardError";
+    this.code = code;
+  }
+}
+
+const UNAVAILABLE_MESSAGE =
+  "This item is no longer available. Another buyer may have just purchased it.";
+
+function isUniqueViolation(error) {
+  return (
+    error?.code === "23505" ||
+    /duplicate key|unique constraint/i.test(error?.message || "")
+  );
+}
+
+function mapRpcGuardMessage(reason) {
+  switch (reason) {
+    case "own_listing":
+      return "You can't buy your own listing.";
+    case "reserved":
+    case "sold":
+    case "unavailable":
+    case "not_found":
+      return UNAVAILABLE_MESSAGE;
+    default:
+      return UNAVAILABLE_MESSAGE;
+  }
+}
+
+/**
+ * Appelle la fonction SQL reserve_listing (verrou 15 min). Si la migration
+ * n'est pas encore appliquée (fonction absente), on ignore sans bloquer l'app.
+ */
+export async function reserveListingForCheckout(listingId) {
+  if (!DB_HARDENING || !listingId) return { ok: true, skipped: true };
+
+  const { data, error } = await supabase.rpc("reserve_listing", {
+    p_listing_id: listingId
+  });
+
+  if (error) {
+    if (/function .* does not exist|could not find the function|PGRST202/i.test(
+      `${error.message || ""} ${error.code || ""}`
+    )) {
+      return { ok: true, skipped: true };
+    }
+    throw error;
+  }
+
+  if (data && data.ok === false) {
+    throw new OrderGuardError(data.reason || "unavailable", mapRpcGuardMessage(data.reason));
+  }
+
+  return { ok: true, data };
+}
+
+export async function releaseListingReservation(listingId) {
+  if (!DB_HARDENING || !listingId) return;
+
+  try {
+    await supabase.rpc("release_listing", { p_listing_id: listingId });
+  } catch {
+    /* le verrou expirera tout seul au bout de 15 min */
+  }
+}
+
+async function assertCheckoutAllowed({ listing, sellerId, buyer, idempotencyKey }) {
+  /* L1.2 — pas d'achat de sa propre annonce */
+  if (String(sellerId) === String(buyer.id)) {
+    throw new OrderGuardError("own_listing", "You can't buy your own listing.");
+  }
+
+  /* Statut réel de l'annonce (pas celui du cache de la page) */
+  const { data: fresh } = await supabase
+    .from("listings")
+    .select("id, status, seller_id")
+    .eq("id", listing.id)
+    .maybeSingle();
+
+  if (!fresh) {
+    throw new OrderGuardError("not_found", UNAVAILABLE_MESSAGE);
+  }
+
+  if (String(fresh.seller_id) === String(buyer.id)) {
+    throw new OrderGuardError("own_listing", "You can't buy your own listing.");
+  }
+
+  const listingStatus = String(fresh.status || "active").toLowerCase();
+
+  if (["sold", "completed", "hidden", "deleted", "paused"].includes(listingStatus)) {
+    throw new OrderGuardError("unavailable", UNAVAILABLE_MESSAGE);
+  }
+
+  /* Commandes déjà actives sur cette annonce (visibles par ce compte) */
+  const { data: activeRows } = await supabase
+    .from("orders")
+    .select("id, buyer_id, status, client_request_id")
+    .eq("listing_id", listing.id)
+    .in("status", ACTIVE_ORDER_STATUSES);
+
+  const active = activeRows || [];
+  const mine = active.find((row) => String(row.buyer_id) === String(buyer.id));
+
+  /* L1.1 — idempotence : même acheteur, même annonce => on rouvre la commande */
+  if (mine) {
+    return { existingOrderId: mine.id };
+  }
+
+  if (active.length > 0) {
+    throw new OrderGuardError("unavailable", UNAVAILABLE_MESSAGE);
+  }
+
+  if (listingStatus === "reserved") {
+    /* Réservée : seul le verrou posé par cet acheteur est accepté.
+       Sans migration, une annonce « reserved » reste indisponible. */
+    if (!DB_HARDENING) {
+      throw new OrderGuardError("reserved", UNAVAILABLE_MESSAGE);
+    }
+  }
+
+  await reserveListingForCheckout(listing.id);
+
+  return { existingOrderId: null, idempotencyKey };
+}
+
+function assertDeliveryContact(address, deliveryMethod) {
+  if (deliveryMethod === "meetup") return;
+
+  const errors = validateAddress(address, { requirePhone: true });
+
+  if (deliveryMethod === "pickup") {
+    /* Point relais : nom + mobile suffisent (l'adresse = le point choisi) */
+    if (errors.fullName || errors.mobileNumber) {
+      throw new OrderGuardError(
+        "invalid_address",
+        errors.fullName || errors.mobileNumber
+      );
+    }
+    return;
+  }
+
+  const firstError = Object.values(errors)[0];
+
+  if (firstError) {
+    throw new OrderGuardError(
+      "invalid_address",
+      `Please complete your delivery address. ${firstError}`
+    );
+  }
+}
+
 export async function createOrderFromCheckout({
   listing,
   seller,
@@ -454,7 +647,8 @@ export async function createOrderFromCheckout({
   meetup,
   sellerMeetupSpot,
   buyerSuggestedMeetupSpot,
-  meetupChangeStatus
+  meetupChangeStatus,
+  idempotencyKey
 }) {
   if (!listing?.id) {
     throw new Error(
@@ -476,6 +670,21 @@ export async function createOrderFromCheckout({
     throw new Error(
       "Missing seller."
     );
+  }
+
+  /* Cahier L1.1 / L1.2 / L2.2 : garde-fous avant toute écriture */
+  assertDeliveryContact(address, deliveryMethod);
+
+  const guard = await assertCheckoutAllowed({
+    listing,
+    sellerId,
+    buyer,
+    idempotencyKey
+  });
+
+  if (guard.existingOrderId) {
+    const existing = await getOrderById(guard.existingOrderId);
+    if (existing) return existing;
   }
 
   /*
@@ -515,7 +724,7 @@ export async function createOrderFromCheckout({
   const maxShippingDate =
     addDays(
       now,
-      7
+      SHIPPING_DEADLINE_DAYS
     );
 
   const trackingNumber =
@@ -649,12 +858,23 @@ export async function createOrderFromCheckout({
           14
         ),
 
-      status
+      status,
+
+      ...(DB_HARDENING && idempotencyKey
+        ? { client_request_id: idempotencyKey }
+        : {})
     })
     .select("*")
     .single();
 
   if (error) {
+    await releaseListingReservation(listing.id);
+
+    if (isUniqueViolation(error)) {
+      /* L'index unique « 1 commande active par annonce » a joué son rôle. */
+      throw new OrderGuardError("unavailable", UNAVAILABLE_MESSAGE);
+    }
+
     throw error;
   }
 
@@ -1445,4 +1665,185 @@ export async function updateMeetupChangeStatus(
   return getOrderById(
     orderId
   );
+}
+
+
+/*
+ * ============================================================
+ * CAHIER BÊTA — ANNULATION, EXPIRATION, DÉLAI (L1.3 / L2.3)
+ * ============================================================
+ */
+
+export function getOrderDeadlineInfo(order, now = new Date()) {
+  const raw = order?.maxShippingDate || order?.max_shipping_date;
+  const deadline = raw ? new Date(raw) : null;
+
+  if (!deadline || Number.isNaN(deadline.getTime())) {
+    return { deadline: null, daysLeft: null, overdue: false };
+  }
+
+  const msLeft = deadline.getTime() - now.getTime();
+
+  return {
+    deadline,
+    daysLeft: Math.ceil(msLeft / 86400000),
+    overdue: msLeft < 0
+  };
+}
+
+export function isOrderActive(order) {
+  return ACTIVE_ORDER_STATUSES.includes(String(order?.status || ""));
+}
+
+export function canBuyerCancelOrder(order) {
+  return PRE_SHIPMENT_STATUSES.includes(String(order?.status || "")) &&
+    !order?.shippingLabelDownloaded;
+}
+
+async function relistListing(listingId) {
+  if (!listingId) return;
+
+  if (DB_HARDENING) {
+    await releaseListingReservation(listingId);
+    return;
+  }
+
+  /* Sans migration : tentative directe (réussit seulement si les règles RLS l'autorisent). */
+  try {
+    await supabase
+      .from("listings")
+      .update({ status: "active" })
+      .eq("id", listingId)
+      .eq("status", "reserved");
+  } catch {
+    /* ignoré */
+  }
+}
+
+async function closeOrder(order, status, event) {
+  const { error } = await supabase
+    .from("orders")
+    .update({ status })
+    .eq("id", order.id)
+    .in("status", ACTIVE_ORDER_STATUSES);
+
+  if (error) throw error;
+
+  try {
+    await addOrderTrackingEvent(order.id, {
+      title: event.title,
+      description: event.description,
+      completed: true
+    });
+  } catch {
+    /* l'historique ne doit pas bloquer la clôture */
+  }
+
+  await relistListing(order.listingId);
+}
+
+/** Annulation par l'acheteur avant expédition => remboursement (simulé en bêta). */
+export async function cancelOrderByBuyer(orderId, reason = "Cancelled by buyer") {
+  const order = await getOrderById(orderId);
+
+  if (!order) throw new Error("Order not found.");
+
+  if (!canBuyerCancelOrder(order)) {
+    throw new Error(
+      "This order can no longer be cancelled because the seller already started shipping. You can request a refund instead."
+    );
+  }
+
+  if (DB_HARDENING) {
+    const { data, error } = await supabase.rpc("cancel_order", {
+      p_order_id: orderId,
+      p_reason: reason
+    });
+
+    if (!error && data?.ok === false) {
+      throw new Error(
+        data.reason === "too_late"
+          ? "This order can no longer be cancelled because the seller already started shipping. You can request a refund instead."
+          : "Unable to cancel this order."
+      );
+    }
+
+    if (!error) {
+      return getOrderById(orderId);
+    }
+
+    if (error && !/does not exist|PGRST202/i.test(`${error.message} ${error.code}`)) {
+      throw error;
+    }
+  }
+
+  await closeOrder(order, "cancelled", {
+    title: "Order cancelled",
+    description: `${reason}. The buyer is refunded in full (simulated during the beta).`
+  });
+
+  try {
+    await sendOrderConversationUpdate(
+      order,
+      "order_cancelled",
+      "This order was cancelled by the buyer and refunded in full."
+    );
+  } catch {
+    /* message best-effort */
+  }
+
+  return getOrderById(orderId);
+}
+
+/**
+ * Filet de sécurité côté navigateur : clôture les commandes dont le vendeur
+ * n'a pas expédié avant la date limite (J+7). La vraie tâche planifiée est dans
+ * la migration SQL (expire_overdue_orders + pg_cron) ; ceci couvre l'intervalle
+ * avant son activation.
+ */
+export async function sweepOverdueOrders(orders) {
+  const overdue = (orders || []).filter(
+    (order) =>
+      PRE_SHIPMENT_STATUSES.includes(String(order.status)) &&
+      getOrderDeadlineInfo(order).overdue
+  );
+
+  const closed = [];
+
+  for (const order of overdue) {
+    try {
+      await closeOrder(order, "expired", {
+        title: "Order expired",
+        description:
+          "The seller did not ship before the deadline. The buyer is refunded in full (simulated during the beta) and the item is available again."
+      });
+      closed.push(order.id);
+    } catch {
+      /* RLS : le serveur le fera */
+    }
+  }
+
+  return closed;
+}
+
+/** Libellé affichable et teinte pour chaque statut (cahier L1.3 / L5.2). */
+export function getOrderStatusLabel(status) {
+  const labels = {
+    paid_waiting_seller: "Paid – waiting for seller",
+    label_downloaded: "Label ready",
+    courier_pickup_scheduled: "Pick-up scheduled",
+    dropped_off: "Dropped off",
+    in_transit: "In transit",
+    ready_for_pickup: "Ready for pick-up",
+    delivery_scheduled: "Delivery scheduled",
+    meetup_request_sent: "Meet-up requested",
+    completed: "Completed",
+    cancelled: "Cancelled",
+    canceled: "Cancelled",
+    expired: "Expired",
+    refunded: "Refunded",
+    refund_requested: "Refund requested"
+  };
+
+  return labels[String(status)] || "In progress";
 }

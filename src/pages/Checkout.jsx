@@ -13,11 +13,19 @@ import {
   Users,
   X
 } from "lucide-react";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import { supabase } from "../lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import { createOrderFromCheckout } from "../lib/orders";
+import {
+  EMPTY_ADDRESS,
+  loadSavedAddress,
+  saveAddress as persistAddress,
+  validateAddress
+} from "../lib/addressBook";
+import BetaPaymentBanner from "../components/BetaPaymentBanner";
+import { PAYMENTS_SIMULATED } from "../lib/featureFlags";
 
 const deliveryOptions = [
   {
@@ -113,18 +121,8 @@ const pickupPoints = [
   }
 ];
 
-const defaultAddress = {
-  fullName: "Gian Capino",
-  mobileNumber: "+63 9XX XXX XXXX",
-  region: "National Capital Region",
-  province: "Metro Manila",
-  city: "Makati City",
-  barangay: "Poblacion",
-  street: "Street name, building, house number",
-  unit: "Unit / floor / landmark",
-  postalCode: "1210",
-  notes: ""
-};
+/* Cahier L2.2 : plus aucune adresse / téléphone « exemple » pré-rempli. */
+const defaultAddress = { ...EMPTY_ADDRESS };
 
 function formatPrice(value) {
   return Number(value || 0).toLocaleString("en-PH", {
@@ -194,6 +192,23 @@ export default function Checkout() {
   const [draftAddress, setDraftAddress] = useState(defaultAddress);
   const [isPaying, setIsPaying] = useState(false);
   const [meetupPlan, setMeetupPlan] = useState(null);
+  const [payError, setPayError] = useState("");
+  const [addressErrors, setAddressErrors] = useState({});
+  const payLockRef = useRef(false);
+  const idempotencyKeyRef = useRef(
+    typeof crypto !== "undefined" && crypto.randomUUID
+      ? crypto.randomUUID()
+      : `req-${Date.now()}-${Math.random().toString(16).slice(2)}`
+  );
+
+  /* Pré-remplit avec l'adresse enregistrée du compte (jamais avec un exemple). */
+  useEffect(() => {
+    if (!user?.id) return;
+    const saved = loadSavedAddress(user.id);
+    setAddress((current) =>
+      current.fullName || current.street ? current : saved
+    );
+  }, [user?.id]);
 
   useEffect(() => {
     let isMounted = true;
@@ -311,6 +326,25 @@ export default function Checkout() {
   const total = itemPrice + buyerProtection + delivery.price;
   const firstPhoto = listing?.photos?.[0];
 
+  const isOwnListing = Boolean(
+    user?.id && listing?.seller_id && String(user.id) === String(listing.seller_id)
+  );
+
+  /* Adresse domicile : tout est obligatoire ; point relais : nom + mobile. */
+  const contactErrors = useMemo(() => {
+    if (selectedDelivery === "meetup") return {};
+    const all = validateAddress(address, { requirePhone: true });
+    if (selectedDelivery === "pickup") {
+      const subset = {};
+      if (all.fullName) subset.fullName = all.fullName;
+      if (all.mobileNumber) subset.mobileNumber = all.mobileNumber;
+      return subset;
+    }
+    return all;
+  }, [address, selectedDelivery]);
+
+  const addressIncomplete = Object.keys(contactErrors).length > 0;
+
   const buyerSuggestedDifferentMeetup =
     selectedDelivery === "meetup" &&
     meetupPlan?.buyerSuggestedAlternative &&
@@ -337,12 +371,27 @@ export default function Checkout() {
   }
 
   function openAddressEditor() {
+    setAddressErrors({});
     setDraftAddress(address);
     setShowAddressEditor(true);
   }
 
   function saveAddress() {
+    const needsFullAddress = selectedDelivery !== "pickup";
+    const all = validateAddress(draftAddress, { requirePhone: true });
+    const errors = needsFullAddress
+      ? all
+      : Object.fromEntries(
+          Object.entries(all).filter(([key]) => key === "fullName" || key === "mobileNumber")
+        );
+
+    setAddressErrors(errors);
+
+    if (Object.keys(errors).length > 0) return;
+
     setAddress(draftAddress);
+    persistAddress(user?.id, draftAddress);
+    setPayError("");
     setShowAddressEditor(false);
   }
 
@@ -378,7 +427,20 @@ export default function Checkout() {
   }
 
   async function handlePay() {
-    if (!listing || isPaying) return;
+    if (!listing || isPaying || payLockRef.current) return;
+
+    if (isOwnListing) {
+      setPayError("You can't buy your own listing.");
+      return;
+    }
+
+    if (addressIncomplete) {
+      setPayError("Please complete your delivery details before paying.");
+      openAddressEditor();
+      return;
+    }
+
+    setPayError("");
 
     if (selectedDelivery === "meetup" && !hasSellerMeetup) {
       alert("The seller has not offered Meet-Up for this item.");
@@ -395,10 +457,12 @@ export default function Checkout() {
       return;
     }
 
+    payLockRef.current = true;
     setIsPaying(true);
 
     try {
       const order = await createOrderFromCheckout({
+        idempotencyKey: idempotencyKeyRef.current,
         listing,
         seller,
         buyer: user,
@@ -423,8 +487,9 @@ export default function Checkout() {
       navigate(selectedDelivery === "meetup" ? "/orders" : `/tracking/${order.id}`);
     } catch (error) {
       console.error("Checkout payment error:", error);
-      alert(error.message || "Unable to create this order.");
+      setPayError(error.message || "Unable to create this order. Please try again.");
     } finally {
+      payLockRef.current = false;
       setIsPaying(false);
     }
   }
@@ -453,6 +518,30 @@ export default function Checkout() {
         <section className="checkout-empty">
           <h2>Item unavailable</h2>
           <p>This item may have been removed or sold.</p>
+        </section>
+      </main>
+    );
+  }
+
+  if (isOwnListing) {
+    return (
+      <main className="checkout-page">
+        <header className="checkout-header">
+          <button type="button" onClick={() => navigate(-1)} aria-label="Go back">
+            <ChevronLeft size={26} />
+          </button>
+
+          <h1>Checkout</h1>
+
+          <span />
+        </header>
+
+        <section className="checkout-empty">
+          <h2>This is your own listing</h2>
+          <p>You can't buy your own listing. You can edit or boost it from the listing page.</p>
+          <button type="button" onClick={() => navigate(`/listing/${id}`)}>
+            Back to my listing
+          </button>
         </section>
       </main>
     );
@@ -518,12 +607,33 @@ export default function Checkout() {
             onClick={openAddressEditor}
           >
             <div>
-              <strong>{address.fullName}</strong>
-              <span>{address.mobileNumber}</span>
-              <p>
-                {address.street}, {address.barangay}, {address.city},{" "}
-                {address.province}, {address.region}, {address.postalCode}
-              </p>
+              {address.fullName || address.street ? (
+                <>
+                  <strong>{address.fullName || "Add your name"}</strong>
+                  <span>{address.mobileNumber || "Add your mobile number"}</span>
+                  {selectedDelivery !== "pickup" && (
+                    <p>
+                      {[address.street, address.unit, address.barangay, address.city, address.province, address.postalCode]
+                        .filter(Boolean)
+                        .join(", ") || "Add your delivery address"}
+                    </p>
+                  )}
+                </>
+              ) : (
+                <>
+                  <strong>
+                    {selectedDelivery === "pickup"
+                      ? "Add your name and mobile number"
+                      : "Add your delivery address"}
+                  </strong>
+                  <span>Required to place your order</span>
+                </>
+              )}
+              {addressIncomplete && (address.fullName || address.street) && (
+                <p className="field-error" role="alert">
+                  {Object.values(contactErrors)[0]}
+                </p>
+              )}
             </div>
 
             <Edit3 size={21} />
@@ -728,9 +838,11 @@ export default function Checkout() {
           type="button"
           className={getPaymentButtonClass(payment.id)}
           onClick={handlePay}
-          disabled={isPaying}
+          disabled={isPaying || addressIncomplete}
         >
-          {selectedDelivery === "meetup" && !meetupPlan
+          {addressIncomplete
+            ? "Add your delivery details"
+            : selectedDelivery === "meetup" && !meetupPlan
             ? "Choose a meeting point"
             : selectedDelivery === "pickup" && !selectedPickupPoint?.id
             ? "Choose a pick-up point"
@@ -739,10 +851,20 @@ export default function Checkout() {
             : payment.buttonLabel}
         </button>
 
-        <p>
-          <ShieldCheck size={14} />
-          Your payment information is encrypted and secure
-        </p>
+        {payError && (
+          <p className="field-error" role="alert" data-testid="pay-error">
+            {payError}
+          </p>
+        )}
+
+        <BetaPaymentBanner compact />
+
+        {!PAYMENTS_SIMULATED && (
+          <p>
+            <ShieldCheck size={14} />
+            Your payment information is encrypted and secure
+          </p>
+        )}
       </section>
 
       {showAddressEditor && (
@@ -762,21 +884,29 @@ export default function Checkout() {
               <span>Full name</span>
               <input
                 value={draftAddress.fullName}
+                className={addressErrors.fullName ? "input-invalid" : ""}
                 onChange={(event) =>
                   updateDraftAddress("fullName", event.target.value)
                 }
               />
+            {addressErrors.fullName && (
+                <small className="field-error" role="alert">{addressErrors.fullName}</small>
+              )}
             </label>
 
             <label>
               <span>Mobile number</span>
               <input
                 value={draftAddress.mobileNumber}
+                className={addressErrors.mobileNumber ? "input-invalid" : ""}
                 onChange={(event) =>
                   updateDraftAddress("mobileNumber", event.target.value)
                 }
-                placeholder="+63 9XX XXX XXXX"
+                placeholder="09171234567" inputMode="tel"
               />
+            {addressErrors.mobileNumber && (
+                <small className="field-error" role="alert">{addressErrors.mobileNumber}</small>
+              )}
             </label>
 
             <label>
@@ -787,6 +917,7 @@ export default function Checkout() {
                   updateDraftAddress("region", event.target.value)
                 }
               >
+                <option value="">Select region</option>
                 <option>National Capital Region</option>
                 <option>CALABARZON</option>
                 <option>Central Luzon</option>
@@ -801,40 +932,56 @@ export default function Checkout() {
               <span>Province</span>
               <input
                 value={draftAddress.province}
+                className={addressErrors.province ? "input-invalid" : ""}
                 onChange={(event) =>
                   updateDraftAddress("province", event.target.value)
                 }
               />
+            {addressErrors.province && (
+                <small className="field-error" role="alert">{addressErrors.province}</small>
+              )}
             </label>
 
             <label>
               <span>City / Municipality</span>
               <input
                 value={draftAddress.city}
+                className={addressErrors.city ? "input-invalid" : ""}
                 onChange={(event) =>
                   updateDraftAddress("city", event.target.value)
                 }
               />
+            {addressErrors.city && (
+                <small className="field-error" role="alert">{addressErrors.city}</small>
+              )}
             </label>
 
             <label>
               <span>Barangay</span>
               <input
                 value={draftAddress.barangay}
+                className={addressErrors.barangay ? "input-invalid" : ""}
                 onChange={(event) =>
                   updateDraftAddress("barangay", event.target.value)
                 }
               />
+            {addressErrors.barangay && (
+                <small className="field-error" role="alert">{addressErrors.barangay}</small>
+              )}
             </label>
 
             <label>
               <span>Street name, building, house number</span>
               <input
                 value={draftAddress.street}
+                className={addressErrors.street ? "input-invalid" : ""}
                 onChange={(event) =>
                   updateDraftAddress("street", event.target.value)
                 }
               />
+            {addressErrors.street && (
+                <small className="field-error" role="alert">{addressErrors.street}</small>
+              )}
             </label>
 
             <label>
@@ -851,10 +998,14 @@ export default function Checkout() {
               <span>Postal code</span>
               <input
                 value={draftAddress.postalCode}
+                className={addressErrors.postalCode ? "input-invalid" : ""}
                 onChange={(event) =>
                   updateDraftAddress("postalCode", event.target.value)
                 }
               />
+            {addressErrors.postalCode && (
+                <small className="field-error" role="alert">{addressErrors.postalCode}</small>
+              )}
             </label>
 
             <label>

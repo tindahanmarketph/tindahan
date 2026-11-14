@@ -1,0 +1,72 @@
+/* Styles ajoutés par le cahier des charges bêta v1.1 */
+
+/* ---- Beta payment banner (cahier L2.1) ---- */
+.beta-payment-banner {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 12px 0;
+  padding: 10px 14px;
+  border: 1px solid #f0c36d;
+  border-radius: 12px;
+  background: #fff7e0;
+  color: #6b4a00;
+  font-size: 13px;
+  line-height: 1.4;
+}
+.beta-payment-banner p { margin: 0; }
+.beta-payment-banner svg { flex: none; margin-top: 1px; }
+.beta-payment-banner.compact { padding: 7px 10px; font-size: 12px; margin: 8px 0; }
+.field-error { color: #c0262d; font-size: 12px; margin: 4px 0 0; }
+.input-invalid { border-color: #c0262d !important; }
+.order-expired-badge { background: #fde8e8; color: #9b1c1c; }
+
+/* ---- Owner view of own listing (cahier L1.2) ---- */
+.owner-listing-actions { flex-wrap: wrap; }
+.owner-listing-note { flex-basis: 100%; margin: 0 0 8px; font-size: 13px; color: #5b6472; }
+.owner-cta-bar { gap: 8px; }
+.owner-cta-bar button { flex: 1; }
+
+/* ---- Order detail (cahier L2.3) ---- */
+.order-detail-page { padding-bottom: 96px; }
+.order-detail-card { margin: 12px 16px; padding: 14px 16px; background: var(--card-bg, #fff); border: 1px solid var(--border, #ececf1); border-radius: 14px; }
+.order-detail-card h2 { margin: 0 0 8px; font-size: 15px; }
+.order-detail-card p { margin: 4px 0; font-size: 14px; display: flex; gap: 6px; align-items: center; flex-wrap: wrap; }
+.order-detail-note { color: #5b6472; font-size: 13px !important; }
+.order-detail-actions { display: flex; flex-direction: column; gap: 8px; margin: 12px 16px; }
+.order-detail-actions button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.parcel-outline-button.danger { color: #9b1c1c; border-color: #e7b4b4; }
+.seller-shipping-alert.overdue { background: #fde8e8; }
+.order-history { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.order-history li { display: flex; gap: 10px; align-items: flex-start; }
+.order-history li p { margin: 2px 0; color: #5b6472; font-size: 13px; }
+.order-history li span { color: #8a919e; font-size: 12px; }
+.orders-banner-wrap { padding: 0 16px; }
+
+/* ---- Notifications (cahier L4.2) ---- */
+.navbar-notification-button { position: relative; }
+.navbar-notification-count { position: absolute; top: -4px; right: -6px; min-width: 17px; height: 17px; padding: 0 4px; border-radius: 9px; background: #d93025; color: #fff; font-size: 11px; font-weight: 700; display: flex; align-items: center; justify-content: center; }
+.notifications-list { list-style: none; margin: 0; padding: 4px 0; max-height: 360px; overflow-y: auto; }
+.notifications-list li button { width: 100%; text-align: left; background: none; border: 0; padding: 10px 14px; display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+.notifications-list li.unread button { background: #f3f6ff; }
+.notifications-list li button span { font-size: 12px; color: #5b6472; }
+
+.checkout-fixed-total .beta-payment-banner { display: flex; justify-content: flex-start; align-items: flex-start; gap: 8px; text-align: left; color: #6b4a00; font-size: 12px; margin: 8px 0 0; }
+.checkout-fixed-total .beta-payment-banner p { display: block; margin: 0; color: inherit; font-size: 12px; }
+.checkout-fixed-total .field-error { justify-content: flex-start; color: #c0262d; }
+.order-history li { list-style: none; }
+.order-history li > div { display: flex; flex-direction: column; }
+.order-history { padding: 0; }
+.order-detail-card .order-card-top p { display: block; }
+.order-detail-card .checkout-price-row { display: flex; justify-content: space-between; margin: 6px 0; }
+.owner-listing-actions { display: flex; }
+:root[data-theme="dark"] .beta-payment-banner, [data-theme="dark"] .beta-payment-banner { background: #3a2f12; color: #f5d98a; border-color: #6b5a22; }
+
+/* Auth recovery / social (cahier L4.5) */
+.auth-forgot-link { text-align: right; margin: -4px 0 8px; font-size: 13px; }
+.auth-social { display: grid; gap: 8px; margin-top: 14px; }
+.auth-social-button { padding: 11px 14px; border-radius: 12px; border: 1px solid var(--border, #d9dde3); background: transparent; font-weight: 600; cursor: pointer; }
+
+/* Sold banner (cahier L4.1) */
+.listing-sold-banner { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin: 0; padding: 12px 16px; background: #eef1f4; color: #2c3440; font-size: 14px; }
+.listing-sold-banner a { font-weight: 700; margin-left: auto; }

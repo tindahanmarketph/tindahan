@@ -50,6 +50,7 @@ import Members from "./pages/Members";
 import PromotionTools from "./pages/PromotionTools";
 import Wallet from "./pages/Wallet";
 import Orders from "./pages/Orders";
+import OrderDetail from "./pages/OrderDetail";
 
 import Donations from "./pages/Donations";
 import TindaHanGuide from "./pages/TindaHanGuide";
@@ -60,6 +61,7 @@ import Badges from "./pages/Badges";
 import "./styles/searchFilters.css";
 import VerificationGate from "./components/VerificationGate";
 import VerifyIdentity from "./pages/VerifyIdentity";
+import { ForgotPassword, ResetPassword } from "./pages/AuthRecovery";
 
 function isMobileDevice() {
   if (typeof window === "undefined") {
@@ -92,6 +94,17 @@ function AppLaunchLoader({ isLeaving }) {
       </div>
     </div>
   );
+}
+
+/* Cahier L5.3 : /profile redirige vers le profil de la personne connectée. */
+function ProfileRedirect() {
+  const { user, profile, loadingAuth } = useAuth();
+
+  if (loadingAuth) return null;
+  if (!user) return <Navigate to="/login" replace />;
+
+  const username = profile?.username || user.email?.split("@")[0] || user.id;
+  return <Navigate to={`/profile/${username}`} replace />;
 }
 
 function ProtectedRoute({ children }) {
@@ -305,6 +318,16 @@ export default function App() {
         />
 
         <Route
+          path="/forgot-password"
+          element={<ForgotPassword />}
+        />
+
+        <Route
+          path="/reset-password"
+          element={<ResetPassword />}
+        />
+
+        <Route
           path="/welcome"
           element={
             <ProtectedRoute>
@@ -503,6 +526,15 @@ export default function App() {
         />
 
         <Route
+          path="/orders/:orderId"
+          element={
+            <ProtectedRoute>
+              <OrderDetail />
+            </ProtectedRoute>
+          }
+        />
+
+        <Route
           path="/sell"
           element={
             <ProtectedRoute>
@@ -555,6 +587,8 @@ export default function App() {
           path="/listings/:id"
           element={<ListingDetail />}
         />
+
+        <Route path="/profile" element={<ProfileRedirect />} />
 
         <Route
           path="/profile/:username"

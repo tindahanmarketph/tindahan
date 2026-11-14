@@ -23,7 +23,8 @@ function parseOfferValue(value) {
       .replace(/[^\d.]/g, "")
   );
 
-  return Number.isFinite(parsedValue) ? parsedValue : 0;
+  /* Cahier L4.4 : les offres sont en pesos entiers (pas de centimes). */
+  return Number.isFinite(parsedValue) ? Math.round(parsedValue) : 0;
 }
 
 export default function MakeOffer() {
@@ -88,10 +89,10 @@ export default function MakeOffer() {
       if (data?.price) {
         const defaultOffer = isCounterMode
           ? Number(data.price)
-          : Number(data.price) * 0.85;
+          : Math.round(Number(data.price) * 0.85);
 
         setSelectedType(isCounterMode ? "custom" : "15");
-        setOfferValue(isCounterMode ? "0" : defaultOffer.toFixed(2));
+        setOfferValue(isCounterMode ? "0" : String(defaultOffer));
       }
 
       try {
@@ -141,11 +142,11 @@ export default function MakeOffer() {
   const itemPrice = Number(listing?.price || 0);
   const firstPhoto = listing?.photos?.[0];
 
-  const offer15 = useMemo(() => itemPrice * 0.85, [itemPrice]);
-  const offer30 = useMemo(() => itemPrice * 0.7, [itemPrice]);
+  const offer15 = useMemo(() => Math.round(itemPrice * 0.85), [itemPrice]);
+  const offer30 = useMemo(() => Math.round(itemPrice * 0.7), [itemPrice]);
 
   const cleanOfferValue = parseOfferValue(offerValue);
-  const buyerProtection = cleanOfferValue * 0.08;
+  const buyerProtection = Math.round(cleanOfferValue * 0.08 * 100) / 100;
   const protectedTotal = cleanOfferValue + buyerProtection;
 
   const isCustomOffer = selectedType === "custom";
@@ -154,16 +155,21 @@ export default function MakeOffer() {
     user?.id && listing?.seller_id && String(user.id) === String(listing.seller_id)
   );
 
+  /* Cahier L1.2 : un vendeur ne peut pas faire d'offre acheteur sur sa propre annonce
+     (la contre-offre à un acheteur reste possible). */
+  const isOwnOfferBlocked = isCurrentUserSeller && !isCounterMode;
+
   const canSubmit =
     cleanOfferValue > 0 &&
     cleanOfferValue <= itemPrice &&
     !isSubmitting &&
+    !isOwnOfferBlocked &&
     Boolean(listing?.id) &&
     Boolean(user?.id);
 
   function selectSuggestion(type, value) {
     setSelectedType(type);
-    setOfferValue(Number(value).toFixed(2));
+    setOfferValue(String(Math.round(Number(value))));
   }
 
   function selectCustomOffer() {
@@ -394,6 +400,12 @@ export default function MakeOffer() {
       </section>
 
       <section className="make-offer-submit-section">
+        {isOwnOfferBlocked && (
+          <p className="field-error" role="alert" data-testid="own-offer-blocked">
+            You can't make an offer on your own listing.
+          </p>
+        )}
+
         <button type="button" disabled={!canSubmit} onClick={submitOffer}>
           {isSubmitting
             ? "Sending..."

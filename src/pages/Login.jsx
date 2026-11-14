@@ -3,6 +3,8 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import BrandLogo from "../components/BrandLogo";
+import { supabase } from "../lib/supabase";
+import { SOCIAL_LOGIN } from "../lib/featureFlags";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -123,10 +125,34 @@ export default function Login() {
 
           {errorMessage && <div className="auth-error">{errorMessage}</div>}
 
+          <p className="auth-link auth-forgot-link">
+            <Link to="/forgot-password">Forgot password?</Link>
+          </p>
+
           <button type="submit" disabled={loading}>
             {loading ? "Logging in..." : "Log in"}
           </button>
         </form>
+
+        {SOCIAL_LOGIN && (
+          <div className="auth-social" data-testid="social-login">
+            {["google", "facebook"].map((provider) => (
+              <button
+                key={provider}
+                type="button"
+                className="auth-social-button"
+                onClick={() =>
+                  supabase.auth.signInWithOAuth({
+                    provider,
+                    options: { redirectTo: `${window.location.origin}/welcome` }
+                  })
+                }
+              >
+                Continue with {provider === "google" ? "Google" : "Facebook"}
+              </button>
+            ))}
+          </div>
+        )}
 
         <p className="auth-link">
           New here? <Link to="/register">Create an account</Link>

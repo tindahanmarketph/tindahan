@@ -16,8 +16,15 @@ import {
   formatOrderDate,
   formatOrderDateTime,
   formatTindaHanPrice,
-  getStoredOrders
+  getOrderDeadlineInfo,
+  getOrderStatusLabel as getStatusLabel,
+  getStoredOrders,
+  PRE_SHIPMENT_STATUSES,
+  sweepOverdueOrders,
+  TERMINAL_ORDER_STATUSES
 } from "../lib/orders";
+import BetaPaymentBanner from "../components/BetaPaymentBanner";
+import { DB_HARDENING } from "../lib/featureFlags";
 
 export default function Orders() {
   const navigate = useNavigate();
@@ -36,7 +43,14 @@ export default function Orders() {
     setErrorMessage("");
 
     try {
-      const nextOrders = await getStoredOrders(user.id);
+      let nextOrders = await getStoredOrders(user.id);
+
+      /* Filet de sécurité avant l'activation de la tâche planifiée SQL */
+      if (!DB_HARDENING) {
+        const closed = await sweepOverdueOrders(nextOrders);
+        if (closed.length > 0) nextOrders = await getStoredOrders(user.id);
+      }
+
       setOrders(nextOrders);
     } catch (error) {
       console.error("Orders loading error:", error);
@@ -64,8 +78,10 @@ export default function Orders() {
   const filteredOrders = visibleOrders.filter((order) => {
     if (activeFilter === "all") return true;
     if (activeFilter === "completed") return order.status === "completed";
-    if (activeFilter === "cancelled") return order.status === "cancelled";
-    return order.status !== "completed" && order.status !== "cancelled";
+    if (activeFilter === "cancelled") {
+      return ["cancelled", "canceled", "expired", "refunded"].includes(order.status);
+    }
+    return !TERMINAL_ORDER_STATUSES.includes(order.status);
   });
 
   function openDirections(order) {
@@ -81,20 +97,29 @@ export default function Orders() {
   }
 
   function getOrderStatusLabel(order) {
-    const labels = {
-      paid_waiting_seller: "Paid · waiting for seller",
-      label_downloaded: "Shipping label downloaded",
-      courier_pickup_scheduled: "Courier pick-up scheduled",
-      dropped_off: "Dropped off",
-      in_transit: "In transit",
-      ready_for_pickup: "Ready for pick-up",
-      delivery_scheduled: "Delivery scheduled",
-      meetup_request_sent: "Meet-Up request sent",
-      completed: "Completed",
-      cancelled: "Cancelled"
-    };
+    return getStatusLabel(order.status);
+  }
 
-    return labels[order.status] || "In progress";
+  /* Montant affiché : l'acheteur voit le total payé, le vendeur le net (0 % de frais). */
+  function getOrderAmountLabel(order) {
+    if (activeMainTab === "sales") {
+      return `You receive ₱${formatTindaHanPrice(order.itemPrice)}`;
+    }
+    return `₱${formatTindaHanPrice(order.total)}`;
+  }
+
+  function getDeadlineLine(order) {
+    if (order.deliveryMethod === "meetup") return null;
+    if (!["paid_waiting_seller", "label_downloaded", "courier_pickup_scheduled"].includes(order.status)) {
+      return null;
+    }
+
+    const { deadline, daysLeft, overdue } = getOrderDeadlineInfo(order);
+    if (!deadline) return null;
+
+    if (overdue) return "Shipping deadline passed";
+    if (daysLeft <= 2) return `Ship before ${formatOrderDate(deadline)} · ${daysLeft} day${daysLeft === 1 ? "" : "s"} left`;
+    return `Ship before ${formatOrderDate(deadline)}`;
   }
 
   function getOrderSubtitle(order) {
@@ -102,13 +127,18 @@ export default function Orders() {
       return "Safe Meet-Up";
     }
 
-    if (order.status === "paid_waiting_seller") {
-      return `Ship before ${formatOrderDate(order.maxShippingDate)}`;
+    const deadlineLine = getDeadlineLine(order);
+
+    if (deadlineLine && order.status !== "courier_pickup_scheduled") {
+      return deadlineLine;
     }
 
     if (order.status === "courier_pickup_scheduled") {
       return `Pick-up scheduled ${formatOrderDate(order.pickupScheduledAt)}`;
     }
+
+    if (order.status === "expired") return "Seller did not ship in time · refunded";
+    if (order.status === "cancelled") return "Order cancelled · refunded";
 
     return order.carrier || "J&T Express";
   }
@@ -124,6 +154,10 @@ export default function Orders() {
 
         <span />
       </header>
+
+      <div className="orders-banner-wrap">
+        <BetaPaymentBanner compact />
+      </div>
 
       <section className="orders-tabs">
         <button
@@ -211,7 +245,11 @@ export default function Orders() {
       ) : (
         <section className="orders-list">
           {filteredOrders.map((order) => (
-            <article className="order-card parcel-order-card" key={order.id}>
+            <article
+              className="order-card parcel-order-card"
+              key={order.id}
+              data-testid="order-card"
+            >
               <div className="order-card-top">
                 <div className="order-card-image">
                   {order.listingPhoto ? (
@@ -223,8 +261,10 @@ export default function Orders() {
 
                 <div>
                   <strong>{order.listingTitle}</strong>
-                  <span>₱{formatTindaHanPrice(order.total)}</span>
-                  <p>{getOrderStatusLabel(order)}</p>
+                  <span>{getOrderAmountLabel(order)}</span>
+                  <p className={order.status === "expired" ? "order-expired-badge" : ""}>
+                    {getOrderStatusLabel(order)}
+                  </p>
                 </div>
               </div>
 
@@ -251,7 +291,7 @@ export default function Orders() {
 
               {activeMainTab === "sales" &&
                 order.deliveryMethod !== "meetup" &&
-                order.status === "paid_waiting_seller" && (
+                PRE_SHIPMENT_STATUSES.includes(order.status) && (
                   <div className="seller-shipping-alert">
                     <ShieldCheck size={19} />
 
@@ -259,7 +299,8 @@ export default function Orders() {
                       <strong>Your item has been sold</strong>
                       <p>
                         You have until {formatOrderDate(order.maxShippingDate)} to
-                        ship this parcel.
+                        ship this parcel. After that the order is cancelled and
+                        the buyer is refunded.
                       </p>
                     </div>
                   </div>
@@ -292,7 +333,8 @@ export default function Orders() {
 
               <div className="parcel-order-actions">
                 {activeMainTab === "sales" &&
-                  order.deliveryMethod !== "meetup" && (
+                  order.deliveryMethod !== "meetup" &&
+                  ["paid_waiting_seller", "label_downloaded", "courier_pickup_scheduled"].includes(order.status) && (
                     <button
                       type="button"
                       className="parcel-outline-button"
@@ -306,10 +348,10 @@ export default function Orders() {
                 <button
                   type="button"
                   className="parcel-primary-button"
-                  onClick={() => navigate(`/tracking/${order.id}`)}
+                  onClick={() => navigate(`/orders/${order.id}`)}
                 >
-                  <Truck size={16} />
-                  Track parcel
+                  <ReceiptText size={16} />
+                  View order
                 </button>
               </div>
 

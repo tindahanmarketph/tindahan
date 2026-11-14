@@ -16,9 +16,15 @@ import {
 } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
+import {
+  formatAddressLines,
+  loadSavedAddress,
+  saveAddress as persistAddress,
+  validateAddress
+} from "../lib/addressBook";
 import {
   formatOrderDate,
-  formatTindaHanPrice,
   getOrderById,
   markParcelDroppedOff,
   markShippingLabelDownloaded,
@@ -215,19 +221,68 @@ function getSellerAddress(order) {
   };
 }
 
+function getSenderErrors(details) {
+  return validateAddress(details, { requirePhone: true });
+}
+
 function hasMissingSellerDetails(details) {
-  return (
-    !details.fullName ||
-    !details.mobileNumber ||
-    !details.street ||
-    !details.city ||
-    !details.province ||
-    !details.postalCode
-  );
+  return Object.keys(getSenderErrors(details)).length > 0;
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}
+
+/* Étiquette autonome (HTML imprimable en A6) : aucun montant n'y figure. */
+function buildLabelHtml(order, seller) {
+  const buyer = order.address || {};
+  const line = (...parts) => parts.filter((part) => String(part || "").trim()).join(", ");
+  const bars = Array.from({ length: 36 }, (_, index) =>
+    `<i style="width:${(index * 7) % 4 + 2}px"></i>`
+  ).join("");
+
+  return `<!doctype html><html lang="en"><head><meta charset="utf-8"><title>TindaHan label ${escapeHtml(order.trackingNumber)}</title>
+<style>
+  @page { size: A6; margin: 6mm; }
+  body { font: 13px/1.4 Arial, sans-serif; color: #111; margin: 0; padding: 12px; }
+  .label { border: 2px solid #111; border-radius: 6px; padding: 12px; max-width: 380px; margin: 0 auto; }
+  .row { display: flex; justify-content: space-between; align-items: center; gap: 8px; }
+  h1 { font-size: 16px; margin: 0; } h2 { font-size: 11px; text-transform: uppercase; letter-spacing: .05em; margin: 12px 0 2px; color: #555; }
+  .track { font: 700 18px monospace; margin: 8px 0; }
+  .bars { display: flex; gap: 2px; height: 46px; align-items: stretch; margin-top: 12px; } .bars i { background: #111; display: block; }
+  p { margin: 0; }
+</style></head><body><div class="label">
+  <div class="row"><h1>TindaHan</h1><strong>${escapeHtml(order.carrier || "J&T Express")}</strong></div>
+  <div class="track">${escapeHtml(order.trackingNumber)}</div>
+  <h2>Ship to</h2>
+  <p><strong>${escapeHtml(buyer.fullName)}</strong><br>${escapeHtml(buyer.mobileNumber)}<br>${escapeHtml(line(buyer.street, buyer.unit))}<br>${escapeHtml(line(buyer.barangay, buyer.city))}<br>${escapeHtml(line(buyer.province, buyer.postalCode))}</p>
+  <h2>From (seller)</h2>
+  <p><strong>${escapeHtml(seller.fullName)}</strong><br>${escapeHtml(seller.mobileNumber)}<br>${escapeHtml(line(seller.street))}<br>${escapeHtml(line(seller.barangay, seller.city))}<br>${escapeHtml(line(seller.province, seller.postalCode))}</p>
+  <h2>Parcel</h2>
+  <p>${escapeHtml(order.listingTitle)} · 1 item</p>
+  <div class="bars">${bars}</div>
+</div></body></html>`;
+}
+
+function downloadTextFile(filename, content, type = "text/html") {
+  const blob = new Blob([content], { type: `${type};charset=utf-8` });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = filename;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 2000);
 }
 
 export default function ShippingLabel() {
   const { orderId } = useParams();
+  const { user } = useAuth();
   const navigate = useNavigate();
 
   const [order, setOrder] = useState(null);
@@ -253,6 +308,11 @@ export default function ShippingLabel() {
   const [sellerDetailsTouched, setSellerDetailsTouched] = useState(false);
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+  const [showSenderForm, setShowSenderForm] = useState(false);
+  const [senderErrors, setSenderErrors] = useState({});
+  const [labelHtml, setLabelHtml] = useState("");
+  const [showLabelPreview, setShowLabelPreview] = useState(false);
+  const [labelDownloadedNotice, setLabelDownloadedNotice] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -265,7 +325,19 @@ export default function ShippingLabel() {
 
         if (mounted) {
           setOrder(loadedOrder);
-          setSellerDetails(getSellerAddress(loadedOrder));
+
+          /* Adresse enregistrée du vendeur (Settings) ; jamais de valeur fictive. */
+          const fromOrder = getSellerAddress(loadedOrder);
+          const saved = loadSavedAddress(user?.id);
+          setSellerDetails({
+            ...saved,
+            ...Object.fromEntries(
+              Object.entries(fromOrder).filter(([, value]) => String(value || "").trim())
+            ),
+            fullName: fromOrder.fullName && fromOrder.fullName !== loadedOrder?.sellerUsername
+              ? fromOrder.fullName
+              : saved.fullName || ""
+          });
         }
       } catch (error) {
         console.error("Shipping label loading error:", error);
@@ -285,7 +357,7 @@ export default function ShippingLabel() {
     return () => {
       mounted = false;
     };
-  }, [orderId]);
+  }, [orderId, user?.id]);
 
   const trackingAvailable = useMemo(() => canTrackParcel(order), [order]);
 
@@ -307,6 +379,21 @@ export default function ShippingLabel() {
   const selectedCarrierObject = useMemo(() => {
     return CARRIERS.find((carrier) => carrier.id === selectedCarrier) || CARRIERS[0];
   }, [selectedCarrier]);
+
+  /* Points de dépôt du transporteur de la commande uniquement (cahier L2.4). */
+  const carrierDropOffPoints = useMemo(() => {
+    const matching = DROP_OFF_POINTS.filter(
+      (point) => point.carrier === (order?.carrier || "J&T Express")
+    );
+    return matching.length > 0 ? matching : DROP_OFF_POINTS;
+  }, [order?.carrier]);
+
+  useEffect(() => {
+    if (!carrierDropOffPoints.some((point) => point.id === selectedDropOffPoint?.id)) {
+      setSelectedDropOffPoint(carrierDropOffPoints[0]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carrierDropOffPoints]);
 
   const missingSellerDetails = useMemo(() => {
     return hasMissingSellerDetails(sellerDetails);
@@ -332,13 +419,33 @@ export default function ShippingLabel() {
     }));
   }
 
+  function saveSenderDetails() {
+    const errors = getSenderErrors(sellerDetails);
+    setSenderErrors(errors);
+
+    if (Object.keys(errors).length > 0) return;
+
+    persistAddress(user?.id, { ...loadSavedAddress(user?.id), ...sellerDetails });
+    setShowSenderForm(false);
+  }
+
   async function handleDownloadLabel() {
     if (!order?.id || loadingAction) return;
+
+    if (missingSellerDetails) {
+      setSenderErrors(getSenderErrors(sellerDetails));
+      setShowSenderForm(true);
+      return;
+    }
 
     setLoadingAction("label");
 
     try {
       const updatedOrder = await markShippingLabelDownloaded(order.id);
+      const html = buildLabelHtml(updatedOrder || order, sellerDetails);
+      setLabelHtml(html);
+      downloadTextFile(`tindahan-label-${(updatedOrder || order).trackingNumber}.html`, html);
+      setLabelDownloadedNotice(true);
       await refreshOrder(updatedOrder);
     } catch (error) {
       console.error("Download label error:", error);
@@ -370,6 +477,13 @@ export default function ShippingLabel() {
   }
 
   function openHomePickupForm() {
+    if (missingSellerDetails) {
+      setShowShippingChoice(false);
+      setSenderErrors(getSenderErrors(sellerDetails));
+      setShowSenderForm(true);
+      return;
+    }
+
     setShowShippingChoice(false);
     setShowHomePickupForm(true);
     setShowDropOffMap(false);
@@ -540,31 +654,62 @@ export default function ShippingLabel() {
             <strong>{order.address?.fullName || "Buyer"}</strong>
             <br />
             {order.address?.mobileNumber}
-            <br />
-            {order.address?.street}, {order.address?.barangay}
-            <br />
-            {order.address?.city}, {order.address?.province}
-            <br />
-            {order.address?.region}, {order.address?.postalCode}
+            {formatAddressLines(order.address).map((line) => (
+              <span key={line}>
+                <br />
+                {line}
+              </span>
+            ))}
+            {order.address?.pickupPoint?.name && (
+              <span>
+                <br />
+                Pick-up point: {order.address.pickupPoint.name}
+              </span>
+            )}
           </p>
         </div>
 
         <div className="shipping-label-section">
           <h2>Seller</h2>
 
-          <p>
-            <strong>{sellerDetails.fullName || order.sellerUsername || "Seller"}</strong>
-            <br />
-            {sellerDetails.mobileNumber || "Phone number missing"}
-            <br />
-            {sellerDetails.street || "Seller address missing"}
-            <br />
-            {sellerDetails.barangay ? `${sellerDetails.barangay}, ` : ""}
-            {sellerDetails.city || "City missing"}, {sellerDetails.province || "Province missing"}
-            <br />
-            {sellerDetails.region || "Region missing"},{" "}
-            {sellerDetails.postalCode || "Postal code missing"}
-          </p>
+          {missingSellerDetails ? (
+            <p data-testid="sender-incomplete">
+              Your sender details are incomplete. Add your name, mobile number
+              and address to generate the label.{" "}
+              <button
+                type="button"
+                className="parcel-outline-button"
+                onClick={() => {
+                  setSenderErrors({});
+                  setShowSenderForm(true);
+                }}
+              >
+                Add sender details
+              </button>
+            </p>
+          ) : (
+            <p>
+              <strong>{sellerDetails.fullName}</strong>
+              <br />
+              {sellerDetails.mobileNumber}
+              <br />
+              {sellerDetails.street}
+              <br />
+              {[sellerDetails.barangay, sellerDetails.city].filter(Boolean).join(", ")}
+              <br />
+              {[sellerDetails.province, sellerDetails.postalCode].filter(Boolean).join(" ")}{" "}
+              <button
+                type="button"
+                className="parcel-outline-button"
+                onClick={() => {
+                  setSenderErrors({});
+                  setShowSenderForm(true);
+                }}
+              >
+                Edit
+              </button>
+            </p>
+          )}
         </div>
 
         <div className="shipping-label-product">
@@ -578,7 +723,7 @@ export default function ShippingLabel() {
 
           <div>
             <strong>{order.listingTitle}</strong>
-            <span>Order total: ₱{formatTindaHanPrice(order.total)}</span>
+            <span>1 item · Tracking {order.trackingNumber}</span>
           </div>
         </div>
 
@@ -607,6 +752,24 @@ export default function ShippingLabel() {
           <Download size={17} />
           {loadingAction === "label" ? "Preparing label..." : "Download shipping label"}
         </button>
+
+        {labelDownloadedNotice && (
+          <div className="shipping-preparation-notice" role="status" data-testid="label-downloaded">
+            <div className="shipping-preparation-icon">
+              <PackageCheck size={22} />
+            </div>
+
+            <div>
+              <strong>Label downloaded</strong>
+              <p>
+                Print it and stick it on the outside of the parcel. Ship before {formatOrderDate(order.maxShippingDate)}.
+              </p>
+              <button type="button" className="parcel-outline-button" onClick={() => setShowLabelPreview(true)}>
+                Preview label
+              </button>
+            </div>
+          </div>
+        )}
 
         <button
           type="button"
@@ -681,7 +844,11 @@ export default function ShippingLabel() {
 
               <div>
                 <strong>Courier pick-up</strong>
-                <span>A courier comes to the seller address.</span>
+                <span>
+                  {missingSellerDetails
+                    ? "Add your address first: a courier needs it to come to you."
+                    : "A courier comes to the seller address."}
+                </span>
               </div>
             </button>
 
@@ -694,7 +861,7 @@ export default function ShippingLabel() {
 
               <div>
                 <strong>Drop off at a relay point</strong>
-                <span>Deposit the parcel at J&T Express, Ninja Van or LBC.</span>
+                <span>Deposit the parcel at a {order.carrier || "partner"} drop-off point.</span>
               </div>
             </button>
           </section>
@@ -943,7 +1110,7 @@ export default function ShippingLabel() {
                 <span>Nearby relay points</span>
               </div>
 
-              {DROP_OFF_POINTS.map((point) => (
+              {carrierDropOffPoints.map((point) => (
                 <button
                   key={point.id}
                   type="button"
@@ -965,7 +1132,7 @@ export default function ShippingLabel() {
             </div>
 
             <div className="dropoff-point-list">
-              {DROP_OFF_POINTS.map((point) => (
+              {carrierDropOffPoints.map((point) => (
                 <button
                   key={point.id}
                   type="button"
@@ -1008,6 +1175,61 @@ export default function ShippingLabel() {
                 ? "Confirming..."
                 : "Validate selected relay point"}
             </button>
+          </section>
+        </div>
+      )}
+
+
+      {showSenderForm && (
+        <div className="parcel-modal-overlay">
+          <section className="parcel-bottom-sheet shipping-home-pickup-sheet" data-testid="sender-form">
+            <button type="button" className="parcel-sheet-close" onClick={() => setShowSenderForm(false)} aria-label="Close">
+              <X size={24} />
+            </button>
+
+            <h2>Your sender details</h2>
+            <p>The label needs your name, mobile number and address so the courier or relay point can reach you.</p>
+
+            <div className="shipping-seller-form-grid">
+              {[
+                ["fullName", "Full name *", "full-name", "text"],
+                ["mobileNumber", "Mobile number *", "mobile", "tel"],
+                ["street", "Street, building, house number *", "street", "text"],
+                ["barangay", "Barangay *", "barangay", "text"],
+                ["city", "City / municipality *", "city", "text"],
+                ["province", "Province *", "province", "text"],
+                ["postalCode", "Postal code *", "postal", "text"]
+              ].map(([field, label, key, type]) => (
+                <div className={`shipping-form-field ${field === "street" ? "full" : ""}`} key={field}>
+                  <label htmlFor={`sender-${key}`}>{label}</label>
+                  <input
+                    id={`sender-${key}`}
+                    type={type}
+                    value={sellerDetails[field] || ""}
+                    onChange={(event) => updateSellerDetail(field, event.target.value)}
+                    placeholder={field === "mobileNumber" ? "09171234567" : ""}
+                    className={senderErrors[field] ? "input-invalid" : ""}
+                  />
+                  {senderErrors[field] && <small className="field-error" role="alert">{senderErrors[field]}</small>}
+                </div>
+              ))}
+            </div>
+
+            <button type="button" className="dropoff-confirm-button" onClick={saveSenderDetails} data-testid="save-sender">
+              Save sender details
+            </button>
+          </section>
+        </div>
+      )}
+
+      {showLabelPreview && labelHtml && (
+        <div className="parcel-modal-overlay" role="dialog" aria-label="Label preview">
+          <section className="parcel-bottom-sheet" style={{ maxHeight: "92vh" }}>
+            <button type="button" className="parcel-sheet-close" onClick={() => setShowLabelPreview(false)} aria-label="Close">
+              <X size={24} />
+            </button>
+            <h2>Label preview</h2>
+            <iframe title="Shipping label preview" srcDoc={labelHtml} style={{ width: "100%", height: "58vh", border: "1px solid #ddd", borderRadius: 8, background: "#fff" }} />
           </section>
         </div>
       )}

@@ -1,3 +1,4 @@
+import { buildSearchAndClause } from "../lib/searchTerms";
 import {
   useEffect,
   useMemo,
@@ -304,10 +305,11 @@ function buildListingsUrl({
       );
 
     if (cleanQuery) {
-      params.set(
-        "or",
-        `(title.ilike.*${cleanQuery}*,description.ilike.*${cleanQuery}*,brand.ilike.*${cleanQuery}*)`
-      );
+      const searchClause = buildSearchAndClause(cleanQuery);
+
+      if (searchClause) {
+        params.set("and", searchClause);
+      }
     }
   }
 

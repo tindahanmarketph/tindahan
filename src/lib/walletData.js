@@ -6,7 +6,7 @@ import { getUserReviewSummary } from "./reviews";
  * existantes (orders, listings, reviews). Aucune nouvelle table n'est nécessaire.
  */
 
-const NOT_PENDING = ["completed", "cancelled", "canceled", "declined", "refund_requested"];
+const NOT_PENDING = ["completed", "cancelled", "canceled", "declined", "refund_requested", "expired", "refunded"];
 const SHIPPED = [
   "label_downloaded",
   "courier_pickup_scheduled",
@@ -51,6 +51,7 @@ export function summarizeWallet(rows) {
   let pending = 0;
   let available = 0;
   const history = [];
+  const pendingOrders = [];
 
   rows.forEach((row) => {
     const amount = toNumber(row.item_price);
@@ -66,10 +67,18 @@ export function summarizeWallet(rows) {
       });
     } else if (!NOT_PENDING.includes(status)) {
       pending += amount;
+      pendingOrders.push({
+        id: row.id,
+        title: orderTitle(row),
+        amount,
+        status,
+        date: row.created_at
+      });
     }
   });
 
-  return { pending, available, history };
+  /* Seul le statut « completed » alimente le solde disponible (cahier L1.4). */
+  return { pending, available, history, pendingOrders };
 }
 
 export async function loadWalletSummary(userId) {

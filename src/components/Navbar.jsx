@@ -12,6 +12,7 @@ import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import BrandLogo from "./BrandLogo";
+import { useNotifications } from "../lib/notifications";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -21,6 +22,7 @@ export default function Navbar() {
   const [query, setQuery] = useState("");
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationsRef = useRef(null);
+  const notifications = useNotifications(user?.id);
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
@@ -127,24 +129,50 @@ export default function Navbar() {
                   aria-label="Notifications"
                   title="Notifications"
                   aria-expanded={notificationsOpen}
-                  onClick={() =>
-                    setNotificationsOpen((currentValue) => !currentValue)
-                  }
+                  onClick={() => {
+                    if (notificationsOpen) notifications.markAllRead();
+                    setNotificationsOpen((currentValue) => !currentValue);
+                  }}
                 >
                   <Bell size={21} />
+                  {notifications.unread > 0 && (
+                    <span className="navbar-notification-count" data-testid="notif-count">
+                      {notifications.unread > 9 ? "9+" : notifications.unread}
+                    </span>
+                  )}
                 </button>
 
                 {notificationsOpen && (
                   <div className="notifications-popover">
-                    <div className="notifications-empty">
-                      <div className="notifications-empty-icon">
-                        <Bell size={42} />
-                      </div>
+                    {notifications.items.length === 0 ? (
+                      <div className="notifications-empty">
+                        <div className="notifications-empty-icon">
+                          <Bell size={42} />
+                        </div>
 
-                      <strong>
-                        You don&apos;t have notifications for now
-                      </strong>
-                    </div>
+                        <strong>
+                          You don&apos;t have notifications for now
+                        </strong>
+                      </div>
+                    ) : (
+                      <ul className="notifications-list" data-testid="notif-list">
+                        {notifications.items.map((item) => (
+                          <li key={item.id} className={notifications.isRead(item) ? "" : "unread"}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                notifications.markAllRead();
+                                setNotificationsOpen(false);
+                                if (item.link) navigate(item.link);
+                              }}
+                            >
+                              <strong>{item.title}</strong>
+                              {item.body && <span>{item.body}</span>}
+                            </button>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
                   </div>
                 )}
               </div>

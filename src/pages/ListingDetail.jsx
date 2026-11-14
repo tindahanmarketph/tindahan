@@ -544,7 +544,7 @@ export default function ListingDetail() {
   }
 
   function handleChatWithSeller() {
-    if (!listing) {
+    if (!listing || isOwner) {
       return;
     }
 
@@ -596,7 +596,7 @@ export default function ListingDetail() {
   }
 
   function handleBuyNow() {
-    if (!listing?.id) {
+    if (!listing?.id || isOwner) {
       return;
     }
 
@@ -626,7 +626,7 @@ export default function ListingDetail() {
   }
 
   function handleMakeOffer() {
-    if (!listing?.id) {
+    if (!listing?.id || isOwner) {
       return;
     }
 
@@ -894,6 +894,22 @@ export default function ListingDetail() {
 
   return (
     <main className="page listing-detail-page listing-detail-vinted-page">
+      {isSold && (
+        <section className="listing-sold-banner" role="status" data-testid="sold-banner">
+          <strong>This item has been sold.</strong>
+          <span>
+            {isOwner
+              ? "It no longer appears in search results."
+              : "It is no longer available, but you may like similar items."}
+          </span>
+          {!isOwner && (
+            <Link to={listing?.category ? `/?category=${listing.category}` : "/"}>
+              Browse similar items
+            </Link>
+          )}
+        </section>
+      )}
+
       <div className="container detail-layout product-vinted-layout">
         <section className="photo-panel product-gallery-panel">
           <div
@@ -1462,6 +1478,25 @@ export default function ListingDetail() {
             </div>
           </section>
 
+{isOwner ? (
+            <div className="detail-actions product-desktop-actions owner-listing-actions" data-testid="owner-actions">
+              <p className="owner-listing-note">This is your listing. You can't buy it or make an offer on it.</p>
+              <button className="detail-action-btn detail-offer-btn" type="button" onClick={editOwnerListing}>
+                Edit listing
+              </button>
+              <button className="detail-action-btn detail-buy-btn" type="button" onClick={() => navigate("/promotion-tools")}>
+                Boost listing
+              </button>
+              {!isSold && (
+                <button className="detail-action-btn detail-chat-btn" type="button" disabled={ownerActionLoading} onClick={() => updateListingStatus("sold")}>
+                  Mark as sold
+                </button>
+              )}
+              <button className="detail-action-btn detail-chat-btn" type="button" onClick={() => setShowOwnerActions(true)}>
+                More options
+              </button>
+            </div>
+          ) : (
           <div className="detail-actions product-desktop-actions">
             <button
               className="detail-action-btn detail-offer-btn"
@@ -1507,6 +1542,7 @@ export default function ListingDetail() {
               Chat with seller
             </button>
           </div>
+          )}
         </aside>
 
         <section className="detail-recommendations-slot product-recommendations-section">
@@ -1653,6 +1689,19 @@ export default function ListingDetail() {
           </div>
         )}
 
+{isOwner ? (
+        <div className="mobile-product-cta-bar owner-cta-bar" data-testid="owner-cta-bar">
+          <button className="mobile-product-offer-button" type="button" onClick={editOwnerListing}>
+            Edit
+          </button>
+          <button className="mobile-product-buy-button" type="button" onClick={() => navigate("/promotion-tools")}>
+            Boost
+          </button>
+          <button className="mobile-product-offer-button" type="button" onClick={() => setShowOwnerActions(true)}>
+            More
+          </button>
+        </div>
+      ) : (
       <div className="mobile-product-cta-bar">
         <button
           className="mobile-product-offer-button"
@@ -1688,6 +1737,7 @@ export default function ListingDetail() {
             : "Buy"}
         </button>
       </div>
+      )}
     </main>
   );
 }

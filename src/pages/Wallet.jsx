@@ -5,6 +5,8 @@ import {
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { loadWalletSummary } from "../lib/walletData";
+import BetaPaymentBanner from "../components/BetaPaymentBanner";
+import { getOrderStatusLabel } from "../lib/orders";
 
 const peso = (value) =>
   `₱${Number(value || 0).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
@@ -19,7 +21,7 @@ export default function Wallet() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const [showPendingInfo, setShowPendingInfo] = useState(false);
-  const [state, setState] = useState({ loading: true, error: false, pending: 0, available: 0, history: [] });
+  const [state, setState] = useState({ loading: true, error: false, pending: 0, available: 0, history: [], pendingOrders: [] });
 
   useEffect(() => {
     let cancelled = false;
@@ -56,6 +58,10 @@ export default function Wallet() {
         </button>
       </header>
 
+      <div className="orders-banner-wrap">
+        <BetaPaymentBanner compact />
+      </div>
+
       <section className="wallet-pending-row">
         <span>Pending amount</span>
         <div>
@@ -76,6 +82,20 @@ export default function Wallet() {
         <p className="wallet-info-note" role="status">
           Money from your sales that are not completed yet. It becomes available once the order is completed.
         </p>
+      )}
+
+      {state.pendingOrders.length > 0 && (
+        <section className="wallet-section-list" aria-label="Pending sales" data-testid="wallet-pending-list">
+          {state.pendingOrders.map((entry) => (
+            <article className="wallet-list-row" key={entry.id}>
+              <div>
+                <strong>{entry.title}</strong>
+                <span>{getOrderStatusLabel(entry.status)} · {formatDate(entry.date)}</span>
+              </div>
+              <strong>{peso(entry.amount)}</strong>
+            </article>
+          ))}
+        </section>
       )}
 
       <section className="wallet-balance-card">
