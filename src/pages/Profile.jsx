@@ -260,38 +260,75 @@ function MobileProfileDashboard({
   onLogout
 }) {
   const { user: badgeUser, profile: badgeProfile } = useAuth();
-  const [badgeSummary, setBadgeSummary] = useState({ earned: 0, total: 5 });
-  const [walletTotals, setWalletTotals] = useState({ available: 0, pending: 0 });
+
+  const [badgeSummary, setBadgeSummary] =
+    useState({
+      earned: 0,
+      total: 5
+    });
+
+  const [walletTotals, setWalletTotals] =
+    useState({
+      available: 0,
+      pending: 0
+    });
 
   /* Même source que la page /wallet : un seul calcul, deux affichages. */
   useEffect(() => {
     let cancelled = false;
-    if (!badgeUser?.id) return undefined;
+
+    if (!badgeUser?.id) {
+      return undefined;
+    }
 
     loadWalletSummary(badgeUser.id)
       .then((summary) => {
-        if (!cancelled) setWalletTotals({ available: summary.available, pending: summary.pending });
+        if (!cancelled) {
+          setWalletTotals({
+            available: summary.available,
+            pending: summary.pending
+          });
+        }
       })
       .catch(() => {});
 
     return () => {
       cancelled = true;
     };
-  }, [badgeUser?.id]);
+  }, [
+    badgeUser?.id
+  ]);
 
   useEffect(() => {
     let cancelled = false;
 
-    loadBadgeStats(badgeUser?.id, badgeProfile).then((stats) => {
+    loadBadgeStats(
+      badgeUser?.id,
+      badgeProfile
+    ).then((stats) => {
       if (cancelled) return;
-      const list = evaluateBadges(stats);
-      setBadgeSummary({ earned: list.filter((b) => b.earned).length, total: list.length });
+
+      const list =
+        evaluateBadges(stats);
+
+      setBadgeSummary({
+        earned:
+          list.filter(
+            (badge) => badge.earned
+          ).length,
+
+        total:
+          list.length
+      });
     });
 
     return () => {
       cancelled = true;
     };
-  }, [badgeUser?.id, badgeProfile]);
+  }, [
+    badgeUser?.id,
+    badgeProfile
+  ]);
 
   const reviewLabel =
     getReviewSummaryLabel(reviews);
@@ -319,8 +356,13 @@ function MobileProfileDashboard({
           </div>
 
           <div>
-            <strong>{displayedUsername}</strong>
-            <span>{reviewLabel}</span>
+            <strong>
+              {displayedUsername}
+            </strong>
+
+            <span>
+              {reviewLabel}
+            </span>
           </div>
         </Link>
 
@@ -331,14 +373,24 @@ function MobileProfileDashboard({
           <div className="mobile-profile-badges-row">
             <div>
               <BadgeCheck size={28} />
-              <strong>Badges earned</strong>
+
+              <strong>
+                Badges earned
+              </strong>
             </div>
 
-            <span>{badgeSummary.earned} of {badgeSummary.total}</span>
+            <span>
+              {badgeSummary.earned} of {badgeSummary.total}
+            </span>
           </div>
 
           <div className="mobile-profile-progress">
-            <span style={{ width: `${(badgeSummary.earned / badgeSummary.total) * 100}%` }} />
+            <span
+              style={{
+                width:
+                  `${(badgeSummary.earned / badgeSummary.total) * 100}%`
+              }}
+            />
           </div>
         </Link>
       </div>
@@ -362,8 +414,23 @@ function MobileProfileDashboard({
         <MobileProfileMenuItem
           icon={<Wallet size={28} />}
           title="My wallet"
-          subtitle={walletTotals.pending > 0 ? `₱${walletTotals.pending.toLocaleString("en-PH", { minimumFractionDigits: 2 })} pending` : undefined}
-          value={`₱${walletTotals.available.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`}
+          subtitle={
+            walletTotals.pending > 0
+              ? `₱${walletTotals.pending.toLocaleString(
+                  "en-PH",
+                  {
+                    minimumFractionDigits: 2
+                  }
+                )} pending`
+              : undefined
+          }
+          value={`₱${walletTotals.available.toLocaleString(
+            "en-PH",
+            {
+              minimumFractionDigits: 2,
+              maximumFractionDigits: 2
+            }
+          )}`}
           to="/wallet"
         />
 
@@ -397,7 +464,11 @@ function MobileProfileDashboard({
         <MobileProfileMenuItem
           icon={<Plane size={28} />}
           title="Holiday mode"
-          value={holidayModeEnabled ? "On" : "Off"}
+          value={
+            holidayModeEnabled
+              ? "On"
+              : "Off"
+          }
           to="/holiday-mode"
         />
       </div>
@@ -479,7 +550,9 @@ function MobileProfileDashboard({
   );
 }
 
-function ReviewStars({ rating }) {
+function ReviewStars({
+  rating
+}) {
   const cleanRating =
     Number(rating || 0);
 
@@ -488,23 +561,27 @@ function ReviewStars({ rating }) {
       className="profile-review-stars"
       aria-label={`${cleanRating} out of 5`}
     >
-      {[1, 2, 3, 4, 5].map((star) => (
-        <span
-          key={star}
-          className={
-            star <= cleanRating
-              ? "active"
-              : ""
-          }
-        >
-          ★
-        </span>
-      ))}
+      {[1, 2, 3, 4, 5].map(
+        (star) => (
+          <span
+            key={star}
+            className={
+              star <= cleanRating
+                ? "active"
+                : ""
+            }
+          >
+            ★
+          </span>
+        )
+      )}
     </div>
   );
 }
 
-function ProfileReviewsSection({ reviews }) {
+function ProfileReviewsSection({
+  reviews
+}) {
   const average =
     getReviewAverage(reviews);
 
@@ -518,7 +595,9 @@ function ProfileReviewsSection({ reviews }) {
     >
       <header className="profile-reviews-header">
         <div>
-          <h2>Reviews</h2>
+          <h2>
+            Reviews
+          </h2>
 
           <p>
             Reviews left by buyers and sellers after
@@ -535,61 +614,67 @@ function ProfileReviewsSection({ reviews }) {
 
           <span>
             {reviews.length} review
-            {reviews.length > 1 ? "s" : ""}
+            {reviews.length > 1
+              ? "s"
+              : ""}
           </span>
         </div>
       </header>
 
       {hasReviews ? (
         <div className="profile-review-list">
-          {reviews.map((review) => {
-            const reviewerName =
-              getReviewerName(review);
+          {reviews.map(
+            (review) => {
+              const reviewerName =
+                getReviewerName(review);
 
-            const reviewerAvatar =
-              getReviewerAvatar(review);
+              const reviewerAvatar =
+                getReviewerAvatar(review);
 
-            return (
-              <article
-                className="profile-review-card"
-                key={review.id}
-              >
-                <div className="profile-review-avatar">
-                  {reviewerAvatar ? (
-                    <img
-                      src={reviewerAvatar}
-                      alt={`${reviewerName} profile`}
-                    />
-                  ) : (
-                    getInitial(reviewerName)
-                  )}
-                </div>
-
-                <div>
-                  <div className="profile-review-topline">
-                    <strong>
-                      {reviewerName}
-                    </strong>
-
-                    <span>
-                      {formatReviewDate(
-                        review.createdAt
-                      )}
-                    </span>
+              return (
+                <article
+                  className="profile-review-card"
+                  key={review.id}
+                >
+                  <div className="profile-review-avatar">
+                    {reviewerAvatar ? (
+                      <img
+                        src={reviewerAvatar}
+                        alt={`${reviewerName} profile`}
+                      />
+                    ) : (
+                      getInitial(
+                        reviewerName
+                      )
+                    )}
                   </div>
 
-                  <ReviewStars
-                    rating={review.rating}
-                  />
+                  <div>
+                    <div className="profile-review-topline">
+                      <strong>
+                        {reviewerName}
+                      </strong>
 
-                  <p>
-                    {review.comment ||
-                      "This member completed the order successfully."}
-                  </p>
-                </div>
-              </article>
-            );
-          })}
+                      <span>
+                        {formatReviewDate(
+                          review.createdAt
+                        )}
+                      </span>
+                    </div>
+
+                    <ReviewStars
+                      rating={review.rating}
+                    />
+
+                    <p>
+                      {review.comment ||
+                        "This member completed the order successfully."}
+                    </p>
+                  </div>
+                </article>
+              );
+            }
+          )}
         </div>
       ) : (
         <div className="profile-reviews-empty">
@@ -608,10 +693,12 @@ function ProfileReviewsSection({ reviews }) {
 }
 
 export default function Profile() {
-  const navigate = useNavigate();
+  const navigate =
+    useNavigate();
 
-  const { username } =
-    useParams();
+  const {
+    username
+  } = useParams();
 
   const {
     user,
@@ -632,7 +719,10 @@ export default function Profile() {
 
   const isOwnProfile =
     useMemo(() => {
-      if (!user || !profile) {
+      if (
+        !user ||
+        !profile
+      ) {
         return false;
       }
 
@@ -642,6 +732,21 @@ export default function Profile() {
       profile
     ]);
 
+  /*
+   * IMPORTANT :
+   *
+   * Ce Hook doit toujours être appelé au même endroit,
+   * avant les return conditionnels loading / !profile.
+   *
+   * Sinon React peut produire :
+   * "Rendered more hooks than during the previous render"
+   * et afficher une page blanche.
+   */
+  const sellerStats =
+    useSellerStats(
+      profile?.id
+    );
+
   useEffect(() => {
     async function loadProfile() {
       setLoading(true);
@@ -649,8 +754,11 @@ export default function Profile() {
       const cleanUsername =
         username?.trim();
 
-      let profileData = null;
-      let profileError = null;
+      let profileData =
+        null;
+
+      let profileError =
+        null;
 
       const usernameResponse =
         await supabase
@@ -676,7 +784,10 @@ export default function Profile() {
           await supabase
             .from("profiles")
             .select("*")
-            .eq("id", user.id)
+            .eq(
+              "id",
+              user.id
+            )
             .maybeSingle();
 
         profileData =
@@ -709,7 +820,9 @@ export default function Profile() {
             user.id === profileData.id
         );
 
-      setProfile(profileData);
+      setProfile(
+        profileData
+      );
 
       const [
         userListings,
@@ -722,18 +835,26 @@ export default function Profile() {
 
         getReviewsForUser(
           profileData.id
-        ).catch((error) => {
-          console.warn(
-            "Profile reviews loading skipped:",
-            error.message
-          );
+        ).catch(
+          (error) => {
+            console.warn(
+              "Profile reviews loading skipped:",
+              error.message
+            );
 
-          return [];
-        })
+            return [];
+          }
+        )
       ]);
 
-      setListings(userListings);
-      setReviews(userReviews);
+      setListings(
+        userListings
+      );
+
+      setReviews(
+        userReviews
+      );
+
       setLoading(false);
     }
 
@@ -749,7 +870,9 @@ export default function Profile() {
         "Do you want to log out from TindaHan?"
       );
 
-    if (!confirmed) return;
+    if (!confirmed) {
+      return;
+    }
 
     try {
       await logout();
@@ -805,27 +928,36 @@ export default function Profile() {
   }
 
   const displayedUsername =
-    profile.username || "username";
+    profile.username ||
+    "username";
 
   const displayedBio =
-    profile.bio || "";
+    profile.bio ||
+    "";
 
   const displayedAvatar =
-    profile.avatar_url || "";
+    profile.avatar_url ||
+    "";
 
   const displayedLocation =
-    getProfileLocation(profile);
+    getProfileLocation(
+      profile
+    );
 
   const holidayModeEnabled =
-    Boolean(profile?.holiday_mode);
-
-  const sellerStats = useSellerStats(profile?.id);
+    Boolean(
+      profile?.holiday_mode
+    );
 
   const reviewSummaryLabel =
-    getReviewSummaryLabel(reviews);
+    getReviewSummaryLabel(
+      reviews
+    );
 
   const reviewAverage =
-    getReviewAverage(reviews);
+    getReviewAverage(
+      reviews
+    );
 
   return (
     <main
@@ -846,8 +978,12 @@ export default function Profile() {
           holidayModeEnabled={
             holidayModeEnabled
           }
-          reviews={reviews}
-          onLogout={handleLogout}
+          reviews={
+            reviews
+          }
+          onLogout={
+            handleLogout
+          }
         />
       )}
 
@@ -856,7 +992,9 @@ export default function Profile() {
           <div className="profile-avatar-wrap">
             {displayedAvatar ? (
               <img
-                src={displayedAvatar}
+                src={
+                  displayedAvatar
+                }
                 alt={`${displayedUsername} profile`}
                 className="profile-avatar"
               />
@@ -877,7 +1015,9 @@ export default function Profile() {
                 </h1>
 
                 <div className="profile-rating-line">
-                  <Star size={17} />
+                  <Star
+                    size={17}
+                  />
 
                   {reviews.length > 0 ? (
                     <>
@@ -921,7 +1061,10 @@ export default function Profile() {
                   to="/settings/profile"
                   className="profile-edit-button"
                 >
-                  <Pencil size={18} />
+                  <Pencil
+                    size={18}
+                  />
+
                   Edit profile
                 </Link>
               )}
@@ -934,14 +1077,20 @@ export default function Profile() {
                 </span>
 
                 <div className="profile-meta-line">
-                  <MapPin size={18} />
+                  <MapPin
+                    size={18}
+                  />
+
                   <span>
                     {displayedLocation}
                   </span>
                 </div>
 
                 <div className="profile-meta-line">
-                  <ShieldCheck size={18} />
+                  <ShieldCheck
+                    size={18}
+                  />
+
                   <span>
                     {getLastSeenText(
                       profile
@@ -950,12 +1099,23 @@ export default function Profile() {
                 </div>
 
                 <div className="profile-meta-line">
-                  <Palette size={18} />
+                  <Palette
+                    size={18}
+                  />
 
                   <span data-testid="profile-counters">
-                    {sellerStats ? sellerStats.sales : "…"} sale
-                    {sellerStats?.sales === 1 ? "" : "s"} · {listings.length} listing
-                    {listings.length === 1 ? "" : "s"}
+                    {sellerStats
+                      ? sellerStats.sales
+                      : "…"}{" "}
+                    sale
+                    {sellerStats?.sales === 1
+                      ? ""
+                      : "s"}
+                    {" · "}
+                    {listings.length} listing
+                    {listings.length === 1
+                      ? ""
+                      : "s"}
                   </span>
                 </div>
               </div>
@@ -966,16 +1126,27 @@ export default function Profile() {
                 </span>
 
                 {isOwnProfile &&
-                  user?.app_metadata?.provider === "google" && (
+                  user?.app_metadata?.provider ===
+                    "google" && (
                     <div className="profile-meta-line">
-                      <ShieldCheck size={18} />
-                      <span>Google</span>
+                      <ShieldCheck
+                        size={18}
+                      />
+
+                      <span>
+                        Google
+                      </span>
                     </div>
                   )}
 
                 <div className="profile-meta-line">
-                  <ShieldCheck size={18} />
-                  <span>Email</span>
+                  <ShieldCheck
+                    size={18}
+                  />
+
+                  <span>
+                    Email
+                  </span>
                 </div>
               </div>
             </div>
@@ -999,13 +1170,17 @@ export default function Profile() {
         </section>
 
         <ProfileReviewsSection
-          reviews={reviews}
+          reviews={
+            reviews
+          }
         />
 
         <section className="profile-badges">
           <article className="profile-badge-card">
             <div className="profile-badge-icon">
-              <Shirt size={28} />
+              <Shirt
+                size={28}
+              />
             </div>
 
             <div>
@@ -1027,7 +1202,9 @@ export default function Profile() {
 
           <article className="profile-badge-card">
             <div className="profile-badge-icon">
-              <Truck size={28} />
+              <Truck
+                size={28}
+              />
             </div>
 
             <div>
@@ -1066,20 +1243,54 @@ export default function Profile() {
             <div className="grid">
               {listings.map(
                 (listing) => (
-                  <div className="profile-listing-cell" key={listing.id}>
-                    <ListingCard listing={listing} />
+                  <div
+                    className="profile-listing-cell"
+                    key={
+                      listing.id
+                    }
+                  >
+                    <ListingCard
+                      listing={
+                        listing
+                      }
+                    />
 
                     {isOwnProfile && (
                       <OwnerListingActions
-                        listing={listing}
-                        userId={user?.id}
-                        onChange={(updated, deletedId) =>
-                          setListings((current) =>
-                            updated
-                              ? current.map((item) =>
-                                  item.id === updated.id ? { ...item, ...updated } : item
-                                )
-                              : current.filter((item) => item.id !== deletedId)
+                        listing={
+                          listing
+                        }
+                        userId={
+                          user?.id
+                        }
+                        onChange={(
+                          updated,
+                          deletedId
+                        ) =>
+                          setListings(
+                            (
+                              current
+                            ) =>
+                              updated
+                                ? current.map(
+                                    (
+                                      item
+                                    ) =>
+                                      item.id ===
+                                      updated.id
+                                        ? {
+                                            ...item,
+                                            ...updated
+                                          }
+                                        : item
+                                  )
+                                : current.filter(
+                                    (
+                                      item
+                                    ) =>
+                                      item.id !==
+                                      deletedId
+                                  )
                           )
                         }
                       />
@@ -1095,7 +1306,9 @@ export default function Profile() {
             id="profile-listings"
           >
             <div className="profile-empty-icon">
-              <Shirt size={44} />
+              <Shirt
+                size={44}
+              />
             </div>
 
             <h2>
