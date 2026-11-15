@@ -28,6 +28,7 @@ import {
 } from "../lib/categories";
 import { supabase } from "../lib/supabase";
 import { BRAND_OPTIONS } from "../lib/brands";
+import { mentionsMeetup, validateListingText } from "../lib/listingRules";
 import {
   COLOR_FILTER_OPTIONS,
   MATERIAL_FILTER_OPTIONS,
@@ -2393,7 +2394,7 @@ export default function NewListing() {
           form.price || 0
         );
 
-      return price * 0.08;
+      return Math.round(price * 0.08);
     }, [form.price]);
 
   const totalPreview =
@@ -3241,6 +3242,29 @@ export default function NewListing() {
     ) {
       alert(
         "Please upload at least one photo."
+      );
+      return;
+    }
+
+    const ruleErrors = validateListingText({
+      title: form.title,
+      description: form.description,
+      price: form.price,
+      brand: form.brand,
+      photoCount: files.length
+    });
+
+    if (Object.keys(ruleErrors).length > 0) {
+      alert(Object.values(ruleErrors)[0]);
+      return;
+    }
+
+    if (
+      mentionsMeetup(form.description) &&
+      !(form.meetup_enabled && form.seller_meetup_spot)
+    ) {
+      alert(
+        "Your description mentions a meet-up, but Safe Meet-Up is not enabled for this listing. Enable it in the Meet-Up section or remove the mention."
       );
       return;
     }

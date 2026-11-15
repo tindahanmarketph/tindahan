@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from "react";
 import { supabase } from "./supabase";
 import { DB_HARDENING } from "./featureFlags";
 import { getOrderDeadlineInfo, getStoredOrders } from "./orders";
+import { getOfferEffectiveStatus } from "./offers";
 
 /*
  * Notifications (cahier L4.2).
@@ -76,6 +77,14 @@ export function deriveOrderNotifications(orders, userId) {
       items.push({ id: `cancelled-${order.id}`, title: "Order cancelled", body: title, link, date: order.updatedAt || created });
     }
 
+    if (!isSeller && order.status === "label_downloaded") {
+      items.push({ id: `label-${order.id}`, title: "The seller is preparing your parcel", body: title, link, date: order.updatedAt || created });
+    }
+
+    if (!isSeller && order.status === "dropped_off") {
+      items.push({ id: `dropped-${order.id}`, title: "Your parcel was dropped off", body: title, link, date: order.updatedAt || created });
+    }
+
     if (!isSeller && order.status === "in_transit") {
       items.push({ id: `transit-${order.id}`, title: "Your parcel is on its way", body: title, link, date: order.updatedAt || created });
     }
@@ -86,6 +95,62 @@ export function deriveOrderNotifications(orders, userId) {
   });
 
   return items;
+}
+
+export function deriveOfferNotifications(offers, userId) {
+  const items = [];
+
+  (offers || []).forEach((row) => {
+    const offer = {
+      status: row.status,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at
+    };
+    const status = getOfferEffectiveStatus(offer);
+    const amount = `₱${Number(row.offer_price || 0).toLocaleString("en-PH")}`;
+    const isSeller = String(row.seller_id) === String(userId);
+    const link = "/messages";
+
+    if (isSeller && row.sender_role === "buyer_offer" && status === "pending") {
+      items.push({ id: `offer-new-${row.id}`, title: "New offer received", body: `${amount} offered on your item.`, link, date: row.created_at });
+    }
+
+    if (!isSeller && row.sender_role === "buyer_offer" && ["accepted", "declined"].includes(status)) {
+      items.push({
+        id: `offer-answer-${row.id}-${status}`,
+        title: status === "accepted" ? "Your offer was accepted" : "Your offer was declined",
+        body: amount,
+        link,
+        date: row.updated_at || row.created_at
+      });
+    }
+
+    if (!isSeller && row.sender_role === "seller_counter_offer" && status === "pending") {
+      items.push({ id: `offer-counter-${row.id}`, title: "The seller sent a counter-offer", body: amount, link, date: row.created_at });
+    }
+
+    if (status === "expired" && String(row.sender_id) === String(userId)) {
+      items.push({ id: `offer-expired-${row.id}`, title: "Your offer expired", body: amount, link, date: new Date().toISOString() });
+    }
+  });
+
+  return items;
+}
+
+async function loadOfferNotifications(userId) {
+  try {
+    const { data, error } = await supabase
+      .from("offers")
+      .select("id, buyer_id, seller_id, sender_id, sender_role, offer_price, status, created_at, updated_at")
+      .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`)
+      .order("created_at", { ascending: false })
+      .limit(40);
+
+    if (error) return [];
+    return deriveOfferNotifications(data, userId);
+  } catch {
+    return [];
+  }
 }
 
 async function loadTableNotifications(userId) {
@@ -134,6 +199,9 @@ export function useNotifications(userId) {
     } catch {
       derived = [];
     }
+
+    const offerNotifications = await loadOfferNotifications(userId);
+    derived = [...derived, ...offerNotifications];
 
     const fromTable = await loadTableNotifications(userId);
     const tableOrderTypes = new Set(fromTable.map((n) => n.dedupe));

@@ -136,7 +136,12 @@ export default function ParcelTracking() {
       setLoadingOrder(true);
 
       try {
-        const loadedOrder = await getOrderById(orderId);
+        const loadedOrder = await Promise.race([
+          getOrderById(orderId),
+          new Promise((_, reject) =>
+            setTimeout(() => reject(new Error("tracking-timeout")), 8000)
+          )
+        ]);
 
         if (mounted) {
           setOrder(loadedOrder);

@@ -1,10 +1,12 @@
 import { Home, Mail, Plus, Search, UserRound } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { useUnreadMessages } from "../lib/unreadMessages";
 
 export default function MobileBottomNav() {
   const location = useLocation();
   const { user, profile } = useAuth();
+  const unreadMessages = useUnreadMessages(user?.id);
 
   const profileUrl = user
     ? `/profile/${profile?.username || user?.email?.split("@")[0] || ""}`
@@ -69,7 +71,9 @@ export default function MobileBottomNav() {
       >
         <span className="mobile-bottom-icon-wrap">
           <Mail size={28} />
-          <span className="mobile-message-dot" />
+          {unreadMessages > 0 && (
+            <span className="mobile-message-dot" data-testid="message-dot" />
+          )}
         </span>
         <span>Messages</span>
       </NavLink>

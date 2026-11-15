@@ -382,3 +382,91 @@ grant execute on function public.cancel_order(uuid,text) to authenticated;
 --   select l.id, l.title, l.status from public.listings l
 --   where lower(l.status) in ('reserved','sold') and not exists
 --     (select 1 from public.orders o where o.listing_id = l.id);
+
+-- ---------------------------------------------------------------
+-- 9. Compteur de vues sans écriture directe (L4.9) + annonces vendues lisibles (L4.1)
+-- ---------------------------------------------------------------
+create or replace function public.increment_listing_views(p_listing_id uuid)
+returns void language sql security definer set search_path = public as $$
+  update public.listings
+     set views = coalesce(views, 0) + 1
+   where id = p_listing_id and seller_id is distinct from auth.uid();
+$$;
+grant execute on function public.increment_listing_views(uuid) to authenticated;
+
+-- VÉRIFIER : la page « Sold » exige que les annonces vendues restent lisibles par tous
+-- (le lien partagé doit rester valide). Si la policy SELECT de `listings` filtre sur
+-- status = 'active', l'élargir, par exemple :
+--   drop policy if exists "listings_public_read" on public.listings;
+--   create policy "listings_public_read" on public.listings
+--     for select using (status in ('active','available','reserved','sold','completed')
+--                       or seller_id = auth.uid());
+-- (les annonces 'hidden' restent visibles de leur seul vendeur.)
+
+-- ---------------------------------------------------------------
+-- 10. Statistiques vendeur réelles (L3.3) — ventes = commandes completed, note = moyenne des avis
+-- VÉRIFIER : table `reviews` (reviewed_user_id, rating) et colonnes profiles.total_sales / profiles.rating.
+-- ---------------------------------------------------------------
+create or replace function public.seller_stats(p_seller uuid)
+returns jsonb language sql stable security definer set search_path = public as $$
+  select jsonb_build_object(
+    'completed_sales', (select count(*) from public.orders where seller_id = p_seller and status = 'completed'),
+    'rating_count',    (select count(*) from public.reviews where reviewed_user_id = p_seller),
+    'rating_avg',      coalesce((select avg(rating)::numeric(4,2) from public.reviews where reviewed_user_id = p_seller), 0)
+  );
+$$;
+grant execute on function public.seller_stats(uuid) to anon, authenticated;
+
+-- Garde les colonnes dénormalisées de profiles à jour (utilisées par l'accueil et les cartes).
+alter table public.profiles add column if not exists total_sales integer default 0;
+alter table public.profiles add column if not exists rating numeric(4,2);
+
+create or replace function public.refresh_seller_profile_stats(p_seller uuid)
+returns void language plpgsql security definer set search_path = public as $$
+begin
+  update public.profiles p set
+    total_sales = (select count(*) from public.orders where seller_id = p_seller and status = 'completed'),
+    rating = (select avg(rating)::numeric(4,2) from public.reviews where reviewed_user_id = p_seller)
+  where p.id = p_seller;
+end $$;
+
+create or replace function public.orders_refresh_stats()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  if new.status = 'completed' and old.status is distinct from 'completed' then
+    perform public.refresh_seller_profile_stats(new.seller_id);
+  end if;
+  return new;
+end $$;
+drop trigger if exists trg_orders_refresh_stats on public.orders;
+create trigger trg_orders_refresh_stats after update of status on public.orders
+  for each row execute function public.orders_refresh_stats();
+
+create or replace function public.reviews_refresh_stats()
+returns trigger language plpgsql security definer set search_path = public as $$
+begin
+  perform public.refresh_seller_profile_stats(coalesce(new.reviewed_user_id, old.reviewed_user_id));
+  return coalesce(new, old);
+end $$;
+drop trigger if exists trg_reviews_refresh_stats on public.reviews;
+create trigger trg_reviews_refresh_stats after insert or update or delete on public.reviews
+  for each row execute function public.reviews_refresh_stats();
+
+-- ---------------------------------------------------------------
+-- 11. Expiration des offres (L4.4) : 48 h (offre sans réponse ; prix accepté tenu 48 h)
+--     Le front calcule déjà le statut « expired » à la lecture ; ceci le persiste.
+-- ---------------------------------------------------------------
+create or replace function public.expire_stale_offers()
+returns integer language plpgsql security definer set search_path = public as $$
+declare n integer;
+begin
+  update public.offers
+     set status = 'expired', updated_at = now()
+   where (status in ('pending','sent') and created_at < now() - interval '48 hours')
+      or (status = 'accepted' and coalesce(updated_at, created_at) < now() - interval '48 hours');
+  get diagnostics n = row_count;
+  return n;
+end $$;
+revoke all on function public.expire_stale_offers() from public, anon, authenticated;
+-- select cron.schedule('tindahan-expire-offers', '*/30 * * * *', $$select public.expire_stale_offers()$$);
+-- VÉRIFIER : si offers.status a une contrainte CHECK, y ajouter 'expired'.

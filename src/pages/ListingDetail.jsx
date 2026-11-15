@@ -1,3 +1,7 @@
+import { mentionsMeetup } from "../lib/listingRules";
+import { formatRatingLabel, useSellerStats } from "../lib/sellerStats";
+import SimilarListings from "../components/SimilarListings";
+import { DB_HARDENING } from "../lib/featureFlags";
 import {
   ChevronLeft,
   ChevronRight,
@@ -262,6 +266,17 @@ export default function ListingDetail() {
     async function incrementViews() {
       if (!listing?.id) return;
 
+      /* Pas de compteur pour le propriétaire ni pour les visiteurs non connectés
+         (évite les écritures refusées / erreurs 4xx en console). */
+      if (!user?.id || String(listing.seller_id) === String(user.id)) return;
+
+      if (DB_HARDENING) {
+        const rpc = await supabase.rpc("increment_listing_views", {
+          p_listing_id: listing.id
+        });
+        if (!rpc.error) return;
+      }
+
       const nextViews =
         Number(listing.views || 0) + 1;
 
@@ -281,7 +296,35 @@ export default function ListingDetail() {
     }
 
     incrementViews();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [listing?.id, user?.id]);
+
+  const sellerStats = useSellerStats(listing?.seller_id);
+
+  /* « In demand » uniquement sur données réelles (cahier L4.8). */
+  const [favoriteCount, setFavoriteCount] = useState(0);
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!listing?.id) return undefined;
+
+    supabase
+      .from("favorites")
+      .select("listing_id", { count: "exact", head: true })
+      .eq("listing_id", listing.id)
+      .then(
+        ({ count }) => {
+          if (!cancelled) setFavoriteCount(count || 0);
+        },
+        () => {}
+      );
+
+    return () => {
+      cancelled = true;
+    };
   }, [listing?.id]);
+
+  const isInDemand = Number(listing?.views || 0) >= 20 || favoriteCount >= 3;
 
   const photos = useMemo(() => {
     if (
@@ -317,7 +360,7 @@ export default function ListingDetail() {
     Number(listing?.price || 0);
 
   const protection =
-    price * 0.08;
+    Math.round(price * 0.08);
 
   const shipping = 80;
 
@@ -836,7 +879,7 @@ export default function ListingDetail() {
     );
 
     navigate(
-      `/sell?edit=${listing.id}`
+      `/edit/${listing.id}`
     );
   }
 
@@ -883,10 +926,9 @@ export default function ListingDetail() {
                 "This listing may have been removed."}
             </p>
 
-            <p className="debug-id">
-              Listing ID: {id}
-            </p>
           </div>
+
+          <SimilarListings title="Discover other items" />
         </div>
       </main>
     );
@@ -1193,15 +1235,20 @@ export default function ListingDetail() {
           </section>
 
           {!isSold &&
-            isAvailable && (
-              <section className="mobile-demand-box">
+            isAvailable &&
+            isInDemand && (
+              <section className="mobile-demand-box" data-testid="in-demand">
                 <span>
                   🔥
                 </span>
 
                 <p>
-                  In demand! Buyers recently viewed
-                  or saved similar items.
+                  In demand!{" "}
+                  {Number(listing?.views || 0)} views
+                  {favoriteCount > 0
+                    ? ` · saved by ${favoriteCount} buyer${favoriteCount === 1 ? "" : "s"}`
+                    : ""}
+                  .
                 </p>
               </section>
             )}
@@ -1214,6 +1261,12 @@ export default function ListingDetail() {
             <p className="product-description-text">
               {displayedDescription}
             </p>
+
+            {mentionsMeetup(description) && !hasSellerMeetup && (
+              <p className="order-detail-note" data-testid="meetup-note">
+                Safe Meet-Up is not available for this item: it is sent by courier.
+              </p>
+            )}
 
             {shouldShowDescriptionToggle && (
               <button
@@ -1288,21 +1341,22 @@ export default function ListingDetail() {
                   </strong>
 
                   <p>
-                    <Star
-                      size={15}
-                      fill="currentColor"
-                    />{" "}
-                    {seller.rating ||
-                      5}{" "}
-                    ·{" "}
-                    {seller.total_sales ||
-                      0}{" "}
-                    sales
+                    {sellerStats && sellerStats.ratingCount > 0 && (
+                      <Star
+                        size={15}
+                        fill="currentColor"
+                      />
+                    )}{" "}
+                    {formatRatingLabel(sellerStats) || "…"}
                   </p>
 
-                  <span className="product-seller-active">
-                    Active seller
-                  </span>
+                  {sellerStats &&
+                    (sellerStats.sales > 0 ||
+                      Date.now() - new Date(listing.created_at).getTime() < 30 * 86400000) && (
+                      <span className="product-seller-active">
+                        Active seller
+                      </span>
+                    )}
                 </div>
               </Link>
 
@@ -1737,6 +1791,16 @@ export default function ListingDetail() {
             : "Buy"}
         </button>
       </div>
+      )}
+
+      {isSold && !isOwner && (
+        <div className="container">
+          <SimilarListings
+            category={listing?.category}
+            excludeId={listing?.id}
+            title="Similar items"
+          />
+        </div>
       )}
     </main>
   );

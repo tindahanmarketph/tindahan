@@ -51,6 +51,7 @@ import PromotionTools from "./pages/PromotionTools";
 import Wallet from "./pages/Wallet";
 import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
+import EditListing from "./pages/EditListing";
 
 import Donations from "./pages/Donations";
 import TindaHanGuide from "./pages/TindaHanGuide";
@@ -589,6 +590,15 @@ export default function App() {
         />
 
         <Route path="/profile" element={<ProfileRedirect />} />
+
+        <Route
+          path="/edit/:id"
+          element={
+            <ProtectedRoute>
+              <EditListing />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/profile/:username"

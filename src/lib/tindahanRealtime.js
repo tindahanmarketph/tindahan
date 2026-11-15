@@ -2,8 +2,8 @@ import { supabase } from "./supabase";
 
 export function formatRealtimePrice(value) {
   return Number(value || 0).toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   });
 }
 
@@ -449,7 +449,7 @@ export async function createOfferMessage({
     throw new Error("Missing conversation.");
   }
 
-  const buyerProtection = Number(offerPrice || 0) * 0.08;
+  const buyerProtection = Math.round(Number(offerPrice || 0) * 0.08);
   const protectedTotal = Number(offerPrice || 0) + buyerProtection;
 
   const { data: offerRow, error: offerError } = await supabase

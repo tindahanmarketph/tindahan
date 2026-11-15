@@ -9,3 +9,16 @@
   from = "/*"
   to = "/index.html"
   status = 200
+
+# Aperçus de partage par annonce (L4.7) — voir netlify/edge-functions/listing-meta.js
+[[edge_functions]]
+  function = "listing-meta"
+  path = "/item/*"
+
+[[edge_functions]]
+  function = "listing-meta"
+  path = "/listing/*"
+
+[[edge_functions]]
+  function = "listing-meta"
+  path = "/listings/*"

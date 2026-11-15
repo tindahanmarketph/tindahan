@@ -1,3 +1,5 @@
+import { formatOfferExpiry, getOfferEffectiveStatus } from "../lib/offers";
+import { markConversationSeen } from "../lib/unreadMessages";
 import {
   Bell,
   Camera,
@@ -81,8 +83,8 @@ function formatPrice(value) {
   if (!price) return "Price not available";
 
   return `₱${price.toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   })}`;
 }
 
@@ -215,7 +217,8 @@ function getAcceptedOffer(conversation) {
     .reverse()
     .find(
       (message) =>
-        message.type === "offer" && message.offer?.status === "accepted"
+        message.type === "offer" &&
+        getOfferEffectiveStatus(message.offer) === "accepted"
     );
 
   return acceptedOfferMessage?.offer || null;
@@ -230,7 +233,7 @@ function getLatestPendingCounterOffer(conversation) {
       (message) =>
         message.type === "offer" &&
         message.offer?.senderRole === "seller_counter_offer" &&
-        message.offer?.status === "pending"
+        getOfferEffectiveStatus(message.offer) === "pending"
     );
 
   return counterOfferMessage?.offer || null;
@@ -1193,6 +1196,8 @@ export default function Messages() {
   async function loadMessages(conversationId) {
     if (!conversationId || !user?.id) return;
 
+    markConversationSeen(user.id, conversationId);
+
     setLoadingMessages(true);
 
     try {
@@ -1759,9 +1764,11 @@ export default function Messages() {
     const offer = item.offer;
     if (!offer) return null;
 
-    const isPending = offer.status === "pending" || offer.status === "sent";
-    const isAccepted = offer.status === "accepted";
-    const isDeclined = offer.status === "declined";
+    const effectiveStatus = getOfferEffectiveStatus(offer);
+    const isPending = effectiveStatus === "pending";
+    const isAccepted = effectiveStatus === "accepted";
+    const isDeclined = effectiveStatus === "declined";
+    const isExpired = effectiveStatus === "expired";
 
     const isBuyerOffer = offer.senderRole === "buyer_offer";
     const isSellerCounterOffer = offer.senderRole === "seller_counter_offer";
@@ -1772,7 +1779,7 @@ export default function Messages() {
     const shouldBuyerAct =
       !offerActionsLocked &&
       !isCurrentUserSeller &&
-      (isAccepted || isSellerCounterOffer);
+      ((isAccepted && !isExpired) || (isSellerCounterOffer && isPending));
 
     return (
       <div
@@ -1796,6 +1803,7 @@ export default function Messages() {
           {isAccepted && <strong className="accepted">Accepted</strong>}
           {isDeclined && <strong className="declined">Declined</strong>}
           {isPending && <strong className="pending">Pending</strong>}
+          {isExpired && <strong className="declined" data-testid="offer-expired">Expired</strong>}
         </div>
 
         <div className="offer-message-price-row">
@@ -1809,6 +1817,13 @@ export default function Messages() {
         {offer.protectedTotal && (
           <p className="offer-message-protected">
             ₱{formatRealtimePrice(offer.protectedTotal)} incl. Buyer Protection
+          </p>
+        )}
+
+        {(isPending || isAccepted || isExpired) && (
+          <p className="offer-message-protected" data-testid="offer-expiry">
+            {isAccepted ? "Accepted price held. " : ""}
+            {formatOfferExpiry(offer)}
           </p>
         )}
 
@@ -1861,14 +1876,14 @@ export default function Messages() {
           </div>
         )}
 
-        {!offerActionsLocked && !isCurrentUserSeller && isBuyerOffer && isPending && (
+        {!offerActionsLocked && !isCurrentUserSeller && isBuyerOffer && (isPending || isExpired) && (
           <div className="offer-message-actions buyer-actions">
             <button
               type="button"
               className="offer-counter-button"
               onClick={handleMakeOfferClick}
             >
-              Change my offer
+              {isExpired ? "Make a new offer" : "Change my offer"}
             </button>
           </div>
         )}
@@ -1888,9 +1903,14 @@ export default function Messages() {
     }
 
     const isAccepted = offer.status === "accepted";
+    const isOfferExpired = getOfferEffectiveStatus(offer) === "expired";
     const isBuyerOffer = offer.senderRole === "buyer_offer";
     const showBuyerBuyCta =
-      !offerActionsLocked && !isCurrentUserSeller && isAccepted && isBuyerOffer;
+      !offerActionsLocked &&
+      !isCurrentUserSeller &&
+      isAccepted &&
+      isBuyerOffer &&
+      !isOfferExpired;
 
     const title = isAccepted
       ? isCurrentUserSeller
@@ -1902,6 +1922,8 @@ export default function Messages() {
 
     const description = offerActionsLocked
       ? "This item is no longer available for purchase from this conversation."
+      : isAccepted && isOfferExpired
+      ? "This accepted offer has expired. Make a new offer to continue."
       : isAccepted
       ? isCurrentUserSeller
         ? "The buyer can now complete the purchase from this conversation."

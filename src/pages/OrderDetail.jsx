@@ -27,6 +27,7 @@ import {
   getOrderDeadlineInfo,
   getOrderStatusLabel,
   isOrderActive,
+  markParcelDroppedOff,
   PRE_SHIPMENT_STATUSES,
   sweepOverdueOrders
 } from "../lib/orders";
@@ -44,6 +45,7 @@ export default function OrderDetail() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [confirmDrop, setConfirmDrop] = useState(false);
 
   async function load() {
     setLoading(true);
@@ -83,6 +85,25 @@ export default function OrderDetail() {
       await load();
     } catch (err) {
       setError(err.message || "Unable to cancel this order.");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleDroppedOff() {
+    setBusy(true);
+    setError("");
+
+    try {
+      await markParcelDroppedOff(
+        order.id,
+        order.carrier || "J&T Express",
+        order.address?.sellerDropOffPoint || null
+      );
+      setConfirmDrop(false);
+      await load();
+    } catch (err) {
+      setError(err.message || "Unable to confirm the drop-off.");
     } finally {
       setBusy(false);
     }
@@ -294,6 +315,20 @@ export default function OrderDetail() {
           </button>
         )}
 
+        {isSeller &&
+          order.deliveryMethod !== "meetup" &&
+          ["label_downloaded", "courier_pickup_scheduled"].includes(order.status) &&
+          !confirmDrop && (
+            <button
+              type="button"
+              className="parcel-primary-button"
+              onClick={() => setConfirmDrop(true)}
+              data-testid="dropped-off"
+            >
+              <PackageCheck size={16} /> I handed the parcel to the courier
+            </button>
+          )}
+
         {isSeller && order.deliveryMethod !== "meetup" &&
           ["paid_waiting_seller", "label_downloaded", "courier_pickup_scheduled"].includes(order.status) && (
             <button type="button" className="parcel-primary-button" onClick={() => navigate(`/shipping-label/${order.id}`)}>
@@ -321,6 +356,24 @@ export default function OrderDetail() {
           <LifeBuoy size={16} /> Contact support
         </button>
       </section>
+
+      {confirmDrop && (
+        <section className="order-detail-card" role="alertdialog" aria-label="Confirm drop-off">
+          <h2>Confirm the drop-off</h2>
+          <p>
+            Only confirm once {order.carrier || "the courier"} has the parcel. Your buyer is
+            notified straight away and the order moves to “Dropped off”.
+          </p>
+          <div className="order-detail-actions">
+            <button type="button" className="parcel-outline-button" onClick={() => setConfirmDrop(false)} disabled={busy}>
+              Not yet
+            </button>
+            <button type="button" className="parcel-primary-button" onClick={handleDroppedOff} disabled={busy} data-testid="confirm-dropped-off">
+              {busy ? "Confirming…" : "Yes, it is dropped off"}
+            </button>
+          </div>
+        </section>
+      )}
 
       {confirmCancel && (
         <section className="order-detail-card" role="alertdialog" aria-label="Confirm cancellation">

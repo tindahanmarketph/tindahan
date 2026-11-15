@@ -70,3 +70,46 @@
 /* Sold banner (cahier L4.1) */
 .listing-sold-banner { display: flex; flex-wrap: wrap; gap: 6px 12px; align-items: center; margin: 0; padding: 12px 16px; background: #eef1f4; color: #2c3440; font-size: 14px; }
 .listing-sold-banner a { font-weight: 700; margin-left: auto; }
+
+.navbar-icon-link { position: relative; }
+.similar-listings { margin: 24px 0; }
+.similar-listings h2 { font-size: 18px; margin: 0 0 12px; }
+
+/* Gestion d'annonce depuis le profil (cahier L3.1) */
+.profile-listing-cell { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.owner-card-actions { display: flex; flex-direction: column; gap: 6px; }
+.owner-card-buttons { display: flex; flex-wrap: wrap; gap: 6px; }
+.owner-card-buttons button, .owner-card-price button { padding: 6px 10px; font-size: 12px; font-weight: 600; border-radius: 8px; border: 1px solid var(--border, #d9dde3); background: transparent; cursor: pointer; }
+.owner-card-buttons button.danger { color: #c0262d; border-color: #e7b4b4; }
+.owner-card-price { display: flex; gap: 6px; }
+.owner-card-price input { width: 90px; padding: 6px 8px; border-radius: 8px; border: 1px solid var(--border, #d9dde3); }
+.owner-card-badge { font-size: 11px; font-weight: 700; color: #6b4a00; background: #fff7e0; border-radius: 6px; padding: 3px 8px; align-self: flex-start; }
+.edit-listing-form { display: flex; flex-direction: column; gap: 14px; margin: 16px 0 90px; }
+.edit-listing-form label { display: flex; flex-direction: column; gap: 4px; font-weight: 600; font-size: 14px; }
+.edit-listing-form input:not([type=checkbox]), .edit-listing-form textarea, .edit-listing-form select { padding: 10px 12px; border-radius: 10px; border: 1px solid var(--border, #d9dde3); font: inherit; }
+.edit-listing-check { flex-direction: row !important; align-items: center; gap: 8px !important; }
+.edit-listing-photos { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.edit-listing-photo { position: relative; width: 84px; display: flex; flex-direction: column; gap: 4px; font-size: 11px; }
+.edit-listing-photo img { width: 84px; height: 84px; object-fit: cover; border-radius: 8px; }
+.edit-listing-add-photo { width: 84px; height: 84px; border: 2px dashed var(--border, #c4cad3); border-radius: 8px; background: transparent; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; cursor: pointer; }
+.edit-listing-back { background: none; border: 0; display: inline-flex; align-items: center; cursor: pointer; padding: 8px 0; }
+
+/* Lot 5 — estimation de livraison */
+.delivery-estimate {
+  margin: 0 0 12px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: #f1f7ff;
+  color: #1f3a5f;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+/* Lot 5 — accueil mobile : les annonces remontent (hero compact, cartes de confiance masquées) */
+@media (max-width: 768px) {
+  .guest-hero { min-height: 0 !important; padding-top: 12px !important; padding-bottom: 12px !important; }
+  .guest-hero-content { padding-top: 0 !important; padding-bottom: 0 !important; }
+  .guest-hero-card { padding: 14px !important; margin: 0 !important; }
+  .guest-hero-card p { display: none; }
+  .home-trust-section { display: none; }
+}

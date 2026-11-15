@@ -1,4 +1,6 @@
-import { buildSearchAndClause } from "../lib/searchTerms";
+import { buildSearchAndClause, rankByRelevance } from "../lib/searchTerms";
+import { sortByProximity } from "../lib/geo";
+import { loadSavedAddress } from "../lib/addressBook";
 import {
   useEffect,
   useMemo,
@@ -1320,8 +1322,16 @@ export default function Home() {
         }
 
 
+        const fetched = result.listings || [];
+        const proximityRef =
+          activeSort === "nearest" && user?.id ? loadSavedAddress(user.id) : null;
+
         setListings(
-          result.listings || []
+          activeSort === "nearest"
+            ? sortByProximity(fetched, proximityRef)
+            : activeQuery && (!activeSort || activeSort === "newest")
+            ? rankByRelevance(fetched, activeQuery)
+            : fetched
         );
 
 
@@ -1461,6 +1471,12 @@ export default function Home() {
               <option value="price-high">
                 Price high to low
               </option>
+
+              {user && (
+                <option value="nearest">
+                  Nearest to me
+                </option>
+              )}
             </select>
           </div>
 
@@ -1523,7 +1539,7 @@ export default function Home() {
 
                 <p>
                   {activeQuery
-                    ? "Try changing or removing some filters."
+                    ? `Nothing matches “${activeQuery}”. Check the spelling, try a more general word (e.g. “bag” instead of “leather bag”) or remove some filters.`
                     : isFilteredPage
                     ? "There are no items in this category yet."
                     : "Be the first to list an item on TindaHan."}

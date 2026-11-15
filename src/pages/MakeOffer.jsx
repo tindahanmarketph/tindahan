@@ -11,8 +11,8 @@ import {
 
 function formatPrice(value) {
   return Number(value || 0).toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   });
 }
 
@@ -146,7 +146,7 @@ export default function MakeOffer() {
   const offer30 = useMemo(() => Math.round(itemPrice * 0.7), [itemPrice]);
 
   const cleanOfferValue = parseOfferValue(offerValue);
-  const buyerProtection = Math.round(cleanOfferValue * 0.08 * 100) / 100;
+  const buyerProtection = Math.round(cleanOfferValue * 0.08);
   const protectedTotal = cleanOfferValue + buyerProtection;
 
   const isCustomOffer = selectedType === "custom";

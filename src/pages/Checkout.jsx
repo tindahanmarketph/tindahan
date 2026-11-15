@@ -1,3 +1,4 @@
+import { estimateDeliveryDays, formatDeliveryEstimate } from "../lib/geo";
 import {
   ChevronLeft,
   CreditCard,
@@ -126,8 +127,8 @@ const defaultAddress = { ...EMPTY_ADDRESS };
 
 function formatPrice(value) {
   return Number(value || 0).toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   });
 }
 
@@ -289,7 +290,7 @@ export default function Checkout() {
   const acceptedOfferPrice = parseOfferPrice(searchParams);
   const itemPrice = acceptedOfferPrice || originalItemPrice;
   const hasAcceptedOfferPrice = Boolean(acceptedOfferPrice);
-  const buyerProtection = itemPrice * 0.08;
+  const buyerProtection = Math.round(itemPrice * 0.08);
   const sellerMeetupSpot = listing?.seller_meetup_spot || null;
   const hasSellerMeetup = Boolean(listing?.meetup_enabled && sellerMeetupSpot);
 
@@ -643,6 +644,14 @@ export default function Checkout() {
 
       <section className="checkout-section">
         <h2>Delivery options</h2>
+
+        {selectedDelivery !== "meetup" && (
+          <p className="delivery-estimate">
+            {formatDeliveryEstimate(
+              estimateDeliveryDays(listing?.location, address)
+            )}
+          </p>
+        )}
 
         <div className="checkout-delivery-list">
           {deliveryOptions.map((option) => {

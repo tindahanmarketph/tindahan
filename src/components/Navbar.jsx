@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import BrandLogo from "./BrandLogo";
 import { useNotifications } from "../lib/notifications";
+import { useUnreadMessages } from "../lib/unreadMessages";
 
 export default function Navbar() {
   const navigate = useNavigate();
@@ -23,6 +24,7 @@ export default function Navbar() {
   const [notificationsOpen, setNotificationsOpen] = useState(false);
   const notificationsRef = useRef(null);
   const notifications = useNotifications(user?.id);
+  const unreadMessages = useUnreadMessages(user?.id);
 
   useEffect(() => {
     setQuery(searchParams.get("q") || "");
@@ -85,7 +87,7 @@ export default function Navbar() {
 
         <form className="navbar-search" onSubmit={handleSearchSubmit}>
           <button className="search-type-button" type="button">
-            Articles
+            Items
             <ChevronDown size={16} />
           </button>
 
@@ -118,6 +120,11 @@ export default function Navbar() {
                 title="Messages"
               >
                 <Mail size={21} />
+                {unreadMessages > 0 && (
+                  <span className="navbar-notification-count" data-testid="navbar-message-count">
+                    {unreadMessages > 9 ? "9+" : unreadMessages}
+                  </span>
+                )}
               </Link>
 
               <div className="navbar-notifications" ref={notificationsRef}>

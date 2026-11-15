@@ -282,7 +282,7 @@ export default function ItemDetail() {
                 </Link>
 
                 <p>
-                  <Star size={15} fill="currentColor" /> {seller.rating || 5} ·{" "}
+                  {seller.rating ? `★ ${Number(seller.rating).toFixed(1)}` : "No reviews yet"} ·{" "}
                   {seller.sales_count || seller.total_sales || 0} sales
                 </p>
               </div>

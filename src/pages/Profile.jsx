@@ -28,6 +28,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "../context/AuthContext";
 import ListingCard from "../components/ListingCard";
+import { useSellerStats } from "../lib/sellerStats";
+import OwnerListingActions from "../components/OwnerListingActions";
 import { evaluateBadges, loadBadgeStats, loadWalletSummary } from "../lib/walletData";
 import { supabase } from "../lib/supabase";
 import { formatReviewDate, getReviewsForUser } from "../lib/reviews";
@@ -117,12 +119,9 @@ async function fetchUserListings(profileId, isOwnProfile = false) {
     "profile_id"
   ];
 
-  const visibleStatuses = [
-    "active",
-    "available",
-    "reserved",
-    "sold"
-  ];
+  const visibleStatuses = isOwnProfile
+    ? ["active", "available", "reserved", "sold", "hidden", "paused"]
+    : ["active", "available", "reserved", "sold"];
 
   for (const column of columnsToTry) {
     const { data, error } = await supabase
@@ -820,6 +819,8 @@ export default function Profile() {
   const holidayModeEnabled =
     Boolean(profile?.holiday_mode);
 
+  const sellerStats = useSellerStats(profile?.id);
+
   const reviewSummaryLabel =
     getReviewSummaryLabel(reviews);
 
@@ -952,7 +953,9 @@ export default function Profile() {
                   <Palette size={18} />
 
                   <span data-testid="profile-counters">
-                    {listings.length} listing{listings.length === 1 ? "" : "s"}
+                    {sellerStats ? sellerStats.sales : "…"} sale
+                    {sellerStats?.sales === 1 ? "" : "s"} · {listings.length} listing
+                    {listings.length === 1 ? "" : "s"}
                   </span>
                 </div>
               </div>
@@ -1063,10 +1066,25 @@ export default function Profile() {
             <div className="grid">
               {listings.map(
                 (listing) => (
-                  <ListingCard
-                    key={listing.id}
-                    listing={listing}
-                  />
+                  <div className="profile-listing-cell" key={listing.id}>
+                    <ListingCard listing={listing} />
+
+                    {isOwnProfile && (
+                      <OwnerListingActions
+                        listing={listing}
+                        userId={user?.id}
+                        onChange={(updated, deletedId) =>
+                          setListings((current) =>
+                            updated
+                              ? current.map((item) =>
+                                  item.id === updated.id ? { ...item, ...updated } : item
+                                )
+                              : current.filter((item) => item.id !== deletedId)
+                          )
+                        }
+                      />
+                    )}
+                  </div>
                 )
               )}
             </div>

@@ -30,8 +30,8 @@ const conditionLabels = {
 
 function formatPrice(value) {
   return Number(value || 0).toLocaleString("en-PH", {
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0
   });
 }
 
@@ -79,7 +79,7 @@ export default function ListingCard({ listing }) {
   const firstPhoto = listing.photos?.[0];
 
   const itemPrice = Number(listing.price || 0);
-  const buyerProtection = itemPrice * 0.08;
+  const buyerProtection = Math.round(itemPrice * 0.08);
   const protectedPrice = itemPrice + buyerProtection;
 
   const sold = isListingSold(listing.status);
