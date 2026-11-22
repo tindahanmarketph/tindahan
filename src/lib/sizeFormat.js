@@ -2,6 +2,9 @@
 // Uniformise l'affichage des tailles de vêtements : "Medium", "small", "medium small",
 // "XS · US 0–2" ... deviennent M, S, S/M, XS ...
 // Les tailles numériques (chaussures, pantalons : 38, 28, US 8) restent inchangées.
+//
+// formatSize(...)     -> forme courte (S, M, XL) : fil d'actualité, cartes de la grille
+// formatSizeLong(...) -> forme complète (Small, Medium, Extra large) : page de l'annonce
 
 const SCALE = [
   "XXXS",
@@ -67,10 +70,23 @@ const PHRASES = [
   [/x small/g, "xs"]
 ];
 
-export function formatSize(rawSize) {
+const LONG_NAMES = {
+  XXXS: "Extra extra extra small",
+  XXS: "Extra extra small",
+  XS: "Extra small",
+  S: "Small",
+  M: "Medium",
+  L: "Large",
+  XL: "Extra large",
+  XXL: "Extra extra large"
+};
+
+// Retourne { letters: ["S","M"] } pour une taille de vêtement,
+// ou { text: "38" } si ce n'est pas une taille en lettres.
+function parseSize(rawSize) {
   const original = String(rawSize ?? "").trim();
 
-  if (!original) return "";
+  if (!original) return { text: "" };
 
   // Retire "· US 8–10" et les parenthèses : "M (US 8-10)" -> "M"
   const cleaned = original
@@ -78,14 +94,14 @@ export function formatSize(rawSize) {
     .replace(/\(.*?\)/g, "")
     .trim();
 
-  if (!cleaned) return original;
+  if (!cleaned) return { text: original };
 
   let text = cleaned.toLowerCase().replace(/[-_]/g, " ").replace(/\s+/g, " ");
 
   const compact = text.replace(/[\s.]/g, "");
 
   if (["onesize", "freesize", "os", "taillunique"].includes(compact)) {
-    return "One size";
+    return { text: "One size" };
   }
 
   for (const [pattern, replacement] of PHRASES) {
@@ -98,14 +114,30 @@ export function formatSize(rawSize) {
 
   // Si un mot n'est pas une taille de vêtement (38, US 8, Other...), on garde le texte d'origine
   if (mapped.length === 0 || mapped.some((value) => !value)) {
-    return cleaned;
+    return { text: cleaned };
   }
 
-  const unique = [...new Set(mapped)].sort(
+  const letters = [...new Set(mapped)].sort(
     (a, b) => SCALE.indexOf(a) - SCALE.indexOf(b)
   );
 
-  return unique.join("/");
+  return { letters };
+}
+
+// Forme courte : M, S, XL, S/M ...
+export function formatSize(rawSize) {
+  const parsed = parseSize(rawSize);
+
+  return parsed.letters ? parsed.letters.join("/") : parsed.text;
+}
+
+// Forme complète : Medium, Small, Extra large, Small / Medium ...
+export function formatSizeLong(rawSize) {
+  const parsed = parseSize(rawSize);
+
+  if (!parsed.letters) return parsed.text;
+
+  return parsed.letters.map((size) => LONG_NAMES[size] || size).join(" / ");
 }
 
 export default formatSize;

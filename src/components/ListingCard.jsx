@@ -17,6 +17,7 @@ import {
 } from "../lib/categories";
 import { useAuth } from "../context/AuthContext";
 import { checkIsFavorite, toggleFavorite } from "../lib/favorites";
+import { formatSize } from "../lib/sizeFormat";
 import "../styles/listingStatus.css";
 
 const conditionLabels = {
@@ -85,7 +86,7 @@ export default function ListingCard({ listing }) {
   const sold = isListingSold(listing.status);
 
   // Taille affichée uniquement si l'annonce en a une (vêtements, chaussures...)
-  const listingSize = String(listing.size || "").trim();
+  const listingSize = formatSize(listing.size);
 
   async function handleFavoriteClick(event) {
     event.preventDefault();
