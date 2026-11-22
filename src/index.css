@@ -54838,3 +54838,24 @@ strong {
     background-position: 76% center;
   }
 }
+/* ========================= */
+/* AUTH - HEADER CENTRÉ (login + register) */
+/* ========================= */
+
+.auth-tindahan-page .auth-modern-intro,
+.register-modern-page .register-modern-card .auth-modern-intro {
+  text-align: center !important;
+}
+
+.auth-tindahan-page .auth-modern-intro .auth-brand-logo,
+.register-modern-page .register-modern-card .auth-modern-intro .auth-brand-logo {
+  margin-inline: auto !important;
+}
+
+.auth-tindahan-page .auth-modern-intro h1,
+.auth-tindahan-page .auth-modern-intro p,
+.register-modern-page .register-modern-card .auth-modern-intro h1,
+.register-modern-page .register-modern-card .auth-modern-intro p {
+  text-align: center !important;
+  margin-inline: auto !important;
+}
