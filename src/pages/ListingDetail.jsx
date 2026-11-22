@@ -1,6 +1,7 @@
 import { mentionsMeetup } from "../lib/listingRules";
 import { formatRatingLabel, useSellerStats } from "../lib/sellerStats";
 import SimilarListings from "../components/SimilarListings";
+import { formatSize } from "../lib/sizeFormat";
 import { DB_HARDENING } from "../lib/featureFlags";
 import {
   ChevronLeft,
@@ -433,7 +434,7 @@ export default function ListingDetail() {
       : null,
 
     listing?.size
-      ? ["Size", listing.size]
+      ? ["Size", formatSize(listing.size)]
       : null,
 
     listing?.condition
@@ -1193,7 +1194,7 @@ export default function ListingDetail() {
 
             <p className="product-meta-line">
               {listing.size &&
-                `${listing.size} · `}
+                `${formatSize(listing.size)} · `}
 
               {conditionLabel}
 
