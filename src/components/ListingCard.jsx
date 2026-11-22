@@ -84,6 +84,9 @@ export default function ListingCard({ listing }) {
 
   const sold = isListingSold(listing.status);
 
+  // Taille affichée uniquement si l'annonce en a une (vêtements, chaussures...)
+  const listingSize = String(listing.size || "").trim();
+
   async function handleFavoriteClick(event) {
     event.preventDefault();
     event.stopPropagation();
@@ -193,6 +196,12 @@ export default function ListingCard({ listing }) {
           </button>
 
           <p className="listing-condition">
+            {listingSize && (
+              <span className="listing-size">
+                {listingSize}
+                {" · "}
+              </span>
+            )}
             {conditionLabels[listing.condition] || listing.condition}
           </p>
 
