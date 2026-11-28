@@ -90,3 +90,69 @@ export function useUnreadMessages(userId) {
 
   return count;
 }
+
+/*
+ * Ensemble des conversations non lues (même règle que ci-dessus), pour afficher
+ * la pastille et le filtre « Unread » dans la liste des messages.
+ * `version` change à chaque ouverture de conversation pour recalculer.
+ */
+export function useUnreadConversationIds(userId, version = 0) {
+  const [ids, setIds] = useState(() => new Set());
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function compute() {
+      if (!userId) {
+        setIds(new Set());
+        return;
+      }
+      try {
+        const { data: conversations } = await supabase
+          .from("conversations")
+          .select("id")
+          .or(`buyer_id.eq.${userId},seller_id.eq.${userId}`);
+
+        if (!conversations?.length) {
+          if (!cancelled) setIds(new Set());
+          return;
+        }
+
+        const { data: messages } = await supabase
+          .from("messages")
+          .select("conversation_id, sender_id, created_at")
+          .in("conversation_id", conversations.map((c) => c.id))
+          .order("created_at", { ascending: false })
+          .limit(300);
+
+        const seen = loadSeen(userId);
+        const latest = new Map();
+        (messages || []).forEach((m) => {
+          if (!latest.has(m.conversation_id)) latest.set(m.conversation_id, m);
+        });
+
+        const next = new Set();
+        latest.forEach((m, conversationId) => {
+          if (String(m.sender_id) === String(userId)) return;
+          const seenAt = seen[conversationId];
+          if (!seenAt || new Date(m.created_at) > new Date(seenAt)) {
+            next.add(String(conversationId));
+          }
+        });
+
+        if (!cancelled) setIds(next);
+      } catch {
+        if (!cancelled) setIds(new Set());
+      }
+    }
+
+    compute();
+    window.addEventListener(EVENT, compute);
+    return () => {
+      cancelled = true;
+      window.removeEventListener(EVENT, compute);
+    };
+  }, [userId, version]);
+
+  return ids;
+}

@@ -1,5 +1,5 @@
 import { formatOfferExpiry, getOfferEffectiveStatus } from "../lib/offers";
-import { markConversationSeen } from "../lib/unreadMessages";
+import { markConversationSeen, useUnreadConversationIds } from "../lib/unreadMessages";
 import {
   Bell,
   Camera,
@@ -10,6 +10,7 @@ import {
   MapPin,
   PackageCheck,
   Plus,
+  Search,
   Send,
   ShieldCheck,
   Truck,
@@ -292,6 +293,37 @@ function getListingUnavailableLabel(conversation, loadingMessages = false) {
   }
 
   return "";
+}
+
+function isUserSeller(conversation, userId) {
+  const sellerId = conversation?.sellerId || conversation?.listing?.sellerId;
+  return Boolean(userId && sellerId && String(sellerId) === String(userId));
+}
+
+/* Le nom enregistré dans la conversation est celui du vendeur : si l'utilisateur
+   EST le vendeur, l'interlocuteur est l'acheteur. */
+function getCounterpartName(conversation, userId) {
+  if (!conversation) return "Member";
+  if (isUserSeller(conversation, userId)) {
+    return conversation.buyerName || "Buyer";
+  }
+  return conversation.sellerName || "Seller";
+}
+
+function getInitial(name) {
+  return String(name || "T").trim().slice(0, 1).toUpperCase() || "T";
+}
+
+function getQuickReplies({ isSeller, hasOrder, unavailable }) {
+  if (unavailable) return ["Thank you!"];
+  if (hasOrder) {
+    return isSeller
+      ? ["I will ship today", "Thanks for your order!", "Tracking coming soon"]
+      : ["Thank you!", "When will you ship?", "Can you send a photo?"];
+  }
+  return isSeller
+    ? ["Yes, it is still available", "Thanks for your interest!", "Can I send more photos?"]
+    : ["Is this still available?", "Can you do a lower price?", "Can I see more photos?"];
 }
 
 function MeetupLocationBox({ label, spot, muted = false }) {
@@ -1146,6 +1178,10 @@ export default function Messages() {
     offset: 0,
     dragging: false
   });
+  const [inboxFilter, setInboxFilter] = useState("all");
+  const [inboxQuery, setInboxQuery] = useState("");
+  const [seenVersion, setSeenVersion] = useState(0);
+  const unreadIds = useUnreadConversationIds(user?.id, seenVersion);
 
   useEffect(() => {
     const isChatOpen = mobilePanel === "chat";
@@ -1197,6 +1233,7 @@ export default function Messages() {
     if (!conversationId || !user?.id) return;
 
     markConversationSeen(user.id, conversationId);
+    setSeenVersion((value) => value + 1);
 
     setLoadingMessages(true);
 
@@ -1345,6 +1382,40 @@ export default function Messages() {
     hasOrderForActiveConversation,
     listingUnavailable
   ]);
+
+  const visibleConversations = useMemo(() => {
+    const query = inboxQuery.trim().toLowerCase();
+
+    return conversations.filter((conversation) => {
+      const selling = isUserSeller(conversation, user?.id);
+
+      if (inboxFilter === "buying" && selling) return false;
+      if (inboxFilter === "selling" && !selling) return false;
+      if (inboxFilter === "unread" && !unreadIds.has(String(conversation.id))) {
+        return false;
+      }
+
+      if (!query) return true;
+
+      const haystack = `${getCounterpartName(conversation, user?.id)} ${
+        conversation.listing?.title || ""
+      }`.toLowerCase();
+
+      return haystack.includes(query);
+    });
+  }, [conversations, inboxFilter, inboxQuery, unreadIds, user?.id]);
+
+  const inboxCounts = useMemo(() => {
+    const counts = { all: conversations.length, buying: 0, selling: 0, unread: 0 };
+
+    conversations.forEach((conversation) => {
+      if (isUserSeller(conversation, user?.id)) counts.selling += 1;
+      else counts.buying += 1;
+      if (unreadIds.has(String(conversation.id))) counts.unread += 1;
+    });
+
+    return counts;
+  }, [conversations, unreadIds, user?.id]);
 
   function openConversation(conversationId) {
     if (swipeState.conversationId === conversationId && swipeState.offset < 0) {
@@ -1667,6 +1738,105 @@ export default function Messages() {
     }
   }
 
+  async function sendQuickReply(text) {
+    if (!activeConversation?.id || !user?.id) return;
+
+    try {
+      await sendTextMessage({
+        conversationId: activeConversation.id,
+        senderId: user.id,
+        text,
+        photos: []
+      });
+
+      await refreshActiveConversation();
+    } catch (error) {
+      console.error("Quick reply error:", error);
+      alert(error.message || "Unable to send message.");
+    }
+  }
+
+  function renderInboxControls() {
+    const filters = [
+      ["all", "All"],
+      ["buying", "Buying"],
+      ["selling", "Selling"],
+      ["unread", "Unread"]
+    ];
+
+    return (
+      <div className="tm-inbox-controls">
+        <label className="tm-search">
+          <Search size={17} aria-hidden="true" />
+          <input
+            type="search"
+            value={inboxQuery}
+            onChange={(event) => setInboxQuery(event.target.value)}
+            placeholder="Search a member or an item"
+            aria-label="Search messages"
+          />
+        </label>
+
+        <div className="tm-filters" role="tablist" aria-label="Filter conversations">
+          {filters.map(([id, label]) => (
+            <button
+              key={id}
+              type="button"
+              role="tab"
+              aria-selected={inboxFilter === id}
+              className={inboxFilter === id ? "tm-filter active" : "tm-filter"}
+              onClick={() => setInboxFilter(id)}
+            >
+              {label}
+              <span>{inboxCounts[id]}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  function renderConversationBody(conversation) {
+    const selling = isUserSeller(conversation, user?.id);
+    const name = getCounterpartName(conversation, user?.id);
+    const unread = unreadIds.has(String(conversation.id));
+
+    return (
+      <>
+        <span className="tm-thumb">
+          {conversation.listing?.photo ? (
+            <img src={conversation.listing.photo} alt="" />
+          ) : (
+            <span className="tm-thumb-empty">{getInitial(name)}</span>
+          )}
+          <span className="tm-thumb-badge" aria-hidden="true">
+            {getInitial(name)}
+          </span>
+        </span>
+
+        <span className="tm-row-main">
+          <span className="tm-row-top">
+            <strong>{name}</strong>
+            <time>{formatConversationDate(conversation.updatedAt)}</time>
+          </span>
+
+          <span className="tm-row-item">{conversation.listing?.title}</span>
+
+          <span className={unread ? "tm-row-last unread" : "tm-row-last"}>
+            {getLastMessage(conversation)}
+          </span>
+
+          <span className="tm-row-tags">
+            <span className={selling ? "tm-tag selling" : "tm-tag buying"}>
+              {selling ? "Selling" : "Buying"}
+            </span>
+            {unread && <span className="tm-unread-dot">New</span>}
+          </span>
+        </span>
+      </>
+    );
+  }
+
   function renderConversationList() {
     if (loadingConversations) {
       return (
@@ -1688,7 +1858,11 @@ export default function Messages() {
 
     return (
       <div className="messages-mobile-list">
-        {conversations.map((conversation) => {
+        {visibleConversations.length === 0 && (
+          <div className="tm-empty-filter">No conversation matches your search.</div>
+        )}
+
+        {visibleConversations.map((conversation) => {
           const swipeOffset = getSwipeOffset(conversation.id);
 
           return (
@@ -1696,8 +1870,8 @@ export default function Messages() {
               key={conversation.id}
               className={
                 swipeOffset < 0
-                  ? "messages-mobile-swipe-row is-open"
-                  : "messages-mobile-swipe-row"
+                  ? "messages-mobile-swipe-row tm-swipe-row is-open"
+                  : "messages-mobile-swipe-row tm-swipe-row"
               }
             >
               <button
@@ -1710,7 +1884,7 @@ export default function Messages() {
 
               <button
                 type="button"
-                className="messages-mobile-row messages-mobile-swipe-content"
+                className="messages-mobile-swipe-content tm-row"
                 style={{
                   transform: `translateX(${swipeOffset}px)`,
                   transition: swipeState.dragging ? "none" : "transform 0.18s ease"
@@ -1721,25 +1895,7 @@ export default function Messages() {
                 onTouchCancel={() => handleSwipeEnd(conversation.id)}
                 onClick={() => openConversation(conversation.id)}
               >
-                <div className="messages-mobile-avatar">
-                  {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
-                </div>
-
-                <div className="messages-mobile-main">
-                  <div className="messages-mobile-row-top">
-                    <strong>{conversation.sellerName}</strong>
-                    <span>{formatConversationDate(conversation.updatedAt)}</span>
-                  </div>
-
-                  <p>{getLastMessage(conversation)}</p>
-
-                  {conversation.listing?.photo && (
-                    <img
-                      src={conversation.listing.photo}
-                      alt={conversation.listing.title}
-                    />
-                  )}
-                </div>
+                {renderConversationBody(conversation)}
               </button>
             </div>
           );
@@ -1975,6 +2131,13 @@ export default function Messages() {
       );
     }
 
+    const counterpartName = getCounterpartName(activeConversation, user?.id);
+    const quickReplies = getQuickReplies({
+      isSeller: isCurrentUserSeller,
+      hasOrder: hasOrderForActiveConversation,
+      unavailable: listingUnavailable
+    });
+
     return (
       <>
         <header className={mobile ? "messages-mobile-chat-header" : "messages-topbar"}>
@@ -1984,14 +2147,19 @@ export default function Messages() {
             </button>
           )}
 
-          <strong>{activeConversation.sellerName}</strong>
+          <div className="tm-header-title">
+            <strong>{counterpartName}</strong>
+            <span>
+              {activeConversation.sellerLocation} · {activeConversation.lastSeen}
+            </span>
+          </div>
 
           <button type="button" aria-label="Conversation information">
             <Info size={21} />
           </button>
         </header>
 
-        <div className="messages-listing-summary">
+        <div className="messages-listing-summary tm-item-card">
           <Link
             to={`/item/${activeConversation.listing?.id}`}
             className="messages-listing-photo"
@@ -2008,7 +2176,12 @@ export default function Messages() {
 
           <div className="messages-listing-info">
             <strong>{activeConversation.listing?.title}</strong>
-            <span>{formatPrice(activeConversation.listing?.price)}</span>
+            <span>
+              {formatPrice(activeConversation.listing?.price)}
+              <em className={isCurrentUserSeller ? "tm-tag selling" : "tm-tag buying"}>
+                {isCurrentUserSeller ? "Selling" : "Buying"}
+              </em>
+            </span>
 
             {listingUnavailableLabel ? (
               <small>{listingUnavailableLabel}</small>
@@ -2055,21 +2228,11 @@ export default function Messages() {
         </div>
 
         <div className="messages-thread">
-          <div className="messages-seller-card">
-            <div className="messages-avatar">
-              {activeConversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
-            </div>
-
-            <div className="messages-seller-bubble">
-              <strong>Hello, I am {activeConversation.sellerName}</strong>
-
-              <p>
-                <MapPin size={16} />
-                {activeConversation.sellerLocation}
-              </p>
-
-              <p>{activeConversation.lastSeen}</p>
-            </div>
+          <div className="tm-intro">
+            <span className="tm-intro-avatar">{getInitial(counterpartName)}</span>
+            <span>
+              <strong>{counterpartName}</strong> · {activeConversation.sellerLocation}
+            </span>
           </div>
 
           {loadingMessages && (
@@ -2137,6 +2300,21 @@ export default function Messages() {
         )}
 
         <div className="chat-composer-wrapper">
+          {!loadingMessages && !message && (
+            <div className="tm-quick-replies" aria-label="Quick replies">
+              {quickReplies.map((text) => (
+                <button
+                  key={text}
+                  type="button"
+                  className="tm-quick"
+                  onClick={() => sendQuickReply(text)}
+                >
+                  {text}
+                </button>
+              ))}
+            </div>
+          )}
+
           {showBundleBox && (
             <div className="chat-bundle-box">
               <div>
@@ -2289,6 +2467,8 @@ export default function Messages() {
               </div>
             )}
 
+            {activeTab === "messages" && conversations.length > 0 && renderInboxControls()}
+
             {activeTab === "messages"
               ? renderConversationList()
               : renderNotificationsEmpty()}
@@ -2304,6 +2484,8 @@ export default function Messages() {
             <h1>Messages</h1>
           </div>
 
+          {conversations.length > 0 && renderInboxControls()}
+
           {conversations.length === 0 ? (
             <div className="messages-empty-sidebar">
               <p>No conversations yet.</p>
@@ -2311,23 +2493,20 @@ export default function Messages() {
             </div>
           ) : (
             <div className="messages-conversation-list">
-              {conversations.map((conversation) => (
+              {visibleConversations.length === 0 && (
+                <div className="tm-empty-filter">No conversation matches your search.</div>
+              )}
+
+              {visibleConversations.map((conversation) => (
                 <button
                   key={conversation.id}
                   type="button"
-                  className={`messages-conversation-item ${
+                  className={`tm-row ${
                     conversation.id === activeConversation?.id ? "active" : ""
                   }`}
                   onClick={() => setActiveConversationId(conversation.id)}
                 >
-                  <div className="messages-avatar">
-                    {conversation.sellerName?.slice(0, 1)?.toUpperCase() || "T"}
-                  </div>
-
-                  <div>
-                    <strong>{conversation.sellerName}</strong>
-                    <p>{getLastMessage(conversation)}</p>
-                  </div>
+                  {renderConversationBody(conversation)}
                 </button>
               ))}
             </div>

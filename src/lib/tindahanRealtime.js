@@ -53,6 +53,7 @@ function mapConversationRow(row) {
     buyerId: row.buyer_id,
     sellerId: row.seller_id,
     sellerName: snapshot.sellerName || "Seller",
+    buyerName: snapshot.buyerName || "",
     sellerLocation: snapshot.sellerLocation || "Philippines",
     lastSeen: snapshot.lastSeen || "Recently active",
     listing: {
@@ -234,6 +235,10 @@ export async function getOrCreateConversation({
     price: Number(listing.price || 0),
     photo: firstPhoto || listing.photos?.[0] || "",
     sellerName: seller?.username || "Seller",
+    buyerName:
+      buyer?.user_metadata?.username ||
+      buyer?.username ||
+      (buyer?.email ? String(buyer.email).split("@")[0] : ""),
     sellerLocation: listing.location || "Philippines",
     lastSeen: "Recently active"
   };
