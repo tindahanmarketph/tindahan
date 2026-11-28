@@ -1,6 +1,7 @@
+import { useEffect } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
-import { isIdentityVerified } from "../lib/identity";
+import { isUserVerified, saveIdentityToAccount } from "../lib/identity";
 
 /*
  * Tant que l'identité (18+ et pièce d'identité) n'est pas vérifiée,
@@ -28,9 +29,14 @@ export default function VerificationGate() {
   const { user, loadingAuth } = useAuth();
   const location = useLocation();
 
+  // Rattrapage : déjà vérifié sur cet appareil mais pas encore sur le compte -> on l'enregistre une fois
+  useEffect(() => {
+    if (user?.id) saveIdentityToAccount(user);
+  }, [user?.id, user?.user_metadata?.identity_status]);
+
   if (loadingAuth || !user) return null;
   if (ALLOWED.some((p) => location.pathname === p || location.pathname.startsWith(`${p}/`))) return null;
-  if (isIdentityVerified(user.id)) return null;
+  if (isUserVerified(user)) return null;
 
   return <Navigate to="/verify-identity" replace state={{ from: location.pathname + location.search }} />;
 }

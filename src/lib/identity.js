@@ -8,6 +8,8 @@
  * statut depuis la base (voir SPEC-VERIFICATION-IDENTITE.md).
  */
 
+import { supabase } from "./supabase";
+
 export const IDENTITY_MODE = "simulation"; // "simulation" | "live"
 export const MIN_AGE = 18;
 
@@ -50,6 +52,41 @@ export function isIdentityVerified(userId) {
   return loadIdentity(userId)?.status === "verified";
 }
 
+/*
+ * Vérifié = mémorisé sur le COMPTE (user_metadata Supabase, valable sur tous les
+ * appareils et navigateurs) OU sur cet appareil (ancienne méthode).
+ * Une fois la vérification faite, elle n'est donc plus jamais redemandée.
+ */
+export function isUserVerified(user) {
+  if (!user?.id) return false;
+  if (user.user_metadata?.identity_status === "verified") return true;
+  return isIdentityVerified(user.id);
+}
+
+/*
+ * Enregistre le statut « vérifié » sur le compte. Sert aussi à rattraper les
+ * personnes déjà vérifiées uniquement sur leur appareil (une seule fois).
+ */
+export async function saveIdentityToAccount(user, record) {
+  if (!user?.id) return;
+  if (user.user_metadata?.identity_status === "verified") return;
+
+  const source = record || loadIdentity(user.id);
+  if (source?.status !== "verified") return;
+
+  try {
+    await supabase.auth.updateUser({
+      data: {
+        identity_status: "verified",
+        identity_verified_at: source.verified_at || new Date().toISOString(),
+        identity_test: Boolean(source.test)
+      }
+    });
+  } catch {
+    /* hors ligne : la vérification sera enregistrée à la prochaine visite */
+  }
+}
+
 /* Simule l'envoi + le contrôle. Ne mémorise AUCUNE photo ni numéro de pièce. */
 export async function submitIdentity({ userId, birthDate, documentType }) {
   if (!userId) throw new Error("You need to be logged in.");
@@ -69,5 +106,9 @@ export async function submitIdentity({ userId, birthDate, documentType }) {
   } catch {
     /* stockage indisponible : la vérification de test sera redemandée */
   }
+
+  // Mémorise aussi sur le compte : plus jamais redemandé, même sur un autre appareil
+  await saveIdentityToAccount({ id: userId, user_metadata: {} }, record);
+
   return record;
 }

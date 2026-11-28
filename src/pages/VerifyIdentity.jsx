@@ -9,7 +9,7 @@ import {
   MIN_AGE,
   getAge,
   isAdult,
-  isIdentityVerified,
+  isUserVerified,
   submitIdentity
 } from "../lib/identity";
 
@@ -110,7 +110,7 @@ export default function VerifyIdentity() {
     return <main className="auth-page"><section className="auth-card"><p>Loading…</p></section></main>;
   }
   if (!user) return <Navigate to="/login" replace />;
-  if (isIdentityVerified(user.id) && step !== 2) return <Navigate to="/" replace />;
+  if (isUserVerified(user) && step !== 2) return <Navigate to="/" replace />;
 
   function goNext() {
     setError("");
